@@ -1,4 +1,4 @@
-﻿using SKit.Lib;
+﻿using SKit.Base;
 using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
@@ -10,7 +10,8 @@ namespace SKit.Client
     {
         private TcpClient _tcpClient;
         private NetworkStream _stream;
-        private byte[] _buffer = new byte[1024];
+        private byte[] _recvbuffer = new byte[10240];
+        private byte[] _sendbuffer = new byte[10240];
         private int _cursor;
         private ISPackager _packager;
 
@@ -23,9 +24,10 @@ namespace SKit.Client
         {
             _tcpClient = new TcpClient();
             _tcpClient.Connect(ip, port);
-
+            
             _stream = _tcpClient.GetStream();
-            var result = _stream.BeginRead(_buffer, 0, _buffer.Length, OnRead, _stream);
+            
+            var result = _stream.BeginRead(_recvbuffer, 0, _recvbuffer.Length, OnRead, _stream);
         }
 
         public void Stop()
@@ -36,7 +38,7 @@ namespace SKit.Client
         public void Send(Object msg)
         {
             var body = Encoding.UTF8.GetBytes((String)msg);
-            var data = _packager.Pack(body, 0, body.Length);
+            var data = _packager.Pack(body, _sendbuffer, 0, _sendbuffer.Length);
             _stream.Write(data.Array, data.Offset, data.Count);
         }
 
@@ -51,7 +53,7 @@ namespace SKit.Client
             while (true)
             {
                 var readlength = 0;
-                ArraySegment<byte> data = _packager.UnPack(_buffer, from, _cursor, ref readlength);
+                ArraySegment<byte> data = _packager.UnPack(_recvbuffer, from, _cursor, ref readlength);
                 if (readlength != 0)
                 {
                     yield return data;
@@ -63,7 +65,7 @@ namespace SKit.Client
             }
             if (_cursor > 0)
             {
-                Buffer.BlockCopy(_buffer, from, _buffer, 0, _cursor);
+                Buffer.BlockCopy(_recvbuffer, from, _recvbuffer, 0, _cursor);
             }
             //e.SetBuffer(_cursor, _buffer.Length - _cursor);
         }
@@ -82,7 +84,7 @@ namespace SKit.Client
                     OnMessageReceiving(data);
                 }
                 
-                stream.BeginRead(_buffer, _cursor, _buffer.Length - _cursor, OnRead, stream);
+                stream.BeginRead(_recvbuffer, _cursor, _recvbuffer.Length - _cursor, OnRead, stream);
                 //PostReceive(receiveEventArgs);
             }
             else
@@ -99,6 +101,7 @@ namespace SKit.Client
 
         private void CloseSocket()
         {
+            Console.WriteLine("连接关闭");
             _stream.Close();
             _tcpClient.Close();
         }

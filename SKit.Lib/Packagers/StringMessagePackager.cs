@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace SKit.Lib.Packagers
+namespace SKit.Base.Packagers
 {
     public class StringMessagePackager: FixedHeaderPackager
     {
@@ -24,23 +24,23 @@ namespace SKit.Lib.Packagers
 
         protected override int GetBodyLength(byte[] buffer, int offset, int headerSize)
         {
-
-            var head = new byte[headerSize];
             if (BitConverter.IsLittleEndian)
             {
+                var head = new byte[headerSize];
                 for (int i = 0; i < headerSize; i++)
                 {
                     head[headerSize - i - 1] = buffer[offset + i];
                 }
+                return BitConverter.ToInt32(head, 0);
             }
             else
             {
-                for (int i = 0; i < headerSize; i++)
-                {
-                    head[i] = buffer[offset + i];
-                }
+                //for (int i = 0; i < headerSize; i++)
+                //{
+                //    head[i] = buffer[offset + i];
+                //}
+                return BitConverter.ToInt32(buffer, offset);
             }
-            return BitConverter.ToInt32(head, 0);
         }
     }
 }

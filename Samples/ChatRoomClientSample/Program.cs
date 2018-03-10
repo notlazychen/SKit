@@ -1,10 +1,10 @@
 ﻿using SKit.Client;
-using SKit.Lib.Packagers;
+using SKit.Base.Packagers;
 using System;
 using System.Net;
 using System.Net.Sockets;
 
-namespace SocketTestClient
+namespace ChatRoomClientSample
 {
     class Program
     {

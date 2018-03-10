@@ -9,10 +9,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SKit;
-using SKit.Lib;
-using SKit.Lib.Packagers;
+using SKit.Base;
+using SKit.Base.Packagers;
+using SKit.Base.Serialization;
 
-namespace GameServerTest
+namespace ChatRoomSample
 {
     public class Startup
     {
@@ -28,15 +29,17 @@ namespace GameServerTest
         {
             services.Configure<SKitConfig>(Configuration.GetSection("game"));
             services.AddTransient<ISPackager, StringMessagePackager>();
+            services.AddTransient<ISerializable, StringSerializer>();
+
+            //services.AddSingleton(services);
+
+            //var provider = services.BuildServiceProvider();
+            // 输出singletone1的Guid
+            var server = new GameServer(services);
+            services.AddSingleton(server);
+            server.Start();
 
             services.AddMvc();
-            services.AddTransient<GameServer>();
-
-            var provider = services.BuildServiceProvider();
-
-            // 输出singletone1的Guid
-            var server = provider.GetService<GameServer>();
-            server.Start();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

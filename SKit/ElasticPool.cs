@@ -9,10 +9,15 @@ namespace SKit
         private Stack<T> _pool;
         private Func<T> _builder;
 
-        public ElasticPool(Func<T> builder)
+        public ElasticPool(Func<T> builder, int preset)
         {
             _pool = new Stack<T>();
             _builder = builder;
+            for (int i = 0; i< preset; i++)
+            {
+                var element = _builder.Invoke();
+                _pool.Push(element);
+            }
         }
 
         public T Pop()

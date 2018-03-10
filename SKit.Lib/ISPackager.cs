@@ -2,11 +2,26 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace SKit.Lib
+namespace SKit.Base
 {
     public interface ISPackager
     {
+        /// <summary>
+        /// 拆包
+        /// </summary>
+        /// <param name="buffer">接收缓冲区</param>
+        /// <param name="offset">偏移</param>
+        /// <param name="count">长度</param>
+        /// <param name="readlength">返回读取的头+身体的总长度</param>
+        /// <returns>提取出数据实体包</returns>
         ArraySegment<byte> UnPack(byte[] buffer, int offset, int count, ref int readlength);
-        ArraySegment<byte> Pack(byte[] body, int offset, int count);
+        /// <summary>
+        /// 打包,将实体序列化后的数据打包成网络包
+        /// </summary>
+        /// <param name="body">缓冲区</param>
+        /// <param name="offset">实体数据偏移</param>
+        /// <param name="count">实体数据长度</param>
+        /// <returns>打包完的数据包</returns>
+        ArraySegment<byte> Pack(byte[] data, byte[] buffer, int offset, int count);
     }
 }

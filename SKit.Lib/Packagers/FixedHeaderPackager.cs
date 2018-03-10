@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace SKit.Lib.Packagers
+namespace SKit.Base.Packagers
 {
     /// <summary>
     /// 可用于实现具体的固定头协议
@@ -30,15 +30,20 @@ namespace SKit.Lib.Packagers
             return _defaultData;
         }
 
-        public ArraySegment<byte> Pack(byte[] buffer, int offset, int count)
+        public ArraySegment<byte> Pack(byte[] data, byte[] buffer, int offset, int count)
         {
             //组包
-            var headBuf = ToHeader(buffer, offset, count);
-            var sendBuf = new byte[count + headBuf.Length];
-            Buffer.BlockCopy(headBuf, 0, sendBuf, 0, 4);
-            Buffer.BlockCopy(buffer, offset, sendBuf, 4, count);
-            return new ArraySegment<byte>(sendBuf);
+            var headBuf = ToHeader(data, 0, data.Length);
+            int totalLength = headBuf.Length + data.Length;
+            if(count < totalLength)
+            {
+                throw new StackOverflowException("数据包大小超过设置的发送缓冲区");
+            }
+            Buffer.BlockCopy(headBuf, 0, buffer, offset, headBuf.Length);
+            Buffer.BlockCopy(data, 0, buffer, offset + headBuf.Length, data.Length);            
+            return new ArraySegment<byte>(buffer, offset, totalLength);
         }
+
 
         /// <summary>
         /// 头部的组织方法
@@ -63,6 +68,6 @@ namespace SKit.Lib.Packagers
         /// <param name="offset">当前偏移</param>
         /// <param name="length">可读取长度</param>
         /// <returns></returns>
-        protected abstract int GetBodyLength(byte[] buffer, int offset, int length);
+        protected abstract int GetBodyLength(byte[] buffer, int offset, int length);        
     }
 }

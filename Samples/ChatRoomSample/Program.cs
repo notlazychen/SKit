@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 using NLog;
 using NLog.Web;
 
-namespace GameServerTest
+namespace ChatRoomSample
 {
     public class Program
     {
@@ -28,7 +28,7 @@ namespace GameServerTest
                 throw;
             }
         }
-
+        
         public static IWebHost BuildWebHost(string[] args) =>
             WebHost.CreateDefaultBuilder(args)
                 .UseStartup<Startup>()

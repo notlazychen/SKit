@@ -1,12 +1,15 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using SKit.Lib;
+using SKit.Base;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,19 +17,39 @@ using System.Threading.Tasks;
 namespace SKit
 {
     /// <summary>
-    /// 
+    /// 游戏服务器
     /// </summary>
     public class GameServer : IDisposable
     {
         public string Id { get; }
         public bool IsRunning { get; private set; }
+        /// <summary>
+        /// 监听端口
+        /// </summary>
+        public int Port { get { return Config.Port; } }
 
-        //private Task _listenerTask;
+
+        private ConcurrentQueue<GameTask> _workingQueue = new ConcurrentQueue<GameTask>();
+        private Task _workingTask;
+        private CancellationTokenSource _workingTaskTokenSource;
         private CancellationTokenSource _listenerTokenSource;
 
-        private ElasticPool<SocketAsyncEventArgs> _socketArgsPool;//输入缓冲池
+        private ConcurrentQueue<GameMessage> _sendingQueue = new ConcurrentQueue<GameMessage>();
+        private Task _sendingTask;
+        private CancellationTokenSource _sendingTaskTokenSource;
+
+
+        private ElasticPool<SocketAsyncEventArgs> _socketRecvArgsPool;//输入缓冲池
+        private ElasticPool<SocketAsyncEventArgs> _socketSendArgsPool;//输出缓冲池
         private ISPackager _packager;//拆包打包器
-        private SKitConfig _config;//配置
+        private ISerializable _serializer;//正反序列化工具
+        private SKitConfig Config { get; }//配置
+        private IServiceCollection _services;//DI容器
+
+        #region 连接管理
+        private ConcurrentDictionary<string, GameSession> _sessions = new ConcurrentDictionary<string, GameSession>();//所有连接 Key:SessionId
+        private ConcurrentDictionary<string, GameSession> _users = new ConcurrentDictionary<string, GameSession>();//登录的连接 Key:UserName
+        #endregion
 
 
         /// <summary>
@@ -35,22 +58,37 @@ namespace SKit
         private TcpListener _listener;
         private readonly ILogger<GameServer> _logger;
 
-        public GameServer(ILogger<GameServer> logger, IOptions<SKitConfig> configProvider, ISPackager packager)
+        #region 开放方法
+        public GameServer(IServiceCollection services)
         {
-            _logger = logger;
-            _packager = packager;
-            _config = configProvider.Value;
-
-            _socketArgsPool = new ElasticPool<SocketAsyncEventArgs>(() =>
+            _services = services;
+            var provicer = services.BuildServiceProvider();
+            Config = provicer.GetService<IOptions<SKitConfig>>().Value;
+            Debug.Assert(Config != null, "SKitConfig Can't be NULL!");
+            _serializer = provicer.GetService<ISerializable>();
+            Debug.Assert(_serializer != null, "ISerializable Can't be NULL!");
+            _logger = provicer.GetService<ILogger<GameServer>>();
+            Debug.Assert(_logger != null, "ILogger Can't be NULL!");
+            _packager = provicer.GetService<ISPackager>();
+            Debug.Assert(_packager != null, "ISPackager Can't be NULL!");
+            
+            _socketRecvArgsPool = new ElasticPool<SocketAsyncEventArgs>(() =>
             {
                 var args = new SocketAsyncEventArgs();
-                var buff = new byte[_config.BufferSize];
+                var buff = new byte[Config.RecvBufferSize];
                 args.SetBuffer(buff, 0, buff.Length);
                 args.Completed += IO_Completed;
                 return args;
-            });
-            IPEndPoint endPoint = new IPEndPoint(IPAddress.Any, _config.Port);
-            _listenerTokenSource = new CancellationTokenSource();
+            }, Config.PresetUserCount);
+            _socketSendArgsPool = new ElasticPool<SocketAsyncEventArgs>(() =>
+            {
+                var args = new SocketAsyncEventArgs();
+                var buff = new byte[Config.SendBufferSize];
+                args.SetBuffer(buff, 0, buff.Length);
+                args.Completed += IO_Completed;
+                return args;
+            }, Config.PresetUserCount);
+            IPEndPoint endPoint = new IPEndPoint(IPAddress.Any, Config.Port);
             _listener = new TcpListener(endPoint);
             _listener.AllowNatTraversal(true);
         }
@@ -60,31 +98,42 @@ namespace SKit
         /// </summary>
         public async void Start()
         {
+            //反射
+            this.ReflectProtocols();
+
             if (!IsRunning)
             {
+                IsRunning = true;
+
+                //启动任务工作线程
+                _workingTaskTokenSource = new CancellationTokenSource();
+                _workingTask = new Task(Loop, _workingTaskTokenSource.Token);
+                _workingTask.Start();
+
+                //启动发送线程
+                _sendingTaskTokenSource = new CancellationTokenSource();
+                _sendingTask = new Task(SendingLoop, _sendingTaskTokenSource.Token);
+                _sendingTask.Start();
+
+
+                //启动接收线程
+                _listenerTokenSource = new CancellationTokenSource();
                 _logger.LogInformation($"Game Server [{Id}] Starting...");
                 var threads = Process.GetCurrentProcess().Threads;
-                IsRunning = true;
                 _listener.Start();
-                //_listenerTask = new Task(async ()=> {
-                //    while (!_listenerTokenSource.IsCancellationRequested)
-                //    {
-                //        Console.WriteLine("task thread id: {0}", Thread.CurrentThread.ManagedThreadId);
-                //        var socket = await _listener.AcceptSocketAsync();
-
-                //        //socket.Receive
-                //        Thread.Sleep(1000);
-                //        Console.WriteLine("sleep thread id: {0}", Thread.CurrentThread.ManagedThreadId);
-                //    }
-                //}, _listenerTokenSource.Token);
-                //_listenerTask.Start();
                 while (!_listenerTokenSource.IsCancellationRequested)
                 {
                     var socket = await _listener.AcceptSocketAsync();
-                    var args = _socketArgsPool.Pop();
+                    var args = _socketRecvArgsPool.Pop();
                     var session = new GameSession();
+                    session.Server = this;
                     session.Socket = socket;
+                    session.SocketAsyncEventArgs = args;
                     args.UserToken = session;
+
+                    _sessions.TryAdd(session.Id, session);
+                    this.OnNewSessionConnected(session);
+
                     _logger.LogInformation($"New client entered [{session.Id}]");
 
                     bool willRaiseEvent = socket.ReceiveAsync(args);
@@ -96,6 +145,109 @@ namespace SKit
             }
         }
 
+        public void Stop()
+        {
+            if (IsRunning)
+            {
+                _logger.LogInformation("Server Closing...");
+                _listenerTokenSource.Cancel();
+                _workingTaskTokenSource.Cancel();
+                _sendingTaskTokenSource.Cancel();
+                Task.WaitAll(_workingTask, _sendingTask);
+                IsRunning = false;
+                _logger.LogInformation("Server Closed");
+            }
+        }
+
+        public void Dispose()
+        {
+            Stop();
+        }
+
+        internal void SetLogin(GameSession session)
+        {
+            if (session.IsAuthorized)
+            {
+                _users.AddOrUpdate(session.UserName, session, (username, oldSession) =>
+                {
+                    //把原来的玩家踢下线
+                    oldSession.Logout();
+                    CloseClientSocket(oldSession.SocketAsyncEventArgs, ClientCloseReason.KickOut);
+                    return session;
+                });
+            }
+        }
+
+        /// <summary>
+        /// 群发给所有连接
+        /// </summary>
+        public void BroadcastAllSessionAsync(Object msg)
+        {
+            GameMessage gmsg = new GameMessage()
+            {
+                MessageType = MessageType.AllSession,
+                Msg = msg,
+            };
+            _sendingQueue.Enqueue(gmsg);
+        }
+        /// <summary>
+        /// 群发给所有登录用户
+        /// </summary>
+        public void BroadcastAllUserAsync(Object msg)
+        {
+            GameMessage gmsg = new GameMessage()
+            {
+                MessageType = MessageType.AllUser,
+                Msg = msg,
+            };
+            _sendingQueue.Enqueue(gmsg);
+        }
+        /// <summary>
+        /// 发送给指定登录用户
+        /// </summary>
+        public void SendByUserNameAsync(string username, Object msg)
+        {
+            GameMessage gmsg = new GameMessage()
+            {
+                MessageType = MessageType.ToUser,
+                Msg = msg,
+                DestId = username
+            };
+            _sendingQueue.Enqueue(gmsg);
+        }
+        /// <summary>
+        /// 发送给指定连接
+        /// </summary>
+        public void SendBySessionIdAsync(string sessionId, Object msg)
+        {
+            GameMessage gmsg = new GameMessage()
+            {
+                MessageType = MessageType.ToSession,
+                Msg = msg,
+                DestId = sessionId
+            };
+            _sendingQueue.Enqueue(gmsg);
+        }
+        #endregion
+
+        /// <summary>
+        /// 有新的连接建立
+        /// </summary>
+        /// <param name="session"></param>
+        /// <remarks>这里是网络通信部分，与游戏逻辑处理不是同一线程</remarks>
+        protected virtual void OnNewSessionConnected(GameSession session)
+        {
+
+        }
+        /// <summary>
+        /// 连接断开
+        /// </summary>
+        protected virtual void OnSessionClosed(GameSession session)
+        {
+
+        }
+
+        #region 网络部分
         /// <summary>
         /// 拆包
         /// </summary>
@@ -103,7 +255,7 @@ namespace SKit
         {
             int from = 0;
             session.BufferReaderCursor += e.BytesTransferred;//剩余可读取字节
-            
+
             while (true)
             {
                 var readlength = 0;
@@ -130,12 +282,25 @@ namespace SKit
             if (e.BytesTransferred > 0 && e.SocketError == SocketError.Success)
             {
                 GameSession session = (GameSession)e.UserToken;
-                Debug.Assert(session != null, "session != null");
-                var datas = Resolve(session, e);
-                foreach (ArraySegment<byte> data in datas)
+                try
                 {
-                    OnMessageReceiving(session, data);
+                    var datas = Resolve(session, e);
+                    foreach (ArraySegment<byte> data in datas)
+                    {
+                        //消息处理: 反序列化和筛选
+                        if (!DigestRecevedData(session, data))
+                        {
+                            CloseClientSocket(e, ClientCloseReason.ProtocolError);
+                            return;
+                        }
+                    }
                 }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, ex.Message);
+                    CloseClientSocket(e, ClientCloseReason.ReceiveDataError);
+                }
+
                 //PostReceive(receiveEventArgs);    
                 bool willRaiseEvent = session.Socket.ReceiveAsync(e);
                 if (!willRaiseEvent)
@@ -145,16 +310,11 @@ namespace SKit
             }
             else
             {
-                CloseClientSocket(e);
+                CloseClientSocket(e, ClientCloseReason.ClientClose);
             }
         }
 
-        private void ProcessSend(SocketAsyncEventArgs e)
-        {
-
-        }
-
-        private void CloseClientSocket(SocketAsyncEventArgs e)
+        private void CloseClientSocket(SocketAsyncEventArgs e, ClientCloseReason reason)
         {
             GameSession token = e.UserToken as GameSession;
             // close the socket associated with the client
@@ -166,8 +326,27 @@ namespace SKit
             catch (Exception) { }
             token.Socket.Close();
 
+            if (token.IsAuthorized)
+            {
+                _users.TryRemove(token.UserName, out token);
+            }
+
+            if (_sessions.TryRemove(token.Id, out token))
+            {
+                //任务队列加入玩家离线
+                foreach (GameController controller in _controllers.Values)
+                {
+                    _workingQueue.Enqueue(new GamePlayerLeaveTask(token, controller, reason));
+                }
+                this.OnSessionClosed(token);
+            }
             // Free the SocketAsyncEventArg so they can be reused by another client
-            _socketArgsPool.Push(e);
+            _socketRecvArgsPool.Push(e);
+        }
+
+        private void ProcessSend(SocketAsyncEventArgs e)
+        {
+            _socketSendArgsPool.Push(e);
         }
 
         private void IO_Completed(object sender, SocketAsyncEventArgs e)
@@ -184,30 +363,190 @@ namespace SKit
                     throw new ArgumentException("The last operation completed on the socket was not a receive or send");
             }
         }
+        #endregion
 
-        /// <summary>
-        /// 刚接受到消息还未放入处理队列之前，可重写此处做筛选
-        /// </summary>
-        /// <param name="session"></param>
-        /// <param name="data"></param>
-        protected virtual void OnMessageReceiving(GameSession session, ArraySegment<byte> data)
+        #region 任务执行派发部分
+        private void SendingLoop()
         {
-            string msg = Encoding.UTF8.GetString(data.Array, data.Offset, data.Count);
-            _logger.LogInformation($"{session.Id} : {msg}");
-        }
-
-        public void Stop()
-        {
-            if (IsRunning)
+            while (!_sendingTaskTokenSource.IsCancellationRequested)
             {
-                _listenerTokenSource.Cancel();
-                //Task.WaitAll(_listenerTask);
+                try
+                {
+                    if (!_sendingQueue.IsEmpty)
+                    {
+                        GameMessage message = null;
+                        if (_sendingQueue.TryDequeue(out message))
+                        {
+                            var args = _socketSendArgsPool.Pop();
+                            //string cmd = _serializer.EntityToCmd(message.Msg);
+                            byte[] data = _serializer.Serialize(message.Msg);
+                            ArraySegment<byte> encodedMessage = _packager.Pack(data, args.Buffer, 0, args.Buffer.Length);
+                            args.SetBuffer(0, encodedMessage.Count);
+                            switch (message.MessageType)
+                            {
+                                case MessageType.AllSession:
+                                    foreach (var session in _sessions.Values)
+                                    {
+                                        if (!session.Socket.SendAsync(args))
+                                        {
+                                            ProcessSend(args);
+                                        }
+                                    }
+                                    break;
+                                case MessageType.AllUser:
+                                    foreach (var session in _users.Values)
+                                    {
+                                        if (!session.Socket.SendAsync(args))
+                                        {
+                                            ProcessSend(args);
+                                        }
+                                    }
+                                    break;
+                                case MessageType.ToSession:
+                                    {
+                                        GameSession session;
+                                        if (_sessions.TryGetValue(message.DestId, out session))
+                                        {
+                                            if (!session.Socket.SendAsync(args))
+                                            {
+                                                ProcessSend(args);
+                                            }
+                                        }
+                                    }
+                                    break;
+                                case MessageType.ToUser:
+                                    {
+                                        GameSession session;
+                                        if (_users.TryGetValue(message.DestId, out session))
+                                        {
+                                            if (!session.Socket.SendAsync(args))
+                                            {
+                                                ProcessSend(args);
+                                            }
+                                        }
+                                    }
+                                    break;
+                            }
+                        }
+                    }
+                    Thread.Sleep(1);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, ex.Message);
+                }
             }
         }
 
-        public void Dispose()
+        private void Loop()
         {
-            Stop();
+            while (!_workingTaskTokenSource.IsCancellationRequested)
+            {
+                try
+                {
+                    if (!_workingQueue.IsEmpty)
+                    {
+                        GameTask task = null;
+                        if (_workingQueue.TryDequeue(out task))
+                        {
+                            task.DoAction();
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, ex.Message);
+                }
+                Thread.Sleep(1);
+            }
         }
+
+        /// <summary>
+        /// 处理消息包
+        /// </summary>
+        /// <param name="session"></param>
+        /// <param name="data"></param>
+        protected bool DigestRecevedData(GameSession session, ArraySegment<byte> data)
+        {
+            string cmd = _serializer.DataToCmd(data.Array, data.Offset, data.Count);
+            if (!this._Handlers.ContainsKey(cmd))
+            {
+                //如果没有处理器，先刷掉一批
+                return false;
+            }
+            var handler = this._Handlers[cmd];
+            var type = handler.RequestType;
+            var request = _serializer.Deserialize(type, data.Array, data.Offset, data.Count);
+            var task = new GameTask(handler.ProcessAction, session, request, handler.Controller);
+            this._workingQueue.Enqueue(task);
+            return true;
+        }
+        #endregion
+
+        #region 通讯协议约定
+        class GameProtocolProcessMethod
+        {
+            public String CMD { get; set; }
+            public Delegate ProcessAction { get; set; }
+            public Type RequestType { get; set; }
+            public MethodInfo MethodInfo { get; set; }
+            public GameController Controller { get; set; }
+        }
+
+        private Dictionary<string, GameProtocolProcessMethod> _Handlers = new Dictionary<string, GameProtocolProcessMethod>();
+        private Dictionary<Type, GameController> _controllers = new Dictionary<Type, GameController>();
+        public T GetController<T>() where T : GameController
+        {
+            Type t = typeof(T);
+            return _controllers[t] as T;
+        }
+        /// <summary>
+        /// 消息驱动，通过消息实体名找处理函数
+        /// </summary>
+        private void ReflectProtocols()
+        {
+            foreach (var type in Assembly.GetEntryAssembly().ExportedTypes)
+            {
+                if (type.GetTypeInfo().BaseType == typeof(GameController))
+                {
+                    _services.AddTransient(typeof(GameController), type);
+                }
+            }
+
+            var provider = _services.BuildServiceProvider();
+            var controllers = provider.GetServices<GameController>();
+            foreach (var controller in controllers)
+            {
+                Type type = controller.GetType();
+                _controllers.Add(type, controller);
+                MethodInfo[] methods = type.GetMethods();
+                foreach (var methodInfo in methods)
+                {
+                    ParameterInfo[] parameterInfos = methodInfo.GetParameters();
+                    if (parameterInfos.Length == 2)
+                    {
+                        Type requestType = parameterInfos[1].ParameterType;
+                        String cmd = requestType.Name;
+                        Type[] templateTypeSet = new[] { typeof(GameSession), requestType };
+                        Type methodGenericType = typeof(Action<,>);
+                        Type methodType = methodGenericType.MakeGenericType(templateTypeSet);
+                        Delegate actionMethod = Delegate.CreateDelegate(methodType, controller, methodInfo);
+                        var handler = new GameProtocolProcessMethod()
+                        {
+                            CMD = cmd,
+                            MethodInfo = methodInfo,
+                            ProcessAction = actionMethod,
+                            RequestType = requestType,
+                            Controller = controller
+                        };
+                        _Handlers.Add(handler.CMD, handler);
+
+                    }
+
+                }
+            }
+        }
+
+        #endregion 
     }
 }
