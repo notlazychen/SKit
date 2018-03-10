@@ -26,7 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SKit\SKit.csproj" />
+    <ProjectReference Include="..\..\SKit\SKit.csproj" />
   </ItemGroup>
 
   <ItemGroup>

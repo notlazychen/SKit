@@ -6,7 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SKit.Client\SKit.Client.csproj" />
+    <ProjectReference Include="..\..\SKit.Client\SKit.Client.csproj" />
   </ItemGroup>
 
 </Project>

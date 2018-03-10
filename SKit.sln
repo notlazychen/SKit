@@ -3,15 +3,17 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27130.2003
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SKit", "SKit\SKit.csproj", "{DB35061F-B894-4C5E-B59E-7C3F0FEBEE61}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SKit", "SKit\SKit.csproj", "{DB35061F-B894-4C5E-B59E-7C3F0FEBEE61}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SocketTestClient", "SocketTestClient\SocketTestClient.csproj", "{CE34E4B5-EA00-42E0-8C28-F0F649DE64B7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GameClientTest", "Samples\GameClient\GameClient.csproj", "{CE34E4B5-EA00-42E0-8C28-F0F649DE64B7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameServerTest", "GameServerTest\GameServerTest.csproj", "{62FC3AC8-AC11-489D-80DF-8E2B4E76512D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GameServerTest", "Samples\GameServer\GameServer.csproj", "{62FC3AC8-AC11-489D-80DF-8E2B4E76512D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SKit.Lib", "SKit.Lib\SKit.Lib.csproj", "{2AFC29D4-0074-456C-88AB-6FA581E594BE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SKit.Lib", "SKit.Lib\SKit.Lib.csproj", "{2AFC29D4-0074-456C-88AB-6FA581E594BE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SKit.Client", "SKit.Client\SKit.Client.csproj", "{2D384AA9-C9E8-4128-82A7-41686824648D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SKit.Client", "SKit.Client\SKit.Client.csproj", "{2D384AA9-C9E8-4128-82A7-41686824648D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{CA5620A3-3297-4091-B330-0917D645EC96}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -42,6 +44,10 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{CE34E4B5-EA00-42E0-8C28-F0F649DE64B7} = {CA5620A3-3297-4091-B330-0917D645EC96}
+		{62FC3AC8-AC11-489D-80DF-8E2B4E76512D} = {CA5620A3-3297-4091-B330-0917D645EC96}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C8214006-48A2-42EC-B249-E587DA2363BF}
