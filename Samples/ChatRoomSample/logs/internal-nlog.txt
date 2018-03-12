@@ -878,3 +878,89 @@
 2018-03-10 22:48:36.3284 Info Configured from an XML element in E:\XIAOBAI_WORKSPACE\SKit\Samples\ChatRoomSample\bin\Debug\netcoreapp2.0\nlog.config...
 2018-03-10 22:48:36.3594 Info Found 72 configuration items
 2018-03-10 22:48:36.3594 Info Found 72 configuration items
+2018-03-12 16:07:04.3476 Info Message Template Auto Format enabled
+2018-03-12 16:07:04.5236 Info Adding target File Target[allfile]
+2018-03-12 16:07:04.6105 Error Error parsing layout aspnet-request-url will be ignored. Exception: System.ArgumentException: LayoutRenderer cannot be found: 'aspnet-request-url'. Is NLog.Web not included?
+   at NLog.Config.Factory`2.CreateInstance(String name)
+   at NLog.Layouts.LayoutParser.GetLayoutRenderer(ConfigurationItemFactory configurationItemFactory, String name)
+2018-03-12 16:07:04.6310 Error Error parsing layout aspnet-mvc-action will be ignored. Exception: System.ArgumentException: LayoutRenderer cannot be found: 'aspnet-mvc-action'. Is NLog.Web not included?
+   at NLog.Config.Factory`2.CreateInstance(String name)
+   at NLog.Layouts.LayoutParser.GetLayoutRenderer(ConfigurationItemFactory configurationItemFactory, String name)
+2018-03-12 16:07:04.6447 Info Adding target File Target[ownFile-web]
+2018-03-12 16:07:04.6447 Info Adding target ColoredConsole Target[c]
+2018-03-12 16:07:04.6447 Info Adding target Null Target[blackhole]
+2018-03-12 16:07:04.6778 Info Configured from an XML element in C:\Users\cnroy\Documents\GitHub\SKit\Samples\ChatRoomSample\bin\Debug\netcoreapp2.0\nlog.config...
+2018-03-12 16:07:04.7530 Info Found 72 configuration items
+2018-03-12 16:07:04.7795 Info Found 72 configuration items
+2018-03-12 16:07:17.2459 Info Message Template Auto Format enabled
+2018-03-12 16:07:17.8744 Info Adding target File Target[allfile]
+2018-03-12 16:07:17.9988 Error Error parsing layout aspnet-request-url will be ignored. Exception: System.ArgumentException: LayoutRenderer cannot be found: 'aspnet-request-url'. Is NLog.Web not included?
+   at NLog.Config.Factory`2.CreateInstance(String name)
+   at NLog.Layouts.LayoutParser.GetLayoutRenderer(ConfigurationItemFactory configurationItemFactory, String name)
+2018-03-12 16:07:18.0060 Error Error parsing layout aspnet-mvc-action will be ignored. Exception: System.ArgumentException: LayoutRenderer cannot be found: 'aspnet-mvc-action'. Is NLog.Web not included?
+   at NLog.Config.Factory`2.CreateInstance(String name)
+   at NLog.Layouts.LayoutParser.GetLayoutRenderer(ConfigurationItemFactory configurationItemFactory, String name)
+2018-03-12 16:07:18.0060 Info Adding target File Target[ownFile-web]
+2018-03-12 16:07:18.0220 Info Adding target ColoredConsole Target[c]
+2018-03-12 16:07:18.0220 Info Adding target Null Target[blackhole]
+2018-03-12 16:07:18.0390 Info Configured from an XML element in C:\Users\cnroy\Documents\GitHub\SKit\Samples\ChatRoomSample\bin\Debug\netcoreapp2.0\nlog.config...
+2018-03-12 16:07:18.0913 Info Found 72 configuration items
+2018-03-12 16:07:18.1403 Info Found 72 configuration items
+2018-03-12 16:08:22.5911 Info Message Template Auto Format enabled
+2018-03-12 16:08:22.8571 Info Adding target File Target[allfile]
+2018-03-12 16:08:23.1364 Error Error parsing layout aspnet-request-url will be ignored. Exception: System.ArgumentException: LayoutRenderer cannot be found: 'aspnet-request-url'. Is NLog.Web not included?
+   at NLog.Config.Factory`2.CreateInstance(String name)
+   at NLog.Layouts.LayoutParser.GetLayoutRenderer(ConfigurationItemFactory configurationItemFactory, String name)
+2018-03-12 16:08:23.1499 Error Error parsing layout aspnet-mvc-action will be ignored. Exception: System.ArgumentException: LayoutRenderer cannot be found: 'aspnet-mvc-action'. Is NLog.Web not included?
+   at NLog.Config.Factory`2.CreateInstance(String name)
+   at NLog.Layouts.LayoutParser.GetLayoutRenderer(ConfigurationItemFactory configurationItemFactory, String name)
+2018-03-12 16:08:23.1636 Info Adding target File Target[ownFile-web]
+2018-03-12 16:08:23.1636 Info Adding target ColoredConsole Target[c]
+2018-03-12 16:08:23.1636 Info Adding target Null Target[blackhole]
+2018-03-12 16:08:23.1878 Info Configured from an XML element in C:\Users\cnroy\Documents\GitHub\SKit\Samples\ChatRoomSample\bin\Debug\netcoreapp2.0\nlog.config...
+2018-03-12 16:08:23.2335 Info Found 72 configuration items
+2018-03-12 16:08:23.2617 Info Found 72 configuration items
+2018-03-12 16:09:54.7938 Info Shutting down logging...
+2018-03-12 16:09:54.8448 Info Logger has been shut down.
+2018-03-12 17:12:58.9089 Info Message Template Auto Format enabled
+2018-03-12 17:12:59.3041 Info Adding target File Target[allfile]
+2018-03-12 17:12:59.4478 Error Error parsing layout aspnet-request-url will be ignored. Exception: System.ArgumentException: LayoutRenderer cannot be found: 'aspnet-request-url'. Is NLog.Web not included?
+   at NLog.Config.Factory`2.CreateInstance(String name)
+   at NLog.Layouts.LayoutParser.GetLayoutRenderer(ConfigurationItemFactory configurationItemFactory, String name)
+2018-03-12 17:12:59.4575 Error Error parsing layout aspnet-mvc-action will be ignored. Exception: System.ArgumentException: LayoutRenderer cannot be found: 'aspnet-mvc-action'. Is NLog.Web not included?
+   at NLog.Config.Factory`2.CreateInstance(String name)
+   at NLog.Layouts.LayoutParser.GetLayoutRenderer(ConfigurationItemFactory configurationItemFactory, String name)
+2018-03-12 17:12:59.4575 Info Adding target File Target[ownFile-web]
+2018-03-12 17:12:59.4740 Info Adding target ColoredConsole Target[c]
+2018-03-12 17:12:59.4740 Info Adding target Null Target[blackhole]
+2018-03-12 17:12:59.4941 Info Configured from an XML element in C:\Users\cnroy\Documents\GitHub\SKit\Samples\ChatRoomSample\bin\Debug\netcoreapp2.0\nlog.config...
+2018-03-12 17:12:59.5368 Info Found 72 configuration items
+2018-03-12 17:12:59.5607 Info Found 72 configuration items
+2018-03-12 17:13:50.2522 Info Message Template Auto Format enabled
+2018-03-12 17:13:50.6088 Info Adding target File Target[allfile]
+2018-03-12 17:13:50.8360 Error Error parsing layout aspnet-request-url will be ignored. Exception: System.ArgumentException: LayoutRenderer cannot be found: 'aspnet-request-url'. Is NLog.Web not included?
+   at NLog.Config.Factory`2.CreateInstance(String name)
+   at NLog.Layouts.LayoutParser.GetLayoutRenderer(ConfigurationItemFactory configurationItemFactory, String name)
+2018-03-12 17:13:50.8593 Error Error parsing layout aspnet-mvc-action will be ignored. Exception: System.ArgumentException: LayoutRenderer cannot be found: 'aspnet-mvc-action'. Is NLog.Web not included?
+   at NLog.Config.Factory`2.CreateInstance(String name)
+   at NLog.Layouts.LayoutParser.GetLayoutRenderer(ConfigurationItemFactory configurationItemFactory, String name)
+2018-03-12 17:13:50.8683 Info Adding target File Target[ownFile-web]
+2018-03-12 17:13:50.8683 Info Adding target ColoredConsole Target[c]
+2018-03-12 17:13:50.8799 Info Adding target Null Target[blackhole]
+2018-03-12 17:13:50.9048 Info Configured from an XML element in C:\Users\cnroy\Documents\GitHub\SKit\Samples\ChatRoomSample\bin\Debug\netcoreapp2.0\nlog.config...
+2018-03-12 17:13:50.9712 Info Found 72 configuration items
+2018-03-12 17:13:51.0175 Info Found 72 configuration items
+2018-03-12 17:17:55.6564 Info Message Template Auto Format enabled
+2018-03-12 17:17:55.9994 Info Adding target File Target[allfile]
+2018-03-12 17:17:56.1900 Error Error parsing layout aspnet-request-url will be ignored. Exception: System.ArgumentException: LayoutRenderer cannot be found: 'aspnet-request-url'. Is NLog.Web not included?
+   at NLog.Config.Factory`2.CreateInstance(String name)
+   at NLog.Layouts.LayoutParser.GetLayoutRenderer(ConfigurationItemFactory configurationItemFactory, String name)
+2018-03-12 17:17:56.2070 Error Error parsing layout aspnet-mvc-action will be ignored. Exception: System.ArgumentException: LayoutRenderer cannot be found: 'aspnet-mvc-action'. Is NLog.Web not included?
+   at NLog.Config.Factory`2.CreateInstance(String name)
+   at NLog.Layouts.LayoutParser.GetLayoutRenderer(ConfigurationItemFactory configurationItemFactory, String name)
+2018-03-12 17:17:56.2070 Info Adding target File Target[ownFile-web]
+2018-03-12 17:17:56.2070 Info Adding target ColoredConsole Target[c]
+2018-03-12 17:17:56.2070 Info Adding target Null Target[blackhole]
+2018-03-12 17:17:56.2394 Info Configured from an XML element in C:\Users\cnroy\Documents\GitHub\SKit\Samples\ChatRoomSample\bin\Debug\netcoreapp2.0\nlog.config...
+2018-03-12 17:17:56.3068 Info Found 72 configuration items
+2018-03-12 17:17:56.3450 Info Found 72 configuration items

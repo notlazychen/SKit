@@ -71,6 +71,7 @@ namespace SKit
             Debug.Assert(_logger != null, "ILogger Can't be NULL!");
             _packager = provicer.GetService<ISPackager>();
             Debug.Assert(_packager != null, "ISPackager Can't be NULL!");
+            this.Id = Config.Id;
             
             _socketRecvArgsPool = new ElasticPool<SocketAsyncEventArgs>(() =>
             {
@@ -149,13 +150,13 @@ namespace SKit
         {
             if (IsRunning)
             {
-                _logger.LogInformation("Server Closing...");
+                _logger.LogInformation($"Game Server [{Id}] Closing...");
                 _listenerTokenSource.Cancel();
                 _workingTaskTokenSource.Cancel();
                 _sendingTaskTokenSource.Cancel();
                 Task.WaitAll(_workingTask, _sendingTask);
                 IsRunning = false;
-                _logger.LogInformation("Server Closed");
+                _logger.LogInformation($"Game Server [{Id}] Closed");
             }
         }
 

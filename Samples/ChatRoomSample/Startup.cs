@@ -8,10 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using SKit;
-using SKit.Base;
-using SKit.Base.Packagers;
-using SKit.Base.Serialization;
+using SKit.AspNetCore;
 
 namespace ChatRoomSample
 {
@@ -27,29 +24,18 @@ namespace ChatRoomSample
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.Configure<SKitConfig>(Configuration.GetSection("game"));
-            services.AddTransient<ISPackager, StringMessagePackager>();
-            services.AddTransient<ISerializable, StringSerializer>();
-
-            //services.AddSingleton(services);
-
-            //var provider = services.BuildServiceProvider();
-            // 输出singletone1的Guid
-            var server = new GameServer(services);
-            services.AddSingleton(server);
-            server.Start();
-
+            services.AddSKit();            
             services.AddMvc();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
-        {
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, IApplicationLifetime applicationLifetime)
+        {            
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
-
+            app.UserSKit();
             app.UseMvc();
         }
     }
