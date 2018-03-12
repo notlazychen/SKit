@@ -1,6 +1,7 @@
 ﻿using SKit.Base;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net.Sockets;
 using System.Text;
 
@@ -14,10 +15,15 @@ namespace SKit.Client
         private byte[] _sendbuffer = new byte[10240];
         private int _cursor;
         private ISPackager _packager;
+        private ISerializable _serializable;
+        private Dictionary<string, Type> _actions = new Dictionary<string, Type>();
 
-        public GameClient(ISPackager packager)
+        public event EventHandler<Object> MessageReceived;
+
+        public GameClient(ISPackager packager, ISerializable serializable)
         {
             _packager = packager;
+            _serializable = serializable;
         }
 
         public void Start(string ip, int port)
@@ -25,8 +31,7 @@ namespace SKit.Client
             _tcpClient = new TcpClient();
             _tcpClient.Connect(ip, port);
             
-            _stream = _tcpClient.GetStream();
-            
+            _stream = _tcpClient.GetStream();            
             var result = _stream.BeginRead(_recvbuffer, 0, _recvbuffer.Length, OnRead, _stream);
         }
 
@@ -37,8 +42,8 @@ namespace SKit.Client
 
         public void Send(Object msg)
         {
-            var body = Encoding.UTF8.GetBytes((String)msg);
-            var data = _packager.Pack(body, _sendbuffer, 0, _sendbuffer.Length);
+            var body = _serializable.Serialize(msg);
+            var data = _packager.Pack(body, _sendbuffer, 0, _sendbuffer.Length);           
             _stream.Write(data.Array, data.Offset, data.Count);
         }
 
@@ -95,8 +100,17 @@ namespace SKit.Client
 
         private void OnMessageReceiving(ArraySegment<byte> data)
         {
-            string msg = Encoding.UTF8.GetString(data.Array, data.Offset, data.Count);
-            Console.WriteLine("收到消息: " + msg);
+            string cmd = _serializable.DataToCmd(data.Array, data.Offset, data.Count);
+            Type t = null;
+            if(_actions.TryGetValue(cmd, out t))
+            {
+                var msg = _serializable.Deserialize(t, data.Array, data.Offset, data.Count);
+                MessageReceived?.Invoke(this, msg);
+            }
+            else
+            {
+                throw new Exception("unregist message!");
+            }
         }
 
         private void CloseSocket()
@@ -104,6 +118,12 @@ namespace SKit.Client
             Console.WriteLine("连接关闭");
             _stream.Close();
             _tcpClient.Close();
+        }
+
+        public void Register<T>()
+        {
+            var type = typeof(T);
+            _actions.Add(type.Name, type);
         }
     }
 }

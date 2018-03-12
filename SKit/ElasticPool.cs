@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 
@@ -6,12 +7,12 @@ namespace SKit
 {
     public class ElasticPool<T>
     {
-        private Stack<T> _pool;
+        private ConcurrentStack<T> _pool;
         private Func<T> _builder;
 
         public ElasticPool(Func<T> builder, int preset)
         {
-            _pool = new Stack<T>();
+            _pool = new ConcurrentStack<T>();
             _builder = builder;
             for (int i = 0; i< preset; i++)
             {
@@ -22,11 +23,12 @@ namespace SKit
 
         public T Pop()
         {
-            if (_pool.Count == 0)
+            T o;
+            if(!_pool.TryPop(out o))
             {
                 return _builder.Invoke();
             }
-            return _pool.Pop();
+            return o;
         }
 
         public void Push(T element)

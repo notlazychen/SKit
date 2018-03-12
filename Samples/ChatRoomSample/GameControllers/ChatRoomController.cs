@@ -20,14 +20,15 @@ namespace ChatRoomSample.GameControllers
         public void Chat(GameSession s, string msg)
         {
             string str;
-            if (s.IsAuthorized)
-            {
-                str = $"{s.UserName}: {msg}";
-            }
-            else
-            {
-                str = $"{s.Id}: {msg}";
-            }
+            //if (s.IsAuthorized)
+            //{
+            //    str = $"{s.UserName}: {msg}";
+            //}
+            //else
+            //{
+            //    str = $"{s.Id}: {msg}";
+            //}
+            str = msg;
             _server.BroadcastAllSessionAsync(str);
             _logger.LogDebug(str);
         }
