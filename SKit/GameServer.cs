@@ -91,7 +91,7 @@ namespace SKit
             }, Config.PresetUserCount);
             IPEndPoint endPoint = new IPEndPoint(IPAddress.Any, Config.Port);
             _listener = new TcpListener(endPoint);
-            _listener.AllowNatTraversal(true);
+            //_listener.AllowNatTraversal(true);
         }
 
         /// <summary>

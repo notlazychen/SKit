@@ -17,7 +17,7 @@ namespace ChatRoomClientSample
             Console.WriteLine("Hello World!");
             //1 创建客户端
             client = new GameClient(new StringMessagePackager(), new StringSerializer());
-            string ip = "127.0.0.1";
+            string ip = "101.132.118.172";
             IPEndPoint endPoint = new IPEndPoint(IPAddress.Parse(ip), 2018);
             
             //注册接收
