@@ -144,7 +144,7 @@ namespace SKit
                     _sessions.TryAdd(session.Id, session);
                     this.OnNewSessionConnected(session);
 
-                    _logger.LogInformation($"New client entered [{session.Id}]");
+                    _logger.LogDebug($"{session.Id}: Enter");
 
                     bool willRaiseEvent = socket.ReceiveAsync(args);
                     if (!willRaiseEvent)
@@ -266,7 +266,7 @@ namespace SKit
             int from = 0;
             session.BufferReaderCursor += e.BytesTransferred;//剩余可读取字节
 
-            while (true)
+            while (session.BufferReaderCursor > 0)
             {
                 var readlength = 0;
                 ArraySegment<byte> data = _packager.UnPack(e.Buffer, from, session.BufferReaderCursor, ref readlength);
@@ -300,8 +300,11 @@ namespace SKit
                         //消息处理: 反序列化和筛选
                         if (!DigestRecevedData(session, data))
                         {
-                            CloseClientSocket(e, ClientCloseReason.ProtocolError);
-                            return;
+                            if (Config.KickoutWhenProtocolError)
+                            {
+                                CloseClientSocket(e, ClientCloseReason.ProtocolError);
+                                return;
+                            }
                         }
                     }
                 }
@@ -481,7 +484,7 @@ namespace SKit
         protected bool DigestRecevedData(GameSession session, ArraySegment<byte> data)
         {
             string cmd = _serializer.DataToCmd(data.Array, data.Offset, data.Count);
-            if (!this._Handlers.ContainsKey(cmd))
+            if (cmd == null || !this._Handlers.ContainsKey(cmd))
             {
                 //如果没有处理器，先刷掉一批
                 return false;

@@ -23,5 +23,9 @@ namespace SKit
         /// 预设用户
         /// </summary>
         public int PresetUserCount { get; set; } = 100;
+        /// <summary>
+        /// 当协议解析错误的时候踢出用户（不同于拆包出错，拆包出错必须踢出）
+        /// </summary>
+        public bool KickoutWhenProtocolError { get; set; } = true;
     }
 }

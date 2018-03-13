@@ -1,5 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 using ProtoBuf;
 using protocol;
 using SKit.Common;
@@ -10,7 +12,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Reflection;
 using System.Text;
 
 namespace Frontline.Common.Network
@@ -23,16 +24,26 @@ namespace Frontline.Common.Network
         private static byte[] _xorbytes;
         private Dictionary<Type, short> _types = new Dictionary<Type, short>();
         private Dictionary<short, string> _cmds = new Dictionary<short, string>();
-
-        public ProtoBufSerializer(IOptions<GameConfig> config)
+        private ILogger<ProtoBufSerializer> _logger;
+        private IOptions<GameConfig> _config;
+        public ProtoBufSerializer(IOptions<GameConfig> config, ILogger<ProtoBufSerializer> logger)
         {
+            _config = config;
             _xorbytes = Encoding.UTF8.GetBytes(config.Value.Secret);
+            _logger = logger;
         }
 
         public override string DataToCmd(byte[] data, int offset, int count)
         {
             short cmd = IPAddress.NetworkToHostOrder(BitConverter.ToInt16(data, offset));
-            return _cmds[cmd];
+
+            string cmdName;
+            if(_cmds.TryGetValue(cmd, out cmdName))
+            {
+                return cmdName;
+            }
+            _logger.LogWarning("NO CMD: {0}", cmd);
+            return null;
         }
 
         public override Object Deserialize(Type type, byte[] data, int offset, int count)
@@ -43,30 +54,49 @@ namespace Frontline.Common.Network
             using (MemoryStream stream = new MemoryStream(data, offset, bodyLength))
             {
                 stream.SetLength(bodyLength);
-                return ProtoBuf.Serializer.Deserialize(type, stream);
+                var msg =  ProtoBuf.Serializer.Deserialize(type, stream);
+
+                if (_config.Value.LogIO)
+                {
+                    _logger.LogDebug("[RECV]{0}:{1}", msg.GetType().Name, JsonConvert.SerializeObject(msg));
+                }
+                return msg;
             }
         }
 
         public override byte[] Serialize(Object entity)
         {
             short cmd;
-            if(_types.TryGetValue(entity.GetType(), out cmd)){
+            var type = entity.GetType();
+            if (!_types.TryGetValue(type, out cmd)){
 
-                MemoryStream stream = new MemoryStream();
-                ProtoBuf.Serializer.Serialize(stream, entity);
-                var bytes = stream.ToArray();
-                MathEx.Xor(bytes, _xorbytes);
-
-                int offset = 0;
-                var buffer = new byte[bytes.Length + 2];
-
-                buffer[offset++] = (byte)((cmd >> 8) & 0xff);
-                buffer[offset++] = (byte)(cmd & 0xff);
-
-                Buffer.BlockCopy(bytes, 0, buffer, offset, bytes.Length);
-                return buffer;
+                var attribute = type.GetCustomAttributesData().FirstOrDefault(a => a.AttributeType == typeof(ProtoAttribute));
+                if(attribute == null)
+                {
+                    return null;
+                }
+                cmd = Convert.ToInt16(attribute.NamedArguments[0].TypedValue.Value);
+                _types.Add(type, cmd);
+                _cmds.Add(cmd, type.Name);
             }
-            return null;
+            
+            MemoryStream stream = new MemoryStream();
+            ProtoBuf.Serializer.Serialize(stream, entity);
+            var bytes = stream.ToArray();
+            MathEx.Xor(bytes, _xorbytes);
+
+            int offset = 0;
+            var buffer = new byte[bytes.Length + 2];
+
+            buffer[offset++] = (byte)((cmd >> 8) & 0xff);
+            buffer[offset++] = (byte)(cmd & 0xff);
+
+            Buffer.BlockCopy(bytes, 0, buffer, offset, bytes.Length);
+            if (_config.Value.LogIO)
+            {
+                _logger.LogDebug("[SEND]{0}:{1}", entity.GetType().Name, JsonConvert.SerializeObject(entity));
+            }
+            return buffer;
         }
 
         public override void Register(Type type)

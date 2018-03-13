@@ -6,6 +6,7 @@ namespace Frontline.Common
 {
     public class GameConfig
     {
-        public string Secret { get; set; } 
+        public string Secret { get; set; } = String.Empty;
+        public bool LogIO { get; set; } = true;
     }
 }
