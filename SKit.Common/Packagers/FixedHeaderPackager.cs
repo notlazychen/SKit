@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace SKit.Base.Packagers
+namespace SKit.Common.Packagers
 {
     /// <summary>
     /// 可用于实现具体的固定头协议

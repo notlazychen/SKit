@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\SKit.Lib\SKit.Base.csproj" />
+    <ProjectReference Include="..\SKit.Common\SKit.Common.csproj" />
   </ItemGroup>
 
 </Project>

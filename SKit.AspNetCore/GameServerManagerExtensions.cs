@@ -2,9 +2,9 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using SKit.Base;
-using SKit.Base.Packagers;
-using SKit.Base.Serialization;
+using SKit.Common;
+using SKit.Common.Packagers;
+using SKit.Common.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Text;

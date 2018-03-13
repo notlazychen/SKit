@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Text;
 
-namespace SKit.Base.Serialization
+namespace SKit.Common.Serialization
 {
     /// <summary>
     /// 极简字符串序列化和反序列化

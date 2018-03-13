@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace SKit.Base.Packagers
+namespace SKit.Common.Packagers
 {
     public class StringMessagePackager: FixedHeaderPackager
     {

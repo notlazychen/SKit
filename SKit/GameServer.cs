@@ -2,7 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using SKit.Base;
+using SKit.Common;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;

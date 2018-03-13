@@ -1,9 +1,9 @@
 ﻿using SKit.Client;
-using SKit.Base.Packagers;
+using SKit.Common.Packagers;
+using SKit.Common.Serialization;
 using System;
 using System.Net;
 using System.Net.Sockets;
-using SKit.Base.Serialization;
 using System.Threading.Tasks;
 using System.Threading;
 

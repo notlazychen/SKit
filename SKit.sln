@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27130.2027
+VisualStudioVersion = 15.0.27130.2003
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SKit", "SKit\SKit.csproj", "{DB35061F-B894-4C5E-B59E-7C3F0FEBEE61}"
 EndProject
@@ -9,13 +9,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChatRoomClientSample", "Sam
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChatRoomSample", "Samples\ChatRoomSample\ChatRoomSample.csproj", "{62FC3AC8-AC11-489D-80DF-8E2B4E76512D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SKit.Base", "SKit.Lib\SKit.Base.csproj", "{2AFC29D4-0074-456C-88AB-6FA581E594BE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SKit.Common", "SKit.Common\SKit.Common.csproj", "{2AFC29D4-0074-456C-88AB-6FA581E594BE}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SKit.Client", "SKit.Client\SKit.Client.csproj", "{2D384AA9-C9E8-4128-82A7-41686824648D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{CA5620A3-3297-4091-B330-0917D645EC96}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SKit.AspNetCore", "SKit.AspNetCore\SKit.AspNetCore.csproj", "{7067ACA2-5F08-47BB-B727-C517AE45F316}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SKit.AspNetCore", "SKit.AspNetCore\SKit.AspNetCore.csproj", "{7067ACA2-5F08-47BB-B727-C517AE45F316}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
