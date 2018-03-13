@@ -27,7 +27,7 @@ namespace SKit.Common.Serialization
             return Encoding.UTF8.GetString(data, offset, count);
         }
 
-        public override byte[] Serialize<T>(T entity)
+        public override byte[] Serialize(Object entity)
         {
             var data = Encoding.UTF8.GetBytes(entity as string);
             return data;

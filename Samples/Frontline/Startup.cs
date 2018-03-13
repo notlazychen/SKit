@@ -2,12 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Frontline.Common;
+using Frontline.Common.Network;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using SKit.AspNetCore;
 
 namespace Frontline
 {
@@ -23,6 +26,8 @@ namespace Frontline
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.Configure<GameConfig>(Configuration.GetSection("game"));
+            services.AddSKit<VerintHeadPackager, ProtoBufSerializer>();
             services.AddMvc();
         }
 
@@ -34,6 +39,7 @@ namespace Frontline
                 app.UseDeveloperExceptionPage();
             }
 
+            app.UseSKit();
             app.UseMvc();
         }
     }

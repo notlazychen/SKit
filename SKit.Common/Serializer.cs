@@ -25,7 +25,7 @@ namespace SKit.Common
         ///// <param name="offset">可用偏移</param>
         ///// <param name="count">可用长度</param>
         /// <returns>数据</returns>
-        public abstract byte[] Serialize<T>(T entity);
+        public abstract byte[] Serialize(Object entity);
 
         /// <summary>
         /// 标志实体类型的CMD

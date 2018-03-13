@@ -1,4 +1,7 @@
-﻿using ProtoBuf;
+﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
+using ProtoBuf;
+using protocol;
 using SKit.Common;
 using SKit.Common.Utils;
 using System;
@@ -10,62 +13,68 @@ using System.Net;
 using System.Reflection;
 using System.Text;
 
-namespace CommandOfFrontline.Common.Network
+namespace Frontline.Common.Network
 {
     /// <summary>
     /// 极简字符串序列化和反序列化
     /// </summary>
     public class ProtoBufSerializer : SKit.Common.Serializer
     {
-        private MethodInfo _deserializeMethod;
-        private Dictionary<Type, Delegate> _deserializeHandlers = new Dictionary<Type, Delegate>();
+        private static byte[] _xorbytes;
+        private Dictionary<Type, short> _types = new Dictionary<Type, short>();
+        private Dictionary<short, string> _cmds = new Dictionary<short, string>();
 
-        public ProtoBufSerializer()
+        public ProtoBufSerializer(IOptions<GameConfig> config)
         {
-            _deserializeMethod = typeof(ProtoBuf.Serializer).GetMethods()
-                .FirstOrDefault(ms => ms.Name == "Deserialize" && ms.IsGenericMethod && ms.IsStatic);
+            _xorbytes = Encoding.UTF8.GetBytes(config.Value.Secret);
         }
 
-        private static byte[] Xorbytes = Encoding.UTF8.GetBytes("whoareyou?");
         public override string DataToCmd(byte[] data, int offset, int count)
         {
             short cmd = IPAddress.NetworkToHostOrder(BitConverter.ToInt16(data, offset));
-            return cmd.ToString();
+            return _cmds[cmd];
         }
 
         public override Object Deserialize(Type type, byte[] data, int offset, int count)
         {
-            Delegate action;
-            if (_deserializeHandlers.TryGetValue(type, out action))
+            offset += 2;
+            int bodyLength = count - 2;
+            MathEx.Xor(new ArraySegment<byte>(data, offset, bodyLength), _xorbytes);
+            using (MemoryStream stream = new MemoryStream(data, offset, bodyLength))
             {
-                offset += 2;
-                int bodyLength = count - 2;
-                MathEx.Xor(new ArraySegment<byte>(data, offset, bodyLength), Xorbytes);
-                using (MemoryStream stream = new MemoryStream(data, offset, bodyLength))
-                {
-                    stream.SetLength(bodyLength);
-                    action.DynamicInvoke(stream);
-                    var desMethod = _deserializeMethod.MakeGenericMethod(type);
-                    object msg = desMethod.Invoke(null, new object[] { stream });
-                    return msg;
-                }
+                stream.SetLength(bodyLength);
+                return ProtoBuf.Serializer.Deserialize(type, stream);
             }
-            return null;//未注册的类型
         }
 
-        public override byte[] Serialize<T>(T entity)
+        public override byte[] Serialize(Object entity)
         {
-            var data = Encoding.UTF8.GetBytes(entity as string);
-            return data;
+            short cmd;
+            if(_types.TryGetValue(entity.GetType(), out cmd)){
+
+                MemoryStream stream = new MemoryStream();
+                ProtoBuf.Serializer.Serialize(stream, entity);
+                var bytes = stream.ToArray();
+                MathEx.Xor(bytes, _xorbytes);
+
+                int offset = 0;
+                var buffer = new byte[bytes.Length + 2];
+
+                buffer[offset++] = (byte)((cmd >> 8) & 0xff);
+                buffer[offset++] = (byte)(cmd & 0xff);
+
+                Buffer.BlockCopy(bytes, 0, buffer, offset, bytes.Length);
+                return buffer;
+            }
+            return null;
         }
 
         public override void Register(Type type)
         {
-            Type[] templateTypeSet = new[] { type };
-            Type methodGenericType = typeof(Action<>);
-            Type methodType = methodGenericType.MakeGenericType(templateTypeSet);
-            Delegate actionMethod = Delegate.CreateDelegate(methodType, _deserializeMethod);
-            _deserializeHandlers.Add(type, actionMethod);
+            var attribute = type.GetCustomAttributesData().First(a => a.AttributeType == typeof(ProtoAttribute));
+            short cmd = Convert.ToInt16(attribute.NamedArguments[0].TypedValue.Value);
+            _types.Add(type, cmd);
+            _cmds.Add(cmd, type.Name);
         }
     }
 }

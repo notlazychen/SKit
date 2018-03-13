@@ -27,7 +27,14 @@ namespace SKit
         /// 监听端口
         /// </summary>
         public int Port { get { return Config.Port; } }
-
+        /// <summary>
+        /// 在线人数
+        /// </summary>
+        public int ClientCount { get { return _sessions.Count; } }
+        /// <summary>
+        /// 登录玩家数
+        /// </summary>
+        public int UserCount { get { return _users.Count; } }
 
         private ConcurrentQueue<GameTask> _workingQueue = new ConcurrentQueue<GameTask>();
         private Task _workingTask;
@@ -302,6 +309,7 @@ namespace SKit
                 {
                     _logger.LogError(ex, ex.Message);
                     CloseClientSocket(e, ClientCloseReason.ReceiveDataError);
+                    return;
                 }
 
                 //PostReceive(receiveEventArgs);    
@@ -345,6 +353,7 @@ namespace SKit
             }
             // Free the SocketAsyncEventArg so they can be reused by another client
             _socketRecvArgsPool.Push(e);
+            _logger.LogDebug($"{token.Id}: LEAVE, reason: {reason}");
         }
 
         private void ProcessSend(SocketAsyncEventArgs e)
@@ -520,7 +529,7 @@ namespace SKit
             {
                 Type type = controller.GetType();
                 _controllers.Add(type, controller);
-                MethodInfo[] methods = type.GetMethods();
+                MethodInfo[] methods = type.GetMethods(BindingFlags.Public|BindingFlags.DeclaredOnly|BindingFlags.Instance);
                 foreach (var methodInfo in methods)
                 {
                     ParameterInfo[] parameterInfos = methodInfo.GetParameters();

@@ -9,8 +9,13 @@ namespace SKit.AspNetCore
 {
     public static class GameServerManagerExtensions
     {
-        public static IServiceCollection AddSKit(this IServiceCollection services)
+        public static IServiceCollection AddSKit<TSPackager, TSerializable>(this IServiceCollection services) 
+            where TSerializable : Serializer
+            where TSPackager :  Packager
         {
+            services.AddTransient<Packager, TSPackager>();
+            services.AddTransient<Serializer, TSerializable>();
+
             var provider = services.BuildServiceProvider();
             var config = provider.GetService<IConfiguration>();
             services.Configure<SKitConfig>(config.GetSection("skit"));
@@ -18,7 +23,7 @@ namespace SKit.AspNetCore
             return services;
         }
 
-        public static IApplicationBuilder UserSKit(this IApplicationBuilder builder)
+        public static IApplicationBuilder UseSKit(this IApplicationBuilder builder)
         {
             var lifetime = builder.ApplicationServices.GetService<IApplicationLifetime>();
             lifetime.ApplicationStarted.Register(OnApplicationStarted, builder.ApplicationServices);
@@ -36,13 +41,12 @@ namespace SKit.AspNetCore
             (state as IServiceProvider)?.GetService<GameServer>()?.Start();
         }
 
-        public static void SetSKitComponents<TSPackager, TSerializable>(this IServiceCollection services)
-            where TSerializable : Serializer
-            where TSPackager :  Packager
-
-        {
-            services.AddTransient<Packager, TSPackager>();
-            services.AddTransient<Serializer, TSerializable>();
-        }
+        //public static void SetSKitComponents<TSPackager, TSerializable>(this IServiceCollection services)
+        //    where TSerializable : Serializer
+        //    where TSPackager :  Packager
+        //{
+        //    services.AddTransient<Packager, TSPackager>();
+        //    services.AddTransient<Serializer, TSerializable>();
+        //}
     }
 }

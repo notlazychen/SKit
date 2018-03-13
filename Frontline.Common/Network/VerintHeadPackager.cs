@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace CommandOfFrontline.Common.Network
+namespace Frontline.Common.Network
 {
     public class VerintHeadPackager : FixedHeadPackager
     {
