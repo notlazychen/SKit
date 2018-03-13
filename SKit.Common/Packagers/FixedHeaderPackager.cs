@@ -7,33 +7,32 @@ namespace SKit.Common.Packagers
     /// <summary>
     /// 可用于实现具体的固定头协议
     /// </summary>
-    public abstract class FixedHeaderPackager : ISPackager
+    public abstract class FixedHeadPackager : Packager
     {
         readonly ArraySegment<byte> _defaultData = new ArraySegment<byte>();
 
-        public ArraySegment<byte> UnPack(byte[] buffer, int offset, int count, ref int readlength)
+        public override ArraySegment<byte> UnPack(byte[] buffer, int offset, int count, ref int readlength)
         {
-            int headerSize = GetHeaderLength(buffer, offset, count);
-            if (headerSize != 0 && count > headerSize)
+            int bodySize = 0;
+            int headSize = 0;
+            if(TryGetHeadLengthAndBodyLength(buffer, offset, count, out headSize, out bodySize))
             {
-                int bodyLength = GetBodyLength(buffer, offset, headerSize);
-                int totalLength = headerSize + bodyLength;
-                if (count >= totalLength)
+                int total = headSize + bodySize;
+                if(total >= count)
                 {
-                    readlength = totalLength;
-                    //byte[] data = new byte[bodyLength];
-                    //Buffer.BlockCopy(buffer, offset + headerSize, data, 0, bodyLength);
-                    return new ArraySegment<byte>(buffer, offset + headerSize, bodyLength);
+                    readlength = total;
+                    return new ArraySegment<byte>(buffer, offset + headSize, bodySize);
                 }
+                
             }
             readlength = 0;
             return _defaultData;
         }
 
-        public ArraySegment<byte> Pack(byte[] data, byte[] buffer, int offset, int count)
+        public override ArraySegment<byte> Pack(byte[] data, byte[] buffer, int offset, int count)
         {
             //组包
-            var headBuf = ToHeader(data, 0, data.Length);
+            var headBuf = ToHead(data, 0, data.Length);
             int totalLength = headBuf.Length + data.Length;
             if(count < totalLength)
             {
@@ -52,7 +51,7 @@ namespace SKit.Common.Packagers
         /// <param name="offset">偏移</param>
         /// <param name="length">可用长度</param>
         /// <returns></returns>
-        protected abstract byte[] ToHeader(byte[] sendData, int offset, int length);
+        protected abstract byte[] ToHead(byte[] sendData, int offset, int length);
         /// <summary>
         /// 获取固定头部的长度
         /// </summary>
@@ -60,14 +59,15 @@ namespace SKit.Common.Packagers
         /// <param name="offset">当前偏移</param>
         /// <param name="length">可读取长度</param>
         /// <returns></returns>
-        protected abstract int GetHeaderLength(byte[] buffer, int offset, int length);
-        /// <summary>
-        /// 获取Body长度
-        /// </summary>
-        /// <param name="buffer">buffer</param>
-        /// <param name="offset">当前偏移</param>
-        /// <param name="length">可读取长度</param>
-        /// <returns></returns>
-        protected abstract int GetBodyLength(byte[] buffer, int offset, int length);        
+        protected abstract bool TryGetHeadLengthAndBodyLength(byte[] buffer, int offset, int length, out int headLength, out int bodyLength);
+
+        ///// <summary>
+        ///// 获取Body长度
+        ///// </summary>
+        ///// <param name="buffer">buffer</param>
+        ///// <param name="offset">当前偏移</param>
+        ///// <param name="length">可读取长度</param>
+        ///// <returns></returns>
+        //protected abstract int GetBodyLength(byte[] buffer, int offset, int length);        
     }
 }

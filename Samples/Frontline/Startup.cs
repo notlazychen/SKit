@@ -8,11 +8,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using SKit.AspNetCore;
-using SKit.Common.Packagers;
-using SKit.Common.Serialization;
 
-namespace ChatRoomSample
+namespace Frontline
 {
     public class Startup
     {
@@ -26,18 +23,17 @@ namespace ChatRoomSample
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddSKit().SetSKitComponents<StringMessagePackager, StringSerializer>();            
             services.AddMvc();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, IApplicationLifetime applicationLifetime)
-        {            
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        {
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
             }
-            app.UserSKit();
+
             app.UseMvc();
         }
     }

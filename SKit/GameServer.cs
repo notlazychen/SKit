@@ -41,8 +41,8 @@ namespace SKit
 
         private ElasticPool<SocketAsyncEventArgs> _socketRecvArgsPool;//输入缓冲池
         private ElasticPool<SocketAsyncEventArgs> _socketSendArgsPool;//输出缓冲池
-        private ISPackager _packager;//拆包打包器
-        private ISerializable _serializer;//正反序列化工具
+        private Packager _packager;//拆包打包器
+        private Serializer _serializer;//正反序列化工具
         private SKitConfig Config { get; }//配置
         private IServiceCollection _services;//DI容器
 
@@ -51,6 +51,8 @@ namespace SKit
         private ConcurrentDictionary<string, GameSession> _users = new ConcurrentDictionary<string, GameSession>();//登录的连接 Key:UserName
         #endregion
 
+        private Dictionary<string, GameProtocolProcessMethod> _Handlers = new Dictionary<string, GameProtocolProcessMethod>();
+        private Dictionary<Type, GameController> _controllers = new Dictionary<Type, GameController>();
 
         /// <summary>
         /// 核心监听客户端TCP
@@ -65,11 +67,11 @@ namespace SKit
             var provicer = services.BuildServiceProvider();
             Config = provicer.GetService<IOptions<SKitConfig>>().Value;
             Debug.Assert(Config != null, "SKitConfig Can't be NULL!");
-            _serializer = provicer.GetService<ISerializable>();
+            _serializer = provicer.GetService<Serializer>();
             Debug.Assert(_serializer != null, "ISerializable Can't be NULL!");
             _logger = provicer.GetService<ILogger<GameServer>>();
             Debug.Assert(_logger != null, "ILogger Can't be NULL!");
-            _packager = provicer.GetService<ISPackager>();
+            _packager = provicer.GetService<Packager>();
             Debug.Assert(_packager != null, "ISPackager Can't be NULL!");
             this.Id = Config.Id;
             
@@ -494,8 +496,6 @@ namespace SKit
             public GameController Controller { get; set; }
         }
 
-        private Dictionary<string, GameProtocolProcessMethod> _Handlers = new Dictionary<string, GameProtocolProcessMethod>();
-        private Dictionary<Type, GameController> _controllers = new Dictionary<Type, GameController>();
         public T GetController<T>() where T : GameController
         {
             Type t = typeof(T);
@@ -541,7 +541,7 @@ namespace SKit
                             Controller = controller
                         };
                         _Handlers.Add(handler.CMD, handler);
-
+                        _serializer.Register(requestType);
                     }
 
                 }

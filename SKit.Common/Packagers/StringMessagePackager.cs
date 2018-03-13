@@ -5,9 +5,9 @@ using System.Text;
 
 namespace SKit.Common.Packagers
 {
-    public class StringMessagePackager: FixedHeaderPackager
+    public class StringMessagePackager: FixedHeadPackager
     {
-        protected override byte[] ToHeader(byte[] sendData, int offset, int length)
+        protected override byte[] ToHead(byte[] sendData, int offset, int length)
         {
             var headBuf = BitConverter.GetBytes(length);
             if (BitConverter.IsLittleEndian)
@@ -17,30 +17,29 @@ namespace SKit.Common.Packagers
             return headBuf;
         }
 
-        protected override int GetHeaderLength(byte[] buffer, int offset, int length)
+        protected override bool TryGetHeadLengthAndBodyLength(byte[] buffer, int offset, int length, out int headLength, out int bodyLength)
         {
-            return 4;
-        }
+            headLength = 4;
+            bodyLength = 0;
+            if (length <= headLength)
+            {
+                return false;
+            }
 
-        protected override int GetBodyLength(byte[] buffer, int offset, int headerSize)
-        {
             if (BitConverter.IsLittleEndian)
             {
-                var head = new byte[headerSize];
-                for (int i = 0; i < headerSize; i++)
+                var head = new byte[headLength];
+                for (int i = 0; i < headLength; i++)
                 {
-                    head[headerSize - i - 1] = buffer[offset + i];
+                    head[headLength - i - 1] = buffer[offset + i];
                 }
-                return BitConverter.ToInt32(head, 0);
+                bodyLength = BitConverter.ToInt32(head, 0);
             }
             else
             {
-                //for (int i = 0; i < headerSize; i++)
-                //{
-                //    head[i] = buffer[offset + i];
-                //}
-                return BitConverter.ToInt32(buffer, offset);
+                bodyLength = BitConverter.ToInt32(buffer, offset);
             }
+            return bodyLength > 0;
         }
     }
 }

@@ -3,19 +3,23 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27130.2003
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SKit.Common", "SKit.Common\SKit.Common.csproj", "{2AFC29D4-0074-456C-88AB-6FA581E594BE}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SKit", "SKit\SKit.csproj", "{DB35061F-B894-4C5E-B59E-7C3F0FEBEE61}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChatRoomClientSample", "Samples\ChatRoomClientSample\ChatRoomClientSample.csproj", "{CE34E4B5-EA00-42E0-8C28-F0F649DE64B7}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChatRoomSample", "Samples\ChatRoomSample\ChatRoomSample.csproj", "{62FC3AC8-AC11-489D-80DF-8E2B4E76512D}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SKit.Common", "SKit.Common\SKit.Common.csproj", "{2AFC29D4-0074-456C-88AB-6FA581E594BE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SKit.AspNetCore", "SKit.AspNetCore\SKit.AspNetCore.csproj", "{7067ACA2-5F08-47BB-B727-C517AE45F316}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SKit.Client", "SKit.Client\SKit.Client.csproj", "{2D384AA9-C9E8-4128-82A7-41686824648D}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{CA5620A3-3297-4091-B330-0917D645EC96}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SKit.AspNetCore", "SKit.AspNetCore\SKit.AspNetCore.csproj", "{7067ACA2-5F08-47BB-B727-C517AE45F316}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChatRoomClientSample", "Samples\ChatRoomClientSample\ChatRoomClientSample.csproj", "{CE34E4B5-EA00-42E0-8C28-F0F649DE64B7}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ChatRoomSample", "Samples\ChatRoomSample\ChatRoomSample.csproj", "{62FC3AC8-AC11-489D-80DF-8E2B4E76512D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Frontline", "Samples\Frontline\Frontline.csproj", "{A4E90DDE-3796-49A8-A26B-30324EDF5F51}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Frontline.Common", "Frontline.Common\Frontline.Common.csproj", "{2708C2C9-1EC2-4CF4-8932-4B1065CCD4EA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -23,10 +27,22 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2AFC29D4-0074-456C-88AB-6FA581E594BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2AFC29D4-0074-456C-88AB-6FA581E594BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2AFC29D4-0074-456C-88AB-6FA581E594BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2AFC29D4-0074-456C-88AB-6FA581E594BE}.Release|Any CPU.Build.0 = Release|Any CPU
 		{DB35061F-B894-4C5E-B59E-7C3F0FEBEE61}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{DB35061F-B894-4C5E-B59E-7C3F0FEBEE61}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DB35061F-B894-4C5E-B59E-7C3F0FEBEE61}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DB35061F-B894-4C5E-B59E-7C3F0FEBEE61}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7067ACA2-5F08-47BB-B727-C517AE45F316}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7067ACA2-5F08-47BB-B727-C517AE45F316}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7067ACA2-5F08-47BB-B727-C517AE45F316}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7067ACA2-5F08-47BB-B727-C517AE45F316}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2D384AA9-C9E8-4128-82A7-41686824648D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2D384AA9-C9E8-4128-82A7-41686824648D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2D384AA9-C9E8-4128-82A7-41686824648D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2D384AA9-C9E8-4128-82A7-41686824648D}.Release|Any CPU.Build.0 = Release|Any CPU
 		{CE34E4B5-EA00-42E0-8C28-F0F649DE64B7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{CE34E4B5-EA00-42E0-8C28-F0F649DE64B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CE34E4B5-EA00-42E0-8C28-F0F649DE64B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -35,18 +51,14 @@ Global
 		{62FC3AC8-AC11-489D-80DF-8E2B4E76512D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{62FC3AC8-AC11-489D-80DF-8E2B4E76512D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{62FC3AC8-AC11-489D-80DF-8E2B4E76512D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2AFC29D4-0074-456C-88AB-6FA581E594BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2AFC29D4-0074-456C-88AB-6FA581E594BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2AFC29D4-0074-456C-88AB-6FA581E594BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2AFC29D4-0074-456C-88AB-6FA581E594BE}.Release|Any CPU.Build.0 = Release|Any CPU
-		{2D384AA9-C9E8-4128-82A7-41686824648D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{2D384AA9-C9E8-4128-82A7-41686824648D}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{2D384AA9-C9E8-4128-82A7-41686824648D}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{2D384AA9-C9E8-4128-82A7-41686824648D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{7067ACA2-5F08-47BB-B727-C517AE45F316}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{7067ACA2-5F08-47BB-B727-C517AE45F316}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{7067ACA2-5F08-47BB-B727-C517AE45F316}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{7067ACA2-5F08-47BB-B727-C517AE45F316}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A4E90DDE-3796-49A8-A26B-30324EDF5F51}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A4E90DDE-3796-49A8-A26B-30324EDF5F51}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A4E90DDE-3796-49A8-A26B-30324EDF5F51}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A4E90DDE-3796-49A8-A26B-30324EDF5F51}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2708C2C9-1EC2-4CF4-8932-4B1065CCD4EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2708C2C9-1EC2-4CF4-8932-4B1065CCD4EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2708C2C9-1EC2-4CF4-8932-4B1065CCD4EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2708C2C9-1EC2-4CF4-8932-4B1065CCD4EA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -54,6 +66,8 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{CE34E4B5-EA00-42E0-8C28-F0F649DE64B7} = {CA5620A3-3297-4091-B330-0917D645EC96}
 		{62FC3AC8-AC11-489D-80DF-8E2B4E76512D} = {CA5620A3-3297-4091-B330-0917D645EC96}
+		{A4E90DDE-3796-49A8-A26B-30324EDF5F51} = {CA5620A3-3297-4091-B330-0917D645EC96}
+		{2708C2C9-1EC2-4CF4-8932-4B1065CCD4EA} = {CA5620A3-3297-4091-B330-0917D645EC96}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C8214006-48A2-42EC-B249-E587DA2363BF}

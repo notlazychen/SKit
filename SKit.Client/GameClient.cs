@@ -14,13 +14,13 @@ namespace SKit.Client
         private byte[] _recvbuffer = new byte[10240];
         private byte[] _sendbuffer = new byte[10240];
         private int _cursor;
-        private ISPackager _packager;
-        private ISerializable _serializable;
+        private Packager _packager;
+        private Serializer _serializable;
         private Dictionary<string, Type> _actions = new Dictionary<string, Type>();
 
         public event EventHandler<Object> MessageReceived;
 
-        public GameClient(ISPackager packager, ISerializable serializable)
+        public GameClient(Packager packager, Serializer serializable)
         {
             _packager = packager;
             _serializable = serializable;

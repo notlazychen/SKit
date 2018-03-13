@@ -4,7 +4,7 @@ using System.Text;
 
 namespace SKit.Common
 {
-    public interface ISerializable
+    public abstract class Serializer
     {
         /// <summary>
         /// 反序列化
@@ -14,8 +14,8 @@ namespace SKit.Common
         /// <param name="offset">偏移</param>
         /// <param name="count">长度</param>
         /// <returns></returns>
-        Object Deserialize(Type type, byte[] data, int offset, int count);
-   
+        public abstract Object Deserialize(Type type, byte[] data, int offset, int count);
+
         /// <summary>
         /// 序列化
         /// </summary>
@@ -25,7 +25,7 @@ namespace SKit.Common
         ///// <param name="offset">可用偏移</param>
         ///// <param name="count">可用长度</param>
         /// <returns>数据</returns>
-        byte[] Serialize<T>(T entity);
+        public abstract byte[] Serialize<T>(T entity);
 
         /// <summary>
         /// 标志实体类型的CMD
@@ -34,12 +34,20 @@ namespace SKit.Common
         /// <param name="offset">偏移</param>
         /// <param name="count">长度</param>
         /// <returns>Cmd</returns>
-        string DataToCmd(byte[] data, int offset, int count);
+        public abstract string DataToCmd(byte[] data, int offset, int count);
+
+        ///// <summary>
+        ///// 标志实体类型的CMD
+        ///// </summary>
+        ///// <returns>Cmd</returns>
+        //public abstract string EntityToCmd(Object entity);
 
         /// <summary>
-        /// 标志实体类型的CMD
+        /// 对需要在初始化期间进行类型注册的可以重载此方法
         /// </summary>
-        /// <returns>Cmd</returns>
-        string EntityToCmd(Object entity);
+        /// <param name="types"></param>
+        public virtual void Register(Type type)
+        {
+        }
     }
 }
