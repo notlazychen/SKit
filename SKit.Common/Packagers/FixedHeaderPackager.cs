@@ -18,7 +18,7 @@ namespace SKit.Common.Packagers
             if(TryGetHeadLengthAndBodyLength(buffer, offset, count, out headSize, out bodySize))
             {
                 int total = headSize + bodySize;
-                if(total >= count)
+                if(total <= count)
                 {
                     readlength = total;
                     return new ArraySegment<byte>(buffer, offset + headSize, bodySize);
@@ -33,13 +33,13 @@ namespace SKit.Common.Packagers
         {
             //组包
             var headBuf = ToHead(data, 0, data.Length);
-            int totalLength = headBuf.Length + data.Length;
+            int totalLength = headBuf.Count + data.Length;
             if(count < totalLength)
             {
                 throw new StackOverflowException("数据包大小超过设置的发送缓冲区");
             }
-            Buffer.BlockCopy(headBuf, 0, buffer, offset, headBuf.Length);
-            Buffer.BlockCopy(data, 0, buffer, offset + headBuf.Length, data.Length);            
+            Buffer.BlockCopy(headBuf.Array, headBuf.Offset, buffer, offset, headBuf.Count);//拷贝头
+            Buffer.BlockCopy(data, 0, buffer, offset + headBuf.Count, data.Length);//拷贝数据
             return new ArraySegment<byte>(buffer, offset, totalLength);
         }
 
@@ -51,7 +51,7 @@ namespace SKit.Common.Packagers
         /// <param name="offset">偏移</param>
         /// <param name="length">可用长度</param>
         /// <returns></returns>
-        protected abstract byte[] ToHead(byte[] sendData, int offset, int length);
+        protected abstract ArraySegment<byte> ToHead(byte[] sendData, int offset, int length);
         /// <summary>
         /// 获取固定头部的长度
         /// </summary>

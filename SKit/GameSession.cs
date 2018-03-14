@@ -15,7 +15,7 @@ namespace SKit
         /// <summary>
         /// 登录用户，请通过Login()函数设置
         /// </summary>
-        public string UserName { get; private set; }
+        public string UserId { get; private set; }
         /// <summary>
         /// 是否登录，请通过Login()函数设置
         /// </summary>
@@ -30,22 +30,23 @@ namespace SKit
             Id = Guid.NewGuid().ToString("N");
         }
 
-        public void Login(string username)
+        public void Login(string userid)
         {
             if (IsAuthorized)
             {
                 return;
             }
-            this.UserName = username;
+            this.UserId = userid;
             IsAuthorized = true;
             LoginTime = DateTime.Now;
+            this.Server.SetLogin(this);
         }
 
         public void Logout()
         {
             if (IsAuthorized)
             {
-                this.UserName = null;
+                this.UserId = null;
                 this.IsAuthorized = false;
             }
         }
@@ -55,5 +56,10 @@ namespace SKit
         /// </summary>
         internal int BufferReaderCursor { get; set; }    
         internal SocketAsyncEventArgs SocketAsyncEventArgs { get; set; }
+
+        public void SendAsync(Object msg)
+        {
+            this.Server.SendBySessionIdAsync(this.Id, msg);
+        }
     }
 }

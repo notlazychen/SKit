@@ -9,14 +9,17 @@ namespace Frontline.Common.Network
 {
     public class VerintHeadPackager : FixedHeadPackager
     {
-        protected override byte[] ToHead(byte[] sendData, int offset, int length)
+        protected override ArraySegment<byte> ToHead(byte[] sendData, int offset, int length)
         {
-            var headBuf = BitConverter.GetBytes(length);
-            if (BitConverter.IsLittleEndian)
-            {
-                headBuf = headBuf.Reverse().ToArray();
-            }
-            return headBuf;
+            //var headBuf = BitConverter.GetBytes(length);
+            //if (BitConverter.IsLittleEndian)
+            //{
+            //    headBuf = headBuf.Reverse().ToArray();
+            //}
+
+            var head = Varint.Int2ByteArray(length);
+            //byte[] headBuf = new byte[head.Count];
+            return head;
         }
 
         protected override bool TryGetHeadLengthAndBodyLength(byte[] buffer, int offset, int length, out int headLength, out int bodyLength)

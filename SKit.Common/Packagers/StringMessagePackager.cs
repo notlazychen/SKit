@@ -7,14 +7,14 @@ namespace SKit.Common.Packagers
 {
     public class StringMessagePackager: FixedHeadPackager
     {
-        protected override byte[] ToHead(byte[] sendData, int offset, int length)
+        protected override ArraySegment<byte> ToHead(byte[] sendData, int offset, int length)
         {
             var headBuf = BitConverter.GetBytes(length);
             if (BitConverter.IsLittleEndian)
             {
                 headBuf = headBuf.Reverse().ToArray();
             }
-            return headBuf;
+            return new ArraySegment<byte>(headBuf);
         }
 
         protected override bool TryGetHeadLengthAndBodyLength(byte[] buffer, int offset, int length, out int headLength, out int bodyLength)

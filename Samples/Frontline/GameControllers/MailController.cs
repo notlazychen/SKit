@@ -1,0 +1,26 @@
+﻿using protocol;
+using SKit;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace Frontline.GameControllers
+{
+    public class MailController : GameController
+    {
+        public void mailList(GameSession context, MailListRequest request)
+        {
+            String pid = context.UserId;
+            MailListResponse response = new MailListResponse();
+            List<MailInfo> ms = new List<MailInfo>()
+            {
+
+            };
+            response.id = pid;
+            response.mails = ms;
+            response.success = true;
+            context.SendAsync(response);
+        }
+    }
+}

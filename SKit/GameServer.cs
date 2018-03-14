@@ -178,7 +178,7 @@ namespace SKit
         {
             if (session.IsAuthorized)
             {
-                _users.AddOrUpdate(session.UserName, session, (username, oldSession) =>
+                _users.AddOrUpdate(session.UserId, session, (username, oldSession) =>
                 {
                     //把原来的玩家踢下线
                     oldSession.Logout();
@@ -340,12 +340,12 @@ namespace SKit
             catch (Exception) { }
             token.Socket.Close();
 
+            GameSession s;
             if (token.IsAuthorized)
             {
-                _users.TryRemove(token.UserName, out token);
-            }
-
-            if (_sessions.TryRemove(token.Id, out token))
+                _users.TryRemove(token.UserId, out s);
+            }            
+            if (_sessions.TryRemove(token.Id, out s))
             {
                 //任务队列加入玩家离线
                 foreach (GameController controller in _controllers.Values)
