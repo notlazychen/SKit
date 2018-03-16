@@ -9,16 +9,16 @@ namespace Frontline.GameControllers
 {
     public class SkillController : GameController
     {
-        public void SkillInfo(GameSession session, SkillsInfoRequest request)
+        public void SkillInfo(SkillsInfoRequest request)
         {
             SkillsInfoResponse response = new SkillsInfoResponse();
-            String pid = session.UserId;
+            String pid = CurrentSession.UserId;
             List<SkillInfo> l = new List<SkillInfo>()
             {
             };
             response.skills = l;
             response.success = true;
-            session.SendAsync(response);
+            CurrentSession.SendAsync(response);
         }
     }
 }

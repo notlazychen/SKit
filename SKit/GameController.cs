@@ -10,8 +10,22 @@ namespace SKit
 {
     public abstract class GameController
     {
-        //public GameSession CurrentSession { get; internal set; }
+        public GameServer Server { get; internal set; }
+        public GameSession CurrentSession { get { return this.Server._currentWorkingSession;  } }
 
+
+        internal void RegisterEvents()
+        {
+            OnRegisterEvents();
+        }
+
+        /// <summary>
+        /// 建议在此处通过DI获得其他Controller并注册事件
+        /// </summary>
+        protected virtual void OnRegisterEvents()
+        {
+
+        }
         //public virtual void OnConnected()
         //{
         //}
@@ -19,7 +33,7 @@ namespace SKit
         /// <summary>
         /// 离开游戏的时候
         /// </summary>
-        public virtual void OnLeave(GameSession session, ClientCloseReason reason)
+        public virtual void OnLeave(ClientCloseReason reason)
         {
         }
     }

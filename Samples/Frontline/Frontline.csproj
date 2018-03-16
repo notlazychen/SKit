@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Folder Include="Migrations\" />
     <Folder Include="wwwroot\" />
   </ItemGroup>
 
@@ -13,15 +14,19 @@
     <PackageReference Include="Newtonsoft.Json" Version="11.0.1" />
     <PackageReference Include="NLog" Version="4.5.0-rc06" />
     <PackageReference Include="NLog.Web.AspNetCore" Version="4.5.0-rc3" />
+    <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="2.0.1" />
+    
   </ItemGroup>
 
   <ItemGroup>
     <DotNetCliToolReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Tools" Version="2.0.1" />
+    <DotNetCliToolReference Include="Microsoft.EntityFrameworkCore.Tools.DotNet" Version="2.0.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Frontline.Common\Frontline.Common.csproj" />
     <ProjectReference Include="..\..\SKit.AspNetCore\SKit.AspNetCore.csproj" />
+    <ProjectReference Include="..\Frontline.Common\Frontline.Common.csproj" />
+    <ProjectReference Include="..\Frontline.GameDesign\Frontline.GameDesign.csproj" />
   </ItemGroup>
 
   <ItemGroup>

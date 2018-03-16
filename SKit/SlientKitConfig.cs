@@ -6,7 +6,8 @@ namespace SKit
 {
     public class SKitConfig
     {
-        public string Id { get; set; }
+        public int Id { get; set; }
+        public string Name { get; set; }
         /// <summary>
         /// 客户端监听端口
         /// </summary>

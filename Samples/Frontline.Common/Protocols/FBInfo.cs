@@ -33,7 +33,7 @@ namespace protocol
 		[ProtoMember(5, IsRequired = false)]
 		public int remainTimes;
         /// <summary>
-        ///  今日剩余可购买次数
+        ///  今日剩余可购买次数(废弃)
         /// </summary>
 		[ProtoMember(6, IsRequired = false)]
 		public int remainBuyTimes;

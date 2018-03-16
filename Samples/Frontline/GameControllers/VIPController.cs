@@ -10,10 +10,10 @@ namespace Frontline.GameControllers
 {
     public class VIPController : GameController
     {
-        public void VIPInfoRequest(GameSession session, VIPInfoRequest request)
+        public void VIPInfoRequest(VIPInfoRequest request)
         {
             VIPInfoResponse response = JsonConvert.DeserializeObject<VIPInfoResponse>("{ \"vipLevel\":0,\"nextLvExp\":1,\"receivedGifts\":[],\"success\":true,\"vipExp\":0}");
-            session.SendAsync(response);
+            CurrentSession.SendAsync(response);
         }
     }
 }

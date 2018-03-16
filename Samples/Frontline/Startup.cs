@@ -4,8 +4,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using Frontline.Common;
 using Frontline.Common.Network;
+using Frontline.Data;
+using Frontline.GameDesign;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -26,6 +30,24 @@ namespace Frontline
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            var connectionData = Configuration.GetConnectionString("mysql-data");
+            services.AddDbContext<DataContext>(options => options.UseMySql(connectionData, builder =>
+            {
+                builder.EnableRetryOnFailure(
+                    5,
+                    TimeSpan.FromSeconds(5),
+                    new int[] { 2 });
+            }), ServiceLifetime.Singleton);//游戏逻辑并不会多线程处理
+
+            var connectionDesign = Configuration.GetConnectionString("mysql-design");
+            services.AddDbContext<GameDesignContext>(options => options.UseMySql(connectionDesign, builder =>
+            {
+                builder.EnableRetryOnFailure(
+                    5,
+                    TimeSpan.FromSeconds(10),
+                    new int[] { 2 });
+            }));//游戏逻辑并不会多线程处理
+
             services.Configure<GameConfig>(Configuration.GetSection("game"));
             services.AddSKit<VerintHeadPackager, ProtoBufSerializer>();
             services.AddMvc();

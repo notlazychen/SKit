@@ -17,7 +17,7 @@ namespace ChatRoomSample.GameControllers
             _logger = logger;
         }
 
-        public void Chat(GameSession s, string msg)
+        public void Chat(string msg)
         {
             string str;
             //if (s.IsAuthorized)
@@ -33,9 +33,9 @@ namespace ChatRoomSample.GameControllers
             _logger.LogDebug(str);
         }
         
-        public override void OnLeave(GameSession s, ClientCloseReason reason)
+        public override void OnLeave(ClientCloseReason reason)
         {
-            _logger.LogDebug($"{s.Id}: LEAVE, reason: {reason}");
+            _logger.LogDebug($"{CurrentSession.Id}: LEAVE, reason: {reason}");
         }
     }
 }

@@ -12,6 +12,8 @@ namespace SKit
         public DateTime CreateTime { get; internal set; }
         public GameServer Server { get; internal set; }
 
+        private Dictionary<Type, Object> _cacheStore = new Dictionary<Type, object>();
+
         /// <summary>
         /// 登录用户，请通过Login()函数设置
         /// </summary>
@@ -36,10 +38,10 @@ namespace SKit
             {
                 return;
             }
+            this.Server.SetLogin(this);
             this.UserId = userid;
             IsAuthorized = true;
             LoginTime = DateTime.Now;
-            this.Server.SetLogin(this);
         }
 
         public void Logout()
@@ -60,6 +62,24 @@ namespace SKit
         public void SendAsync(Object msg)
         {
             this.Server.SendBySessionIdAsync(this.Id, msg);
+        }
+
+        public bool TryGetBind<T>(out T data) where T : class
+        {
+            Object o;
+            bool result = _cacheStore.TryGetValue(typeof(T), out o);
+            data = o as T;
+            return data != null;
+        }
+
+        public T GetBind<T>() where T : class
+        {
+            return _cacheStore[typeof(T)] as T;
+        }
+
+        public void SetBind<T>(T data)
+        {
+            _cacheStore[typeof(T)] = data;
         }
     }
 }

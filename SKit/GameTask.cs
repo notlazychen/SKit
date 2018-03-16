@@ -4,41 +4,62 @@ using System.Text;
 
 namespace SKit
 {
+    public abstract class GameTask
+    {
+        public GameSession Session { get; private set; }
+
+        public GameTask(GameSession session)
+        {
+            Session = session;
+        }
+
+        public void DoAction()
+        {
+            OnDoAction();
+        }
+
+        protected abstract void OnDoAction();
+    }
+
     /// <summary>
     /// 每收到一个消息包，创建一个任务
     /// </summary>
-    public class GameTask
+    public class GameRequestTask : GameTask
     {
-        public GameTask(Delegate handler, GameSession session, Object entity, GameController controller)
+        public GameRequestTask(Delegate handler, GameSession session, Object entity) 
+            : base(session)
         {
             ProcessAction = handler;
-            Controller = controller;
             Entity = entity;
-            Session = session;
         }
+
         public Delegate ProcessAction { get; private set; }
 
         public Object Entity { get; private set; }
-        public GameSession Session { get; private set; }
-        public GameController Controller { get; private set; }
 
-        public virtual void DoAction()
+        protected override void OnDoAction()
         {
-            this.ProcessAction.DynamicInvoke(Session, Entity);
+            this.ProcessAction.DynamicInvoke(Entity);
         }
     }
 
     public class GamePlayerLeaveTask : GameTask
     {
+        private IEnumerable<GameController> Controllers;
         public ClientCloseReason Reason { get; private set; }
-        public GamePlayerLeaveTask(GameSession session, GameController controller, ClientCloseReason reason) : base(null, session, null, controller)
+        public GamePlayerLeaveTask(GameSession session, ClientCloseReason reason, IEnumerable<GameController> controllers) 
+            : base(session)
         {
             Reason = reason;
+            Controllers = controllers;
         }
 
-        public override void DoAction()
+        protected override void OnDoAction()
         {
-            this.Controller.OnLeave(Session, Reason);
+            foreach(var c in this.Controllers)
+            {
+                c.OnLeave(Reason);
+            }
         }
     }
 }

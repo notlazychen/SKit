@@ -21,7 +21,7 @@ namespace SKit
         /// <summary>
         /// 被玩家顶替
         /// </summary>
-        KickOut,
+        Displacement,
         /// <summary>
         /// 协议解析出错（可能因为协议版本更新）
         /// </summary>

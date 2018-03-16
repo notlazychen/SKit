@@ -21,7 +21,7 @@ namespace SKit
     /// </summary>
     public class GameServer : IDisposable
     {
-        public string Id { get; }
+        public int Id { get; }
         public bool IsRunning { get; private set; }
         /// <summary>
         /// 监听端口
@@ -58,7 +58,7 @@ namespace SKit
         private ConcurrentDictionary<string, GameSession> _users = new ConcurrentDictionary<string, GameSession>();//登录的连接 Key:UserName
         #endregion
 
-        private Dictionary<string, GameProtocolProcessMethod> _Handlers = new Dictionary<string, GameProtocolProcessMethod>();
+        private Dictionary<string, GameProtocolProcessHandler> _Handlers = new Dictionary<string, GameProtocolProcessHandler>();
         private Dictionary<Type, GameController> _controllers = new Dictionary<Type, GameController>();
 
         /// <summary>
@@ -81,7 +81,7 @@ namespace SKit
             _packager = provicer.GetService<Packager>();
             Debug.Assert(_packager != null, "ISPackager Can't be NULL!");
             this.Id = Config.Id;
-            
+
             _socketRecvArgsPool = new ElasticPool<SocketAsyncEventArgs>(() =>
             {
                 var args = new SocketAsyncEventArgs();
@@ -117,12 +117,12 @@ namespace SKit
 
                 //启动任务工作线程
                 _workingTaskTokenSource = new CancellationTokenSource();
-                _workingTask = new Task(Loop, _workingTaskTokenSource.Token);
+                _workingTask = new Task(LoopWorking, _workingTaskTokenSource.Token);
                 _workingTask.Start();
 
                 //启动发送线程
                 _sendingTaskTokenSource = new CancellationTokenSource();
-                _sendingTask = new Task(SendingLoop, _sendingTaskTokenSource.Token);
+                _sendingTask = new Task(LoopSending, _sendingTaskTokenSource.Token);
                 _sendingTask.Start();
 
 
@@ -182,7 +182,7 @@ namespace SKit
                 {
                     //把原来的玩家踢下线
                     oldSession.Logout();
-                    CloseClientSocket(oldSession.SocketAsyncEventArgs, ClientCloseReason.KickOut);
+                    CloseClientSocket(oldSession.SocketAsyncEventArgs, ClientCloseReason.Displacement);
                     return session;
                 });
             }
@@ -255,6 +255,19 @@ namespace SKit
         protected virtual void OnSessionClosed(GameSession session)
         {
 
+        }
+
+        /// <summary>
+        /// 接收消息前，可用于重写Filter
+        /// </summary>
+        /// <returns>是否过滤掉</returns>
+        protected virtual bool Filter(GameSession session, GameProtocolProcessHandler handler)
+        {
+            if (!handler.AllowAnonymous && !session.IsAuthorized)
+            {
+                return true;
+            }
+            return false;
         }
 
         #region 网络部分
@@ -341,19 +354,30 @@ namespace SKit
             token.Socket.Close();
 
             GameSession s;
-            if (token.IsAuthorized)
+            var task = new GamePlayerLeaveTask(token, reason, _controllers.Values);
+            if (reason == ClientCloseReason.Displacement)
             {
-                _users.TryRemove(token.UserId, out s);
-            }            
-            if (_sessions.TryRemove(token.Id, out s))
+                try
+                {
+                    task.DoAction();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, ex.Message);
+                }
+            }
+            else
             {
                 //任务队列加入玩家离线
-                foreach (GameController controller in _controllers.Values)
+                _workingQueue.Enqueue(task);
+                if (token.IsAuthorized)
                 {
-                    _workingQueue.Enqueue(new GamePlayerLeaveTask(token, controller, reason));
+                    _users.TryRemove(token.UserId, out s);
                 }
-                this.OnSessionClosed(token);
             }
+
+            this.OnSessionClosed(token);
+            _sessions.TryRemove(token.Id, out s);
             // Free the SocketAsyncEventArg so they can be reused by another client
             _socketRecvArgsPool.Push(e);
             _logger.LogDebug($"{token.Id}: LEAVE, reason: {reason}");
@@ -381,7 +405,7 @@ namespace SKit
         #endregion
 
         #region 任务执行派发部分
-        private void SendingLoop()
+        private void LoopSending()
         {
             while (!_sendingTaskTokenSource.IsCancellationRequested)
             {
@@ -453,7 +477,8 @@ namespace SKit
             }
         }
 
-        private void Loop()
+        internal GameSession _currentWorkingSession;
+        private void LoopWorking()
         {
             while (!_workingTaskTokenSource.IsCancellationRequested)
             {
@@ -464,9 +489,16 @@ namespace SKit
                         GameTask task = null;
                         if (_workingQueue.TryDequeue(out task))
                         {
+                            _currentWorkingSession = task.Session;
                             task.DoAction();
                         }
                     }
+                }
+                catch (System.Data.Common.DbException ex)
+                {
+                    //数据库异常，宕机吧
+                    _logger.LogError(ex, ex.Message);
+                    throw;
                 }
                 catch (Exception ex)
                 {
@@ -479,8 +511,7 @@ namespace SKit
         /// <summary>
         /// 处理消息包
         /// </summary>
-        /// <param name="session"></param>
-        /// <param name="data"></param>
+        /// <returns>是否执行成功</returns>
         protected bool DigestRecevedData(GameSession session, ArraySegment<byte> data)
         {
             string cmd = _serializer.DataToCmd(data.Array, data.Offset, data.Count);
@@ -491,23 +522,21 @@ namespace SKit
             }
             var handler = this._Handlers[cmd];
             var type = handler.RequestType;
+            if (Filter(session, handler))
+            {
+                return false;
+            }
             var request = _serializer.Deserialize(type, data.Array, data.Offset, data.Count);
-            var task = new GameTask(handler.ProcessAction, session, request, handler.Controller);
+            var task = new GameRequestTask(handler.ProcessAction, session, request);
             this._workingQueue.Enqueue(task);
             return true;
         }
         #endregion
 
         #region 通讯协议约定
-        class GameProtocolProcessMethod
-        {
-            public String CMD { get; set; }
-            public Delegate ProcessAction { get; set; }
-            public Type RequestType { get; set; }
-            public MethodInfo MethodInfo { get; set; }
-            public GameController Controller { get; set; }
-        }
-
+        /// <summary>
+        /// 获得其他控制器
+        /// </summary>
         public T GetController<T>() where T : GameController
         {
             Type t = typeof(T);
@@ -531,32 +560,53 @@ namespace SKit
             foreach (var controller in controllers)
             {
                 Type type = controller.GetType();
+                controller.Server = this;
                 _controllers.Add(type, controller);
-                MethodInfo[] methods = type.GetMethods(BindingFlags.Public|BindingFlags.DeclaredOnly|BindingFlags.Instance);
+
+                MethodInfo[] methods = type.GetMethods(BindingFlags.Public | BindingFlags.DeclaredOnly | BindingFlags.Instance);
                 foreach (var methodInfo in methods)
                 {
-                    ParameterInfo[] parameterInfos = methodInfo.GetParameters();
-                    if (parameterInfos.Length == 2)
+                    if(methodInfo.IsSpecialName)
                     {
-                        Type requestType = parameterInfos[1].ParameterType;
+                        continue;
+                    }
+                    ParameterInfo[] parameterInfos = methodInfo.GetParameters();
+                    if (parameterInfos.Length == 1)
+                    {
+                        Type requestType = parameterInfos[0].ParameterType;
                         String cmd = requestType.Name;
-                        Type[] templateTypeSet = new[] { typeof(GameSession), requestType };
-                        Type methodGenericType = typeof(Action<,>);
+                        Type[] templateTypeSet = new[] { requestType };
+                        Type methodGenericType = typeof(Action<>);
                         Type methodType = methodGenericType.MakeGenericType(templateTypeSet);
                         Delegate actionMethod = Delegate.CreateDelegate(methodType, controller, methodInfo);
-                        var handler = new GameProtocolProcessMethod()
+                        bool allowanonymous = methodInfo.GetCustomAttribute<AllowAnonymousAttribute>() != null;
+                        var handler = new GameProtocolProcessHandler()
                         {
                             CMD = cmd,
                             MethodInfo = methodInfo,
                             ProcessAction = actionMethod,
                             RequestType = requestType,
-                            Controller = controller
+                            Controller = controller,
+                            AllowAnonymous = allowanonymous
                         };
-                        _Handlers.Add(handler.CMD, handler);
-                        _serializer.Register(requestType);
+                        GameProtocolProcessHandler oldhandler = null;
+                        if (!_Handlers.TryGetValue(handler.CMD, out oldhandler))
+                        {
+                            _Handlers.Add(handler.CMD, handler);
+                            _serializer.Register(requestType);
+                        }
+                        else
+                        {
+                            throw new Exception($"Request CMD [{handler.CMD}] in [{handler.Controller.GetType().Name }.{handler.MethodInfo.Name}] already declared in method: [{oldhandler.Controller.GetType().Name }.{oldhandler.MethodInfo.Name}]");
+                        }
                     }
 
                 }
+            }
+
+            foreach (var controller in controllers)
+            {
+                controller.RegisterEvents();
             }
         }
 

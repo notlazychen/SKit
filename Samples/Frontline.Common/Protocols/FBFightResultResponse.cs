@@ -35,7 +35,7 @@ namespace protocol
         ///  上阵单位
         /// </summary>
 		[ProtoMember(7, IsRequired = false)]
-		public List<FightUnitInfo> units;
+		public List<UnitInfo> units;
         /// <summary>
         ///  玩家经验
         /// </summary>

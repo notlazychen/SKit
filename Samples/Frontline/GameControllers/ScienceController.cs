@@ -9,14 +9,14 @@ namespace Frontline.GameControllers
 {
     public class ScienceController : GameController
     {
-        public void info(GameSession session, ScienceInfoRequest request)
+        public void info(ScienceInfoRequest request)
         {
             ScienceInfoResponse response = new ScienceInfoResponse();
             response.success = true;
             response.totalDevs = 1;
             response.sciences = new List<ScienceInfo>();
             response.devs = new List<int>();
-            session.Server.SendBySessionIdAsync(session.Id, response);
+            CurrentSession.SendAsync(response);
         }
 
     }
