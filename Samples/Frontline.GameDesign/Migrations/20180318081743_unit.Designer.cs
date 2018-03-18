@@ -11,9 +11,10 @@ using System;
 namespace Frontline.GameDesign.Migrations
 {
     [DbContext(typeof(GameDesignContext))]
-    partial class GameDesignContextModelSnapshot : ModelSnapshot
+    [Migration("20180318081743_unit")]
+    partial class unit
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -262,116 +263,6 @@ namespace Frontline.GameDesign.Migrations
                     b.HasKey("dungeon_id", "mid");
 
                     b.ToTable("DMonsterInDungeons");
-                });
-
-            modelBuilder.Entity("Frontline.GameDesign.DUnit", b =>
-                {
-                    b.Property<int>("tid")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<int>("armor");
-
-                    b.Property<float>("att_add");
-
-                    b.Property<int>("bullet_count");
-
-                    b.Property<float>("cd");
-
-                    b.Property<int>("count");
-
-                    b.Property<float>("crit");
-
-                    b.Property<float>("crit_hurt");
-
-                    b.Property<int>("crit_v");
-
-                    b.Property<float>("def_add");
-
-                    b.Property<string>("desc");
-
-                    b.Property<float>("distance");
-
-                    b.Property<int>("energy");
-
-                    b.Property<int>("equip");
-
-                    b.Property<int>("exist");
-
-                    b.Property<int>("grade_item_id");
-
-                    b.Property<int>("grade_max");
-
-                    b.Property<int>("gvg_rest_diamond");
-
-                    b.Property<int>("gvg_rest_res_cnt");
-
-                    b.Property<int>("gvg_rest_second");
-
-                    b.Property<float>("hp_add");
-
-                    b.Property<float>("hurt_add");
-
-                    b.Property<int>("hurt_add_v");
-
-                    b.Property<float>("hurt_multiple");
-
-                    b.Property<float>("hurt_sub");
-
-                    b.Property<int>("hurt_sub_v");
-
-                    b.Property<float>("last_time");
-
-                    b.Property<int>("max_energy");
-
-                    b.Property<int>("mob");
-
-                    b.Property<string>("name");
-
-                    b.Property<int>("nation");
-
-                    b.Property<float>("off");
-
-                    b.Property<int>("prop_grow_type");
-
-                    b.Property<float>("prop_grow_val");
-
-                    b.Property<int>("prop_type");
-
-                    b.Property<float>("prop_val");
-
-                    b.Property<int>("pvp_dec_score");
-
-                    b.Property<int>("pvp_point");
-
-                    b.Property<float>("r");
-
-                    b.Property<int>("res_cnt");
-
-                    b.Property<int>("res_type");
-
-                    b.Property<float>("rev");
-
-                    b.Property<float>("rev_body");
-
-                    b.Property<int>("sec");
-
-                    b.Property<int>("show_p");
-
-                    b.Property<int>("skills");
-
-                    b.Property<float>("speed");
-
-                    b.Property<int>("star");
-
-                    b.Property<int>("type");
-
-                    b.Property<int>("type_detail");
-
-                    b.Property<int>("ww_type");
-
-                    b.HasKey("tid");
-
-                    b.ToTable("DUnits");
                 });
 #pragma warning restore 612, 618
         }

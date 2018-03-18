@@ -316,6 +316,13 @@ namespace Frontline.GameControllers
             CurrentSession.SendAsync(response);
         }
 
+
+        readonly static int[][] _stars = new int[][]{
+        new int []{3, 3, 3, 3, 3},
+        new int []{2, 3, 3, 3, 3},
+        new int []{1, 2, 3, 3, 3},
+        new int []{1, 2, 2, 3, 3},
+        new int []{1, 1, 2, 2, 3}};
         public void FightEnd(FBFightResultRequest request)
         {
             FBFightResultResponse response = new FBFightResultResponse();
@@ -338,6 +345,33 @@ namespace Frontline.GameControllers
                 playerController.AddCurrency(CurrencyType.OIL, -ddungeon.oil_cost, reason);
                 playerController.AddExp(ddungeon.exp, reason);
                 //todo: 发放兵种经验
+
+                //副本评星
+                int uscnt = 0;
+                int living = 0;
+
+                if (request.units != null)
+                {
+                    foreach (FightUnitInfo u in request.units)
+                    {
+                        if (string.IsNullOrEmpty(u.unitId))
+                        {
+                            uscnt += 1;
+                            if (!u.dead)
+                            {
+                                living += 1;
+                            }
+                        }
+                    }
+                }
+
+                int star = 1;
+                if (living == 0)
+                {
+                    star = _stars[uscnt - 1][living - 1];
+                }
+                dungeon.Star = star;
+                _db.SaveChanges();
             }
             else
             {
@@ -345,7 +379,7 @@ namespace Frontline.GameControllers
             }
             response.id = request.id;
             response.win = request.win;
-            //response.star = request.win ? fbService.star(request.getId(), request.getUnits()) : 0);
+            response.star = dungeon.Star;
             RewardInfo reward = new RewardInfo();
             response.reward = reward;
             CurrentSession.SendAsync(response);

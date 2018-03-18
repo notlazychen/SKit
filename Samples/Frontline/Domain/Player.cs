@@ -123,5 +123,6 @@ namespace Frontline.Domain
         public List<PlayerCurrency> Currencies { get; set; } = new List<PlayerCurrency>();
         public List<PlayerSection> Sections { get; set; } = new List<PlayerSection>();
         public List<PlayerItem> Items { get; set; } = new List<PlayerItem>();
+        public List<Unit> Units { get; set; } = new List<Unit>();
     }
 }

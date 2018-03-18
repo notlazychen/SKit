@@ -38,6 +38,7 @@ namespace Frontline.GameDesign
         public DbSet<DMonsterAbility> DMonsterAbilities { get; set; }
         public DbSet<DMonsterInDungeon> DMonsterInDungeons { get; set; }
         public DbSet<DDungeon> DDungeons { get; set; }
+        public DbSet<DUnit> DUnits { get; set; }
     }
 }
 
