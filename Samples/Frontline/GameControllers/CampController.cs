@@ -482,9 +482,9 @@ namespace Frontline.GameControllers
         public void UnitGradeUp(ClazupUnitRequest request)
         {
             ClazupUnitResponse response = new ClazupUnitResponse();
-            response.id= request.id;
+            response.id = request.id;
             var player = CurrentSession.GetBindPlayer();
-            Unit unit = player.Units.First(x=>x.Id == request.id);
+            Unit unit = player.Units.First(x => x.Id == request.id);
 
 
             DUnit du = _dunits.First(x => x.tid == unit.Tid);
@@ -492,39 +492,40 @@ namespace Frontline.GameControllers
             int maxClaz = du.grade_max;
             int itemId = du.grade_item_id;
 
-            if (!canClazup(u))
+            if (du.grade_max >= unit.Grade)
             {
                 return;
             }
-            DUnitGradeUp dug = _dunitgrades.FirstOrDefault(x => x.grade == unit.Grade + 1 && x.star == du.star);
-
+            DUnitGradeUp dug = _dunitgrades.First(x => x.grade == unit.Grade + 1 && x.star == du.star);     
             int itemCount = dug.item_cnt;
 
             var pkgController = Server.GetController<PkgController>();
+            var playerController = Server.GetController<PlayerController>();
             string reason = $"兵种进阶{du.tid}";
             PlayerItem item;
-            if(pkgController.TrySubItem(player, itemId, itemCount, reason, out item))
+            if (playerController.IsCurrencyEnough(player, CurrencyType.GOLD, dug.gold))
             {
+                if (pkgController.TrySubItem(player, itemId, itemCount, reason, out item))
+                {
+                    playerController.AddCurrency(player, CurrencyType.GOLD, -dug.gold, reason);
+                                        
+                    unit.Grade += 1;
 
+                    response.unitInfo = this.ToUnitInfo(unit, du);
+                    response.gold = playerController.GetCurrencyValue(player, CurrencyType.GOLD);
+                    response.itemId = itemId;
+                    response.count = item.Count;
+                    response.success = true;
+
+                    CurrentSession.SendAsync(response);
+                    //任务
+                    //Spring.bean(PlayerService.class).TryUpdateMaxPower(u.getPid(), rojo);
+                    //Spring.bean(QuestService.class).onUnitGradeUp(u.getPid(), u.getUid(), u.getClaz());
+                    //Spring.bean(PlayerService.class).TryUpdateMaxPower(u.getPid(), rojo);
+                    //Spring.bean(LogService.class).logHeroCount(u.getPid(), u.getUid(), "" + u.getUid(), 3, getUnitPower(rojo, u.getId()));
+                }
             }
-            Support su = Spring.bean(PlayerService.class).getSupport(u.getPid());
-        su.addRes(Support.RES_GOLD, -du.getCost_gold(), Reason.M_CLAZUP_COST + u.getUid());
-            rojo.updateAndFlush(su, "gold", "supply", "iron");
-            response.setGold((int) su.getGold());
-            response.setItemId(itemId);
-            response.setCount(pkg.count(u.getPid(), itemId));
-            response.setSuccess(true);
 
-            u.setClaz(u.getClaz() + 1);
-            rojo.updateAndFlush(u, "claz");
-
-            Spring.bean(PlayerService.class).TryUpdateMaxPower(u.getPid(), rojo);
-        //任务
-        Spring.bean(QuestService.class).onUnitGradeUp(u.getPid(), u.getUid(), u.getClaz());
-        Spring.bean(PlayerService.class).TryUpdateMaxPower(u.getPid(), rojo);
-        Spring.bean(LogService.class).logHeroCount(u.getPid(), u.getUid(), "" + u.getUid(), 3, getUnitPower(rojo, u.getId()));
-            response.setUnitInfo(this.unitInfo(rojo, u));
-        
         }
 
         /// <summary>
@@ -535,6 +536,16 @@ namespace Frontline.GameControllers
             var player = this.CurrentSession.GetBindPlayer();
             this.UnlockUnit(player, request.unitId, false);
             _db.SaveChanges();
+        }
+
+        public void EquipLevelUp(LevelupEquipRequest request)
+        {
+
+        }
+
+        public void EquipGradeUp(UpGradeEquipRequest request)
+        {
+
         }
         #endregion
     }

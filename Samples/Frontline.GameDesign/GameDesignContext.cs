@@ -43,6 +43,9 @@ namespace Frontline.GameDesign
         public DbSet<DUnitLevelUp> DUnitLevelUps { get; set; }
         public DbSet<DUnitGradeUp> DUnitGradeUps { get; set; }
         public DbSet<DUnitUnlock> DUnitUnlocks { get; set; }
+
+        public DbSet<DEquip> DEquips { get; set; }
+        public DbSet<DEquipLevelCost> DEquipLevelCosts { get; set; }
     }
 }
 

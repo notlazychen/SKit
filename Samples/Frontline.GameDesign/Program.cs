@@ -9,8 +9,8 @@ namespace Frontline.GameDesign
 {
     class Program
     {
-        const string rootPath = @"E:\COF_WORKSPACE\指挥前线开发版\配置表\";
-        //const string rootPath = @"F:\SwordsMan\指挥前线开发版\配置表";
+        //const string rootPath = @"E:\COF_WORKSPACE\指挥前线开发版\配置表\";
+        const string rootPath = @"F:\SwordsMan\指挥前线开发版\配置表";
         const string connection = "Server=101.132.118.172;database=frontline_design;uid=chenrong;pwd=abcd1234;SslMode=None;charset=utf8;pooling=false";
         private static GameDesignContext db;
         static void Main(string[] args)
