@@ -2,24 +2,24 @@
 using System;
 using System.Collections.Generic;
 
-namespace Frontline.GameDesign.Migrations
+namespace Frontline.Migrations
 {
-    public partial class desc : Migration
+    public partial class teamrest : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<string>(
-                name: "desc",
-                table: "DItems",
-                maxLength: 32,
-                nullable: true);
+            migrationBuilder.AddColumn<bool>(
+                name: "IsResting",
+                table: "Unit",
+                nullable: false,
+                defaultValue: false);
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "desc",
-                table: "DItems");
+                name: "IsResting",
+                table: "Unit");
         }
     }
 }

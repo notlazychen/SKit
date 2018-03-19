@@ -121,6 +121,22 @@ namespace Frontline.GameDesign
                                     cellPair.Key.SetValue(ladderConfig, ts);
                                 }
                             }
+                            else if (cellPair.Key.PropertyType == typeof(JsonObject<int[]>))
+                            {
+                                if (!string.IsNullOrEmpty(cell.StringCellValue))
+                                {
+                                    int[] ts = Array.ConvertAll(cell.StringCellValue.Trim(new []{'[',']'}).Split(','), int.Parse);
+                                    cellPair.Key.SetValue(ladderConfig, new JsonObject<int[]>(ts));
+                                }
+                            }
+                            else if (cellPair.Key.PropertyType == typeof(JsonObject<List<int>>))
+                            {
+                                if (!string.IsNullOrEmpty(cell.StringCellValue))
+                                {
+                                    var ts = cell.StringCellValue.Trim(new[] { '[', ']' }).Split(',').Select(int.Parse).ToList();
+                                    cellPair.Key.SetValue(ladderConfig, new JsonObject<List<int>>(ts));
+                                }
+                            }
                             else
                             {
                                 throw new Exception("不支持的类型");

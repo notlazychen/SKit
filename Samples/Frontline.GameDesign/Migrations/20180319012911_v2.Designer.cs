@@ -11,8 +11,8 @@ using System;
 namespace Frontline.GameDesign.Migrations
 {
     [DbContext(typeof(GameDesignContext))]
-    [Migration("20180316111348_desc")]
-    partial class desc
+    [Migration("20180319012911_v2")]
+    partial class v2
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -29,7 +29,7 @@ namespace Frontline.GameDesign.Migrations
                     b.Property<string>("desc")
                         .HasMaxLength(32);
 
-                    b.Property<string>("drop_items")
+                    b.Property<JsonObject<Int32[]>>("drop_items")
                         .HasMaxLength(128);
 
                     b.Property<int>("exp");
@@ -112,7 +112,7 @@ namespace Frontline.GameDesign.Migrations
                     b.Property<TimeSpan?>("cd");
 
                     b.Property<string>("desc")
-                        .HasMaxLength(32);
+                        .HasMaxLength(64);
 
                     b.Property<int>("diamond");
 
@@ -177,7 +177,7 @@ namespace Frontline.GameDesign.Migrations
                     b.Property<int>("defence");
 
                     b.Property<string>("desc")
-                        .HasMaxLength(32);
+                        .HasMaxLength(64);
 
                     b.Property<string>("die_model")
                         .HasMaxLength(32);
@@ -263,6 +263,117 @@ namespace Frontline.GameDesign.Migrations
                     b.HasKey("dungeon_id", "mid");
 
                     b.ToTable("DMonsterInDungeons");
+                });
+
+            modelBuilder.Entity("Frontline.GameDesign.DUnit", b =>
+                {
+                    b.Property<int>("tid")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<int>("armor");
+
+                    b.Property<float>("att_add");
+
+                    b.Property<int>("bullet_count");
+
+                    b.Property<float>("cd");
+
+                    b.Property<int>("count");
+
+                    b.Property<float>("crit");
+
+                    b.Property<float>("crit_hurt");
+
+                    b.Property<int>("crit_v");
+
+                    b.Property<float>("def_add");
+
+                    b.Property<string>("desc")
+                        .HasMaxLength(128);
+
+                    b.Property<float>("distance");
+
+                    b.Property<int>("energy");
+
+                    b.Property<JsonObject<Int32[]>>("equip");
+
+                    b.Property<int>("exist");
+
+                    b.Property<int>("grade_item_id");
+
+                    b.Property<int>("grade_max");
+
+                    b.Property<int>("gvg_rest_diamond");
+
+                    b.Property<string>("gvg_rest_res_cnt");
+
+                    b.Property<int>("gvg_rest_second");
+
+                    b.Property<float>("hp_add");
+
+                    b.Property<float>("hurt_add");
+
+                    b.Property<int>("hurt_add_v");
+
+                    b.Property<float>("hurt_multiple");
+
+                    b.Property<float>("hurt_sub");
+
+                    b.Property<int>("hurt_sub_v");
+
+                    b.Property<float>("last_time");
+
+                    b.Property<int>("max_energy");
+
+                    b.Property<int>("mob");
+
+                    b.Property<string>("name");
+
+                    b.Property<int>("nation");
+
+                    b.Property<float>("off");
+
+                    b.Property<JsonObject<Int32[]>>("prop_grow_type");
+
+                    b.Property<JsonObject<Int32[]>>("prop_grow_val");
+
+                    b.Property<JsonObject<Int32[]>>("prop_type");
+
+                    b.Property<JsonObject<Int32[]>>("prop_val");
+
+                    b.Property<int>("pvp_dec_score");
+
+                    b.Property<int>("pvp_point");
+
+                    b.Property<float>("r");
+
+                    b.Property<JsonObject<Int32[]>>("res_cnt");
+
+                    b.Property<JsonObject<Int32[]>>("res_type");
+
+                    b.Property<float>("rev");
+
+                    b.Property<float>("rev_body");
+
+                    b.Property<int>("sec");
+
+                    b.Property<int>("show_p");
+
+                    b.Property<JsonObject<Int32[]>>("skills");
+
+                    b.Property<float>("speed");
+
+                    b.Property<int>("star");
+
+                    b.Property<int>("type");
+
+                    b.Property<int>("type_detail");
+
+                    b.Property<int>("ww_type");
+
+                    b.HasKey("tid");
+
+                    b.ToTable("DUnits");
                 });
 #pragma warning restore 612, 618
         }

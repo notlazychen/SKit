@@ -25,18 +25,28 @@ namespace Frontline.GameControllers
 
         private DataContext _db;
         private GameConfig _config;
-        private GameDesignContext _design;
+        private GameDesignContext _designDb;
+
+        List<DLevel> _dlevels;
+
         public PlayerController(DataContext db, GameDesignContext design, IOptions<GameConfig> config)
         {
             _db = db;
             _config = config.Value;
-            _design = design;
+            _designDb = design;
         }
 
         public PlayerController()
         {
 
         }
+
+        protected override void OnRegisterEvents()
+        {
+            base.OnRegisterEvents();
+            _dlevels = _designDb.DLevels.AsNoTracking().ToList();
+        }
+
         #region 事件
         /// <summary>
         /// 创建角色的时候
@@ -65,16 +75,47 @@ namespace Frontline.GameControllers
         #endregion
 
         #region 辅助方法
-        /// <summary>
-        /// 添加资源
-        /// </summary>
-        public void AddCurrency(int type, int value, string reason)
+        public int GetCurrencyValue(Player player, int type)
         {
-            var player = CurrentSession.GetBind<Player>();
             var currency = player.Currencies.FirstOrDefault(c => c.Type == type);
             if (currency == null)
             {
-                currency = new PlayerCurrency()
+                return 0;
+            }
+            else
+            {
+                return currency.Value;
+            }
+        }
+        public bool IsCurrencyEnough(Player player, int type, int value)
+        {
+            if (value == 0)
+            {
+                return true;
+            }
+            var currency = player.Currencies.FirstOrDefault(c => c.Type == type);
+            if (currency == null)
+            {
+                return false;
+            }
+            else
+            {
+                return currency.Value >= value;
+            }
+        }
+        /// <summary>
+        /// 添加资源
+        /// </summary>
+        public void AddCurrency(Player player, int type, int value, string reason)
+        {
+            if (value == 0)
+            {
+                return;
+            }
+            var currency = player.Currencies.FirstOrDefault(c => c.Type == type);
+            if (currency == null)
+            {
+                currency = new Currency()
                 {
                     PlayerId = player.Id,
                     Type = type,
@@ -85,17 +126,30 @@ namespace Frontline.GameControllers
             {
                 currency.Value += value;
             }
+
+            ResourceAmountChangedNotify notify = new ResourceAmountChangedNotify();
+            notify.success = true;
+            notify.items = new List<ResourceInfo>()
+            {
+                new ResourceInfo()
+                {
+                    type = 1,
+                    id = type,
+                    count = currency.Value
+                }
+            };
+            Server.SendByUserNameAsync(player.Id, notify);
         }
         /// <summary>
         /// 添加经验
         /// </summary>
-        public void AddExp(int exp, string reason)
+        public void AddExp(Player player, int exp, string reason)
         {
-            var player = CurrentSession.GetBind<Player>();
             player.Exp += exp;
+            int old = player.Level;
             while (true)
             {
-                var dl = _design.DLevels.First(d => d.level == player.Level);
+                var dl = _dlevels.First(d => d.level == player.Level);
                 if (player.Exp >= dl.exp)
                 {
                     player.Level += 1;
@@ -104,6 +158,16 @@ namespace Frontline.GameControllers
                 {
                     break;
                 }
+            }
+            if (old != player.Level)
+            {
+                //任务
+                //通知
+                LevelupNotify notify = new LevelupNotify();
+                notify.exp = player.Exp;
+                notify.level = player.Level;
+                notify.success = true;
+                Server.SendByUserNameAsync(player.Id, notify);//发送给当前player 
             }
         }
         #endregion
@@ -124,7 +188,7 @@ namespace Frontline.GameControllers
             var usercode = json.Value<String>("usercode");
             var bind = json.Value<bool>("bind");
             Player player = null;
-            if (!_db.Players.Any(p=>p.UserCenterId == ucenterId))
+            if (!_db.Players.Any(p => p.UserCenterId == ucenterId))
             {
                 //创建角色信息
                 player = new Player();
@@ -141,9 +205,9 @@ namespace Frontline.GameControllers
                 player.LastVipUpTime = player.LastLvUpTime = player.LastLoginTime = player.CreateTime = DateTime.Now;
                 player.IsBind = false;
                 player.IP = (CurrentSession.Socket.RemoteEndPoint as IPEndPoint)?.Address.ToString();
-                player.Currencies = new List<PlayerCurrency>();
+                player.Currencies = new List<Currency>();
                 //初始化资源
-                for (int ct = 1; ct <= CurrencyType.MAX_TYPE; ct ++)
+                for (int ct = 1; ct <= CurrencyType.MAX_TYPE; ct++)
                 {
                     int v = 0;
                     switch (ct)
@@ -154,7 +218,7 @@ namespace Frontline.GameControllers
                         case CurrencyType.SUPPLY: v = 10000; break;
                         case CurrencyType.OIL: v = 300; break;
                     }
-                    player.Currencies.Add(new PlayerCurrency()
+                    player.Currencies.Add(new Currency()
                     {
                         PlayerId = player.Id,
                         Type = ct,
@@ -167,7 +231,6 @@ namespace Frontline.GameControllers
             }
             else
             {
-
                 var queryPlayer = _db.Players
                     .Where(p => p.UserCode == usercode)
                     .Include(p => p.Currencies);
@@ -229,7 +292,7 @@ namespace Frontline.GameControllers
                 if (currency == null)
                 {
                     checkout = true;
-                    currency = new PlayerCurrency()
+                    currency = new Currency()
                     {
                         PlayerId = player.Id,
                         Type = ct,
@@ -248,9 +311,9 @@ namespace Frontline.GameControllers
                 _db.SaveChanges();
             }
             //一些配置表的内容
-            response.nextExp = _design.DLevels.Where(d => d.level == player.Level).Select(d=>d.exp).SingleOrDefault() ;
+            response.nextExp = _dlevels.Where(d => d.level == player.Level).Select(d => d.exp).SingleOrDefault();
             response.resistMaxWave = 1;
-            response.preExp = _design.DLevels.Where(d => d.level == player.Level - 1).Select(d => d.exp).SingleOrDefault();
+            response.preExp = _dlevels.Where(d => d.level == player.Level - 1).Select(d => d.exp).SingleOrDefault();
             CurrentSession.SendAsync(response);
         }
 

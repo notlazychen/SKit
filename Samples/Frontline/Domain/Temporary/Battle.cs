@@ -10,6 +10,6 @@ namespace Frontline.Domain.Temporary
         public string Id { get; set; }
         public DateTime BeginTime { get; set; }        
         public bool IsEnd { get; set; }
-        public PlayerDungeon Dungeon { get; set; }
+        public Dungeon Dungeon { get; set; }
     }
 }

@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Frontline.Domain
 {
-    public class PlayerCurrency
+    public class Currency
     {
         public string PlayerId { get; set; }
 

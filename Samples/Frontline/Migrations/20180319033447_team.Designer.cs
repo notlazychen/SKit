@@ -12,73 +12,15 @@ using System.Collections.Generic;
 namespace Frontline.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20180319033447_team")]
+    partial class team
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn)
                 .HasAnnotation("ProductVersion", "2.0.1-rtm-125");
-
-            modelBuilder.Entity("Frontline.Domain.Currency", b =>
-                {
-                    b.Property<string>("PlayerId");
-
-                    b.Property<int>("Type");
-
-                    b.Property<int>("Value");
-
-                    b.HasKey("PlayerId", "Type");
-
-                    b.ToTable("Currencies");
-                });
-
-            modelBuilder.Entity("Frontline.Domain.Dungeon", b =>
-                {
-                    b.Property<string>("Id")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<int>("FightTimes");
-
-                    b.Property<bool>("IsLast");
-
-                    b.Property<bool>("IsOpen");
-
-                    b.Property<DateTime>("LastRefreshTime");
-
-                    b.Property<int>("Mission");
-
-                    b.Property<int>("Next")
-                        .HasMaxLength(32);
-
-                    b.Property<string>("PlayerId")
-                        .HasMaxLength(20);
-
-                    b.Property<string>("PlayerSectionId");
-
-                    b.Property<int>("ResetNumb");
-
-                    b.Property<int>("Section");
-
-                    b.Property<string>("SectionId");
-
-                    b.Property<int>("Star");
-
-                    b.Property<int>("Tid");
-
-                    b.Property<int>("Type");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PlayerId");
-
-                    b.HasIndex("SectionId");
-
-                    b.HasIndex("Tid", "PlayerId");
-
-                    b.ToTable("Dungeon");
-                });
 
             modelBuilder.Entity("Frontline.Domain.Player", b =>
                 {
@@ -155,6 +97,63 @@ namespace Frontline.Migrations
                     b.ToTable("Players");
                 });
 
+            modelBuilder.Entity("Frontline.Domain.PlayerCurrency", b =>
+                {
+                    b.Property<string>("PlayerId");
+
+                    b.Property<int>("Type");
+
+                    b.Property<int>("Value");
+
+                    b.HasKey("PlayerId", "Type");
+
+                    b.ToTable("PlayerCurrency");
+                });
+
+            modelBuilder.Entity("Frontline.Domain.PlayerDungeon", b =>
+                {
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<int>("FightTimes");
+
+                    b.Property<bool>("IsLast");
+
+                    b.Property<bool>("IsOpen");
+
+                    b.Property<DateTime>("LastRefreshTime");
+
+                    b.Property<int>("Mission");
+
+                    b.Property<int>("Next")
+                        .HasMaxLength(32);
+
+                    b.Property<string>("PlayerId")
+                        .HasMaxLength(20);
+
+                    b.Property<string>("PlayerSectionId");
+
+                    b.Property<int>("ResetNumb");
+
+                    b.Property<int>("Section");
+
+                    b.Property<int>("Star");
+
+                    b.Property<int>("Tid");
+
+                    b.Property<int>("Type");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlayerId");
+
+                    b.HasIndex("PlayerSectionId");
+
+                    b.HasIndex("Tid", "PlayerId");
+
+                    b.ToTable("PlayerDungeon");
+                });
+
             modelBuilder.Entity("Frontline.Domain.PlayerItem", b =>
                 {
                     b.Property<string>("Id")
@@ -170,7 +169,27 @@ namespace Frontline.Migrations
 
                     b.HasIndex("PlayerId");
 
-                    b.ToTable("Items");
+                    b.ToTable("PlayerItem");
+                });
+
+            modelBuilder.Entity("Frontline.Domain.PlayerSection", b =>
+                {
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<string>("PlayerId");
+
+                    b.Property<int>("RecvdStarReward");
+
+                    b.Property<int>("Section");
+
+                    b.Property<int>("Type");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlayerId");
+
+                    b.ToTable("PlayerSection");
                 });
 
             modelBuilder.Entity("Frontline.Domain.PVPFormation", b =>
@@ -190,27 +209,7 @@ namespace Frontline.Migrations
 
                     b.HasIndex("PlayerId");
 
-                    b.ToTable("Formations");
-                });
-
-            modelBuilder.Entity("Frontline.Domain.Section", b =>
-                {
-                    b.Property<string>("Id")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<int>("Index");
-
-                    b.Property<string>("PlayerId");
-
-                    b.Property<int>("RecvdStarReward");
-
-                    b.Property<int>("Type");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("PlayerId");
-
-                    b.ToTable("Sections");
+                    b.ToTable("PVPFormation");
                 });
 
             modelBuilder.Entity("Frontline.Domain.Team", b =>
@@ -230,7 +229,7 @@ namespace Frontline.Migrations
 
                     b.HasIndex("PlayerId");
 
-                    b.ToTable("Teams");
+                    b.ToTable("Team");
                 });
 
             modelBuilder.Entity("Frontline.Domain.Unit", b =>
@@ -241,8 +240,6 @@ namespace Frontline.Migrations
                     b.Property<int>("Exp");
 
                     b.Property<int>("Grade");
-
-                    b.Property<bool>("IsResting");
 
                     b.Property<int>("Level");
 
@@ -258,10 +255,10 @@ namespace Frontline.Migrations
 
                     b.HasIndex("PlayerId");
 
-                    b.ToTable("Units");
+                    b.ToTable("Unit");
                 });
 
-            modelBuilder.Entity("Frontline.Domain.Currency", b =>
+            modelBuilder.Entity("Frontline.Domain.PlayerCurrency", b =>
                 {
                     b.HasOne("Frontline.Domain.Player")
                         .WithMany("Currencies")
@@ -269,11 +266,11 @@ namespace Frontline.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
-            modelBuilder.Entity("Frontline.Domain.Dungeon", b =>
+            modelBuilder.Entity("Frontline.Domain.PlayerDungeon", b =>
                 {
-                    b.HasOne("Frontline.Domain.Section")
+                    b.HasOne("Frontline.Domain.PlayerSection")
                         .WithMany("Dungeons")
-                        .HasForeignKey("SectionId");
+                        .HasForeignKey("PlayerSectionId");
                 });
 
             modelBuilder.Entity("Frontline.Domain.PlayerItem", b =>
@@ -283,17 +280,17 @@ namespace Frontline.Migrations
                         .HasForeignKey("PlayerId");
                 });
 
+            modelBuilder.Entity("Frontline.Domain.PlayerSection", b =>
+                {
+                    b.HasOne("Frontline.Domain.Player")
+                        .WithMany("Sections")
+                        .HasForeignKey("PlayerId");
+                });
+
             modelBuilder.Entity("Frontline.Domain.PVPFormation", b =>
                 {
                     b.HasOne("Frontline.Domain.Player")
                         .WithMany("Formations")
-                        .HasForeignKey("PlayerId");
-                });
-
-            modelBuilder.Entity("Frontline.Domain.Section", b =>
-                {
-                    b.HasOne("Frontline.Domain.Player")
-                        .WithMany("Sections")
                         .HasForeignKey("PlayerId");
                 });
 

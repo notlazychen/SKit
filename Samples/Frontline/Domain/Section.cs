@@ -9,15 +9,15 @@ namespace Frontline.Domain
     /// <summary>
     /// 其实是玩家副本进度
     /// </summary>
-    public class PlayerSection
+    public class Section
     {
         [Key]
         public String Id { get; set; }//id
-        public int Section { get; set; }
+        public int Index { get; set; }
         public String PlayerId { get; set; }//所属的player
         public int Type { get; set; }//类型
 
-        public List<PlayerDungeon> Dungeons { get; set; }
+        public List<Dungeon> Dungeons { get; set; }
         public int RecvdStarReward { get; set; }
     }
 

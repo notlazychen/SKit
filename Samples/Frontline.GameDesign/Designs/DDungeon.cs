@@ -53,19 +53,6 @@ namespace Frontline.GameDesign
         public int exp_element { get; set; }//获得兵种经验
 
         [MaxLength(128)]
-        public string drop_items { get; set; }
-        private List<int> _drop_items_real;
-        [NotMapped]
-        public List<int> dropItems
-        {
-            get
-            {
-                if(_drop_items_real == null)
-                {
-                    _drop_items_real = drop_items.Trim(new char[] { '[', ']'}).Split(",").Select(int.Parse).ToList();
-                }
-                return _drop_items_real;
-            }
-        }//战前可能掉落显示
+        public JsonObject<List<int>> drop_items { get; set; }//战前可能掉落显示
     }
 }

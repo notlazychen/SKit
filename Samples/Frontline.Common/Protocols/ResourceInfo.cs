@@ -5,23 +5,23 @@ using System;
 namespace protocol
 {
 	[ProtoContract]
-	public class EquipInfo
+	public class ResourceInfo
 	{
         /// <summary>
-        ///  装备id
+        ///  1资源2道具
         /// </summary>
 		[ProtoMember(1, IsRequired = false)]
-		public int equipId;
+		public int type;
         /// <summary>
-        ///  等级
+        ///  道具id/资源类型
         /// </summary>
 		[ProtoMember(2, IsRequired = false)]
-		public int level;
+		public int id;
         /// <summary>
-        ///  阶
+        ///  道具/资源数量
         /// </summary>
 		[ProtoMember(3, IsRequired = false)]
-		public int grade;
+		public int count;
 
 	}
 }

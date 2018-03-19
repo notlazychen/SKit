@@ -2,9 +2,9 @@
 using System;
 using System.Collections.Generic;
 
-namespace Frontline.GameDesign.Migrations
+namespace Frontline.Migrations
 {
-    public partial class monster : Migration
+    public partial class itemunlock : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {

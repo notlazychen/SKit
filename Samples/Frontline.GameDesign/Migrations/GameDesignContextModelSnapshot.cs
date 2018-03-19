@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.EntityFrameworkCore.Storage.Internal;
 using System;
+using System.Collections.Generic;
 
 namespace Frontline.GameDesign.Migrations
 {
@@ -28,7 +29,7 @@ namespace Frontline.GameDesign.Migrations
                     b.Property<string>("desc")
                         .HasMaxLength(32);
 
-                    b.Property<string>("drop_items")
+                    b.Property<JsonObject<List<int>>>("drop_items")
                         .HasMaxLength(128);
 
                     b.Property<int>("exp");
@@ -287,13 +288,14 @@ namespace Frontline.GameDesign.Migrations
 
                     b.Property<float>("def_add");
 
-                    b.Property<string>("desc");
+                    b.Property<string>("desc")
+                        .HasMaxLength(128);
 
                     b.Property<float>("distance");
 
                     b.Property<int>("energy");
 
-                    b.Property<int>("equip");
+                    b.Property<JsonObject<Int32[]>>("equip");
 
                     b.Property<int>("exist");
 
@@ -303,7 +305,7 @@ namespace Frontline.GameDesign.Migrations
 
                     b.Property<int>("gvg_rest_diamond");
 
-                    b.Property<int>("gvg_rest_res_cnt");
+                    b.Property<string>("gvg_rest_res_cnt");
 
                     b.Property<int>("gvg_rest_second");
 
@@ -331,13 +333,13 @@ namespace Frontline.GameDesign.Migrations
 
                     b.Property<float>("off");
 
-                    b.Property<int>("prop_grow_type");
+                    b.Property<JsonObject<Int32[]>>("prop_grow_type");
 
-                    b.Property<float>("prop_grow_val");
+                    b.Property<JsonObject<Int32[]>>("prop_grow_val");
 
-                    b.Property<int>("prop_type");
+                    b.Property<JsonObject<Int32[]>>("prop_type");
 
-                    b.Property<float>("prop_val");
+                    b.Property<JsonObject<Int32[]>>("prop_val");
 
                     b.Property<int>("pvp_dec_score");
 
@@ -345,9 +347,9 @@ namespace Frontline.GameDesign.Migrations
 
                     b.Property<float>("r");
 
-                    b.Property<int>("res_cnt");
+                    b.Property<JsonObject<Int32[]>>("res_cnt");
 
-                    b.Property<int>("res_type");
+                    b.Property<JsonObject<Int32[]>>("res_type");
 
                     b.Property<float>("rev");
 
@@ -357,7 +359,7 @@ namespace Frontline.GameDesign.Migrations
 
                     b.Property<int>("show_p");
 
-                    b.Property<int>("skills");
+                    b.Property<JsonObject<List<int>>>("skills");
 
                     b.Property<float>("speed");
 
@@ -372,6 +374,65 @@ namespace Frontline.GameDesign.Migrations
                     b.HasKey("tid");
 
                     b.ToTable("DUnits");
+                });
+
+            modelBuilder.Entity("Frontline.GameDesign.DUnitGradeUp", b =>
+                {
+                    b.Property<int>("star");
+
+                    b.Property<int>("grade");
+
+                    b.Property<int>("atk");
+
+                    b.Property<int>("defence");
+
+                    b.Property<int>("gold");
+
+                    b.Property<int>("hp");
+
+                    b.Property<int>("item_id");
+
+                    b.Property<int>("max_level");
+
+                    b.Property<int>("min_level");
+
+                    b.HasKey("star", "grade");
+
+                    b.ToTable("DUnitGradeUps");
+                });
+
+            modelBuilder.Entity("Frontline.GameDesign.DUnitLevelUp", b =>
+                {
+                    b.Property<int>("level")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<int>("star1");
+
+                    b.Property<int>("star2");
+
+                    b.Property<int>("star3");
+
+                    b.Property<int>("star4");
+
+                    b.Property<int>("star5");
+
+                    b.HasKey("level");
+
+                    b.ToTable("DUnitLevelUps");
+                });
+
+            modelBuilder.Entity("Frontline.GameDesign.DUnitUnlock", b =>
+                {
+                    b.Property<int>("tid")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<int>("item_cnt");
+
+                    b.Property<int>("item_id");
+
+                    b.HasKey("tid");
+
+                    b.ToTable("DUnitUnlocks");
                 });
 #pragma warning restore 612, 618
         }

@@ -20,6 +20,7 @@ namespace Frontline.GameDesign
             if (IsDoConfig)
             {
                 var connection = "Server=101.132.118.172;database=frontline_design;uid=chenrong;pwd=abcd1234;SslMode=None;charset=utf8;pooling=false";
+                //var connection = "Filename=./sqlitedb.db";
                 optionsBuilder.UseMySql(connection);
             }
         }
@@ -29,7 +30,7 @@ namespace Frontline.GameDesign
             base.OnModelCreating(modelBuilder);
             modelBuilder.Entity<DMonsterInDungeon>().HasKey(d => new { d.dungeon_id, d.mid });
             modelBuilder.Entity<DDungeon>().HasIndex(d => new { d.section, d.type });
-
+            modelBuilder.Entity<DUnitGradeUp>().HasKey(d => new { d.star, d.grade });
         }
 
         public DbSet<DItem> DItems { get; set; }
@@ -39,6 +40,9 @@ namespace Frontline.GameDesign
         public DbSet<DMonsterInDungeon> DMonsterInDungeons { get; set; }
         public DbSet<DDungeon> DDungeons { get; set; }
         public DbSet<DUnit> DUnits { get; set; }
+        public DbSet<DUnitLevelUp> DUnitLevelUps { get; set; }
+        public DbSet<DUnitGradeUp> DUnitGradeUps { get; set; }
+        public DbSet<DUnitUnlock> DUnitUnlocks { get; set; }
     }
 }
 

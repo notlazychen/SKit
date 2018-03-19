@@ -10,7 +10,7 @@ namespace Frontline.Domain
     /// <summary>
     /// 其实是玩家副本进度
     /// </summary>
-    public class PlayerDungeon
+    public class Dungeon
     {
         [Key]
         public String Id { get; set; }//id

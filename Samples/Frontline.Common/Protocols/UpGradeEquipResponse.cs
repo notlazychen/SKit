@@ -5,11 +5,11 @@ using System;
 namespace protocol
 {
     /// <summary>
-    /// 升级装备 协议:-39
+    /// 装备升阶 协议:-40
     /// </summary>
-	[Proto(value=-39,description="升级装备")]
+	[Proto(value=-40,description="装备升阶")]
 	[ProtoContract]
-	public class LevelupEquipResponse
+	public class UpGradeEquipResponse
 	{
         /// <summary>
         ///  兵种id
@@ -22,12 +22,12 @@ namespace protocol
 		[ProtoMember(4, IsRequired = true)]
 		public int position;
         /// <summary>
-        ///  升级后的装备信息
+        ///  升阶后的装备信息
         /// </summary>
 		[ProtoMember(5, IsRequired = false)]
 		public EquipInfo equipInfo;
         /// <summary>
-        ///  升级后的兵种信息
+        ///  升阶后的兵种信息
         /// </summary>
 		[ProtoMember(6, IsRequired = false)]
 		public UnitInfo unitInfo;

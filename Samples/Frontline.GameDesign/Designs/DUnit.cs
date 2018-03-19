@@ -13,8 +13,8 @@ namespace Frontline.GameDesign
         public int type { get; set; }
         public int nation { get; set; }
         public int star { get; set; }
-        public int prop_type { get; set; }
-        public float prop_val { get; set; }
+        public JsonObject<int[]> prop_type { get; set; }
+        public JsonObject<int[]> prop_val { get; set; }
         public float crit { get; set; }
         public float crit_hurt { get; set; }
         public float hurt_add { get; set; }
@@ -35,8 +35,8 @@ namespace Frontline.GameDesign
         public float hp_add { get; set; }
         public float att_add { get; set; }
         public float def_add { get; set; }
-        public int prop_grow_type { get; set; }
-        public float prop_grow_val { get; set; }
+        public JsonObject<int[]> prop_grow_type { get; set; }
+        public JsonObject<int[]> prop_grow_val { get; set; }
         public int type_detail { get; set; }
         public int count { get; set; }
         public float last_time { get; set; }
@@ -44,20 +44,21 @@ namespace Frontline.GameDesign
         public int energy { get; set; }
         public int exist { get; set; }
         public int max_energy { get; set; }
+        [MaxLength(128)]
         public string desc { get; set; }
         public int pvp_point { get; set; }
         public int pvp_dec_score { get; set; }
-        public int res_type { get; set; }
-        public int res_cnt { get; set; }
+        public JsonObject<int[]> res_type { get; set; }
+        public JsonObject<int[]> res_cnt { get; set; }
         public int sec { get; set; }
         public int show_p { get; set; }
-        public int gvg_rest_res_cnt { get; set; }
+        public string gvg_rest_res_cnt { get; set; }
         public int gvg_rest_second { get; set; }
         public int gvg_rest_diamond { get; set; }
-        public int equip { get; set; }
+        public JsonObject<int[]> equip { get; set; }
         public int ww_type { get; set; }
         public int grade_item_id { get; set; }
         public int grade_max { get; set; }
-        public int skills { get; set; }
+        public JsonObject<List<int>> skills { get; set; }
     }
 }

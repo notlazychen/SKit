@@ -15,12 +15,18 @@ namespace Frontline.GameControllers
 {
     public class DungeonController : GameController
     {
-        private GameDesignContext _design;
+        private GameDesignContext _designDb;
         private DataContext _db;
+
+        List<DDungeon> _ddungeons;
+        List<DMonster> _dmonsters;
+        List<DMonsterAbility> _dmonsterAbilities;
+        List<DMonsterInDungeon> _dmonsterInDungeons;
+
         public DungeonController(DataContext db, GameDesignContext design)
         {
             _db = db;
-            _design = design;
+            _designDb = design;
         }
 
         protected override void OnRegisterEvents()
@@ -29,6 +35,11 @@ namespace Frontline.GameControllers
             var playerController = this.Server.GetController<PlayerController>();
             playerController.PlayerCreating += _PlayerController_PlayerCreating;
             playerController.PlayerLoading += PlayerController_PlayerLoading;
+
+            _ddungeons = _designDb.DDungeons.AsNoTracking().ToList();
+            _dmonsters = _designDb.DMonsters.AsNoTracking().ToList();
+            _dmonsterAbilities = _designDb.DMonsterAbilities.AsNoTracking().ToList();
+            _dmonsterInDungeons = _designDb.DMonsterInDungeons.AsNoTracking().ToList();
         }
 
         private void PlayerController_PlayerLoading(object sender, PlayerLoader e)
@@ -41,14 +52,14 @@ namespace Frontline.GameControllers
         private void _PlayerController_PlayerCreating(object sender, Domain.Player e)
         {
             //在创建玩家的时候进行副本的初始化操作
-            List<DDungeon> dds = _design.DDungeons.Where(d => d.section == 1 && d.type == 1).ToList();
-            PlayerSection section = new PlayerSection()
+            List<DDungeon> dds = _ddungeons.Where(d => d.section == 1 && d.type == 1).ToList();
+            Section section = new Section()
             {
                 //Id = $"{e.Id}T1S1",
                 PlayerId = e.Id,
-                Section = 1,
+                Index = 1,
                 Type = 1,
-                Dungeons = new List<PlayerDungeon>()
+                Dungeons = new List<Dungeon>()
             };
             e.Sections.Add(section);
             foreach (var dd in dds)
@@ -62,9 +73,9 @@ namespace Frontline.GameControllers
         }
 
         #region 辅助方法
-        public PlayerDungeon MakeDungeon(Player p, DDungeon dd)
+        public Dungeon MakeDungeon(Player p, DDungeon dd)
         {
-            PlayerDungeon dungeon = new PlayerDungeon()
+            Dungeon dungeon = new Dungeon()
             {
                 //Id = $"{p.Id}T{dd.type}S{dd.section}M{dd.mission}",
                 PlayerId = p.Id,
@@ -84,8 +95,8 @@ namespace Frontline.GameControllers
 
         public MonsterInfo ToMonsterInfo(int mid, int lv)
         {
-            var dm = _design.DMonsters.Single(m => m.id == mid);
-            var dma = _design.DMonsterAbilities.Single(a => a.level == lv);
+            var dm = _dmonsters.Single(m => m.id == mid);
+            var dma = _dmonsterAbilities.Single(a => a.level == lv);
 
             MonsterInfo mi = new MonsterInfo()
             {
@@ -153,7 +164,7 @@ namespace Frontline.GameControllers
             foreach (var section in sections)
             {
                 SectionInfo si = new SectionInfo();
-                si.id = section.Section;
+                si.id = section.Index;
                 si.type = section.Type;
                 si.open = true;
                 si.name = "初临战场";
@@ -170,7 +181,7 @@ namespace Frontline.GameControllers
         public void FbInfo(FBInfoRequest request)
         {
             var sections = CurrentSession.GetBindPlayer().Sections;
-            var section = sections.FirstOrDefault(s => s.Section == request.section && s.Type == request.type);
+            var section = sections.FirstOrDefault(s => s.Index == request.section && s.Type == request.type);
             if (section == null)
             {
                 return;
@@ -183,7 +194,7 @@ namespace Frontline.GameControllers
             response.receiveds = new List<int>();
             response.id = section.PlayerId;
 
-            List<DDungeon> dds = _design.DDungeons.Where(d => d.section == section.Section && d.type == section.Type).ToList();
+            List<DDungeon> dds = _ddungeons.Where(d => d.section == section.Index && d.type == section.Type).ToList();
             foreach (var dd in dds)
             {
                 var dungeon = section.Dungeons.FirstOrDefault(d => d.Tid == dd.id);
@@ -213,7 +224,7 @@ namespace Frontline.GameControllers
                     fi.map_fighting = dd.map_fighting;
                     fi.map_file_name = dd.map_file_name;
                     fi.map_res_name = dd.map_res_name;
-                    fi.dropItems = dd.dropItems;
+                    fi.dropItems = dd.drop_items.Object;
                     fi.resetRemainNumb = 3 - dungeon.ResetNumb;
                     fi.remainBuyTimes = 0;
                     fi.fight_times = dd.fight_times;
@@ -240,7 +251,7 @@ namespace Frontline.GameControllers
                 return;
             }
             var player = this.CurrentSession.GetBindPlayer();
-            PlayerDungeon dungeon = null;
+            Dungeon dungeon = null;
             foreach (var section in player.Sections)
             {
                 foreach (var m in section.Dungeons)
@@ -258,7 +269,7 @@ namespace Frontline.GameControllers
             }
 
             List<MonsterInfo> monster = new List<MonsterInfo>();
-            var dms = _design.DMonsterInDungeons.Where(dm => dm.dungeon_id == dungeon.Tid).ToList();
+            var dms = _dmonsterInDungeons.Where(dm => dm.dungeon_id == dungeon.Tid).ToList();
 
             FBMonsterInfoResponse response = new FBMonsterInfoResponse();
             response.id = dungeon.Id;
@@ -279,7 +290,7 @@ namespace Frontline.GameControllers
                 return;
             }
             var player = this.CurrentSession.GetBindPlayer();
-            PlayerDungeon dungeon = null;
+            Dungeon dungeon = null;
             foreach (var section in player.Sections)
             {
                 foreach (var m in section.Dungeons)
@@ -335,17 +346,25 @@ namespace Frontline.GameControllers
             }
 
             var player = this.CurrentSession.GetBindPlayer();
-            PlayerDungeon dungeon = battle.Dungeon;
-            DDungeon ddungeon = _design.DDungeons.First(dd=>dd.id == dungeon.Tid);
+            Dungeon dungeon = battle.Dungeon;
+            DDungeon ddungeon = _ddungeons.First(dd=>dd.id == dungeon.Tid);
             if (request.win)
             {
                 string reason = $"副本{ddungeon.id}:{ddungeon.name}战斗胜利";
                 dungeon.FightTimes += 1;
                 var playerController = this.Server.GetController<PlayerController>();
-                playerController.AddCurrency(CurrencyType.OIL, -ddungeon.oil_cost, reason);
-                playerController.AddExp(ddungeon.exp, reason);
+                playerController.AddCurrency(player, CurrencyType.OIL, -ddungeon.oil_cost, reason);
+                playerController.AddExp(player, ddungeon.exp, reason);
                 //todo: 发放兵种经验
-
+                var campController = this.Server.GetController<CampController>();
+                var team = player.Teams.FirstOrDefault(t=>t.IsSelected);
+                if (team != null)
+                {
+                    foreach(var unit in player.Units.Where(u => team.Units.Object.Contains(u.Id)))
+                    {
+                        campController.AddUnitExp(player, unit, ddungeon.exp_element, false, true, reason);
+                    }
+                }
                 //副本评星
                 int uscnt = 0;
                 int living = 0;

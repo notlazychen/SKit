@@ -27,18 +27,27 @@ namespace Frontline.Data
             //modelBuilder.Entity<Player>().HasMany(p => p.Items);
             //modelBuilder.Entity<Player>().HasMany(p => p.Sections);
             //modelBuilder.Entity<Player>().HasMany(p => p.Currencies);
-            modelBuilder.Entity<PlayerCurrency>().HasKey(pc => new { pc.PlayerId, pc.Type });
-            modelBuilder.Entity<PlayerCurrency>().HasOne<Player>().WithMany(p=>p.Currencies).IsRequired();
-            modelBuilder.Entity<PlayerDungeon>().HasIndex(d => d.PlayerId);
-            modelBuilder.Entity<PlayerDungeon>().HasIndex(d => new { d.Tid, d.PlayerId });
-            modelBuilder.Entity<PlayerSection>().HasIndex(s => s.PlayerId);
-            modelBuilder.Entity<PlayerSection>().HasMany(s=> s.Dungeons).WithOne();
+            modelBuilder.Entity<Currency>().HasKey(pc => new { pc.PlayerId, pc.Type });
+            modelBuilder.Entity<Currency>().HasOne<Player>().WithMany(p=>p.Currencies).IsRequired();
+            modelBuilder.Entity<Dungeon>().HasIndex(d => d.PlayerId);
+            modelBuilder.Entity<Dungeon>().HasIndex(d => new { d.Tid, d.PlayerId });
+            modelBuilder.Entity<Section>().HasIndex(s => s.PlayerId);
+            modelBuilder.Entity<Section>().HasMany(s=> s.Dungeons).WithOne();
             modelBuilder.Entity<PlayerItem>().HasIndex(p => p.PlayerId);
             modelBuilder.Entity<Unit>().HasIndex(p => p.PlayerId);
+
+            modelBuilder.Entity<Team>().HasIndex(p => p.PlayerId);
+            modelBuilder.Entity<PVPFormation>().HasIndex(p => p.PlayerId);
 
         }
 
         public DbSet<Player> Players { get; set; }
+        public DbSet<Currency> Currencies { get; set; } 
+        public DbSet<Section> Sections { get; set; } 
+        public DbSet<PlayerItem> Items { get; set; } 
+        public DbSet<Unit> Units { get; set; }
+        public DbSet<Team> Teams { get; set; }
+        public DbSet<PVPFormation> Formations { get; set; } 
         //public DbSet<PlayerCurrency> Currencies { get; set; }
         //public DbSet<PlayerDungeon> Dungeons { get; set; }
     }

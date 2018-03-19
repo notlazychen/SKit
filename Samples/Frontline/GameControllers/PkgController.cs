@@ -14,16 +14,21 @@ namespace Frontline.GameControllers
 {
     public class PkgController : GameController
     {
-        private GameDesignContext _design;
+        private GameDesignContext _designDb;
         private DataContext _db;
+
+        List<DItem> _ditems;
+
         public PkgController(DataContext db, GameDesignContext design)
         {
             _db = db;
-            _design = design;
+            _designDb = design;
         }
 
         protected override void OnRegisterEvents()
         {
+            _ditems = _designDb.DItems.AsNoTracking().ToList();
+
             //事件注册
             var playerController = this.Server.GetController<PlayerController>();
             playerController.PlayerCreating += _PlayerController_PlayerCreating;
@@ -58,10 +63,10 @@ namespace Frontline.GameControllers
         #region 辅助方法
         private ItemInfo ToItemInfo(PlayerItem item)
         {
-            var ditem = _design.DItems.FirstOrDefault(d => d.tid == item.Tid);
+            var ditem = _ditems.FirstOrDefault(d => d.tid == item.Tid);
 
             ItemInfo ii = new ItemInfo();
-            ii.id = $"{item.PlayerId}I{item.Tid}";
+            ii.id =  item.Id;
             ii.tid = item.Tid;
             ii.lap = item.Count;
             if (ditem != null)
@@ -84,6 +89,43 @@ namespace Frontline.GameControllers
             return ii;
         }
 
+        public bool TrySubItem(Player player, int itemId, int count, string reason, out PlayerItem item)
+        {
+            item = player.Items.FirstOrDefault(x => x.Tid == itemId);
+            if (item == null)
+            {
+                return false;
+            }
+            else
+            {
+                if (item.Count >= count)
+                {
+                    item.Count -= count;
+                    if (item.Count == 0)
+                    {
+                        player.Items.Remove(item);
+                    }
+
+                    ResourceAmountChangedNotify notify = new ResourceAmountChangedNotify();
+                    notify.success = true;
+                    notify.items = new List<ResourceInfo>()
+                    {
+                        new ResourceInfo()
+                        {
+                            type = 2,
+                            id = itemId,
+                            count = item.Count
+                        }
+                    };
+                    Server.SendByUserNameAsync(player.Id, notify);
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+        }
         #endregion
 
         #region 客户端接口
@@ -111,9 +153,6 @@ namespace Frontline.GameControllers
             {
                 itemCnt = request.cnt;
             }
-            UseItemResponse response = new UseItemResponse();
-            response.id = request.id;
-
             var player = CurrentSession.GetBindPlayer();
             var item = player.Items.FirstOrDefault(x => x.Id == request.id);
             if (item == null)
@@ -122,12 +161,16 @@ namespace Frontline.GameControllers
             if (item.Count < itemCnt)
                 return;
 
-            DItem di = _design.DItems.First(d => d.tid == item.Tid);
+            DItem di = _ditems.First(d => d.tid == item.Tid);
 
             if (!di.useable)
             {
                 return;
             }
+
+            UseItemResponse response = new UseItemResponse();
+            response.id = request.id;
+            response.success = true;
             int unitId = di.breakUnitId;//使用后解锁的兵种id
             if (unitId > 0)
             {
@@ -189,8 +232,10 @@ namespace Frontline.GameControllers
             item.Count -= itemCnt;//减少堆叠
             if (item.Count <= 0)
             {
-                player.Items.Remove(item);
+                _db.Items.Remove(item);
+                //player.Items.Remove(item);
             }
+            _db.SaveChanges();
             response.lap = item.Count;
             CurrentSession.SendAsync(response);
         }

@@ -120,9 +120,12 @@ namespace Frontline.Domain
         /// </summary>
         public float Guide { get; set; }
 
-        public List<PlayerCurrency> Currencies { get; set; } = new List<PlayerCurrency>();
-        public List<PlayerSection> Sections { get; set; } = new List<PlayerSection>();
+        public List<Currency> Currencies { get; set; } = new List<Currency>();
+        public List<Section> Sections { get; set; } = new List<Section>();
         public List<PlayerItem> Items { get; set; } = new List<PlayerItem>();
         public List<Unit> Units { get; set; } = new List<Unit>();
+
+        public List<Team> Teams { get; set; } = new List<Team>();
+        public List<PVPFormation> Formations { get; set; } = new List<PVPFormation>();
     }
 }
