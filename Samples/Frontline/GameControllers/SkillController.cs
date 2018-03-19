@@ -9,7 +9,7 @@ namespace Frontline.GameControllers
 {
     public class SkillController : GameController
     {
-        public void SkillInfo(SkillsInfoRequest request)
+        public void Call_SkillInfo(SkillsInfoRequest request)
         {
             SkillsInfoResponse response = new SkillsInfoResponse();
             String pid = CurrentSession.UserId;

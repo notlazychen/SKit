@@ -16,7 +16,7 @@ namespace Frontline.GameControllers
         /// <param name="c"></param>
         /// <param name="request"></param>
         /// <returns></returns>
-        public void ResPurchaseInfo(ResPurchaseInfoRequest request)
+        public void Call_ResPurchaseInfo(ResPurchaseInfoRequest request)
         {
             ResPurchaseInfoResponse response = JsonConvert.DeserializeObject<ResPurchaseInfoResponse>("{ \"success\":true,\"buyResInfos\":[{\"count\":800,\"times\":0,\"cost\":60,\"timesRemain\":1,\"type\":1},{\"count\":800,\"times\":0,\"cost\":60,\"timesRemain\":1,\"type\":2},{\"count\":10000,\"times\":0,\"cost\":50,\"timesRemain\":1,\"type\":4},{\"count\":200,\"times\":0,\"cost\":30,\"timesRemain\":1,\"type\":5}]}");            
             CurrentSession.SendAsync(response);

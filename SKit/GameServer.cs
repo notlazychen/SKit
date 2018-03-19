@@ -39,7 +39,9 @@ namespace SKit
         private ConcurrentQueue<GameTask> _workingQueue = new ConcurrentQueue<GameTask>();
         private Task _workingTask;
         private CancellationTokenSource _workingTaskTokenSource;
+
         private CancellationTokenSource _listenerTokenSource;
+        private Task _listenerTask;
 
         private ConcurrentQueue<GameMessage> _sendingQueue = new ConcurrentQueue<GameMessage>();
         private Task _sendingTask;
@@ -106,13 +108,14 @@ namespace SKit
         /// <summary>
         /// 启动服务器
         /// </summary>
-        public async void Start()
+        public void Start()
         {
             //反射
             this.ReflectProtocols();
 
             if (!IsRunning)
             {
+                _logger.LogInformation($"Game Server [{Id}] Starting...");
                 IsRunning = true;
 
                 //启动任务工作线程
@@ -128,30 +131,34 @@ namespace SKit
 
                 //启动接收线程
                 _listenerTokenSource = new CancellationTokenSource();
-                _logger.LogInformation($"Game Server [{Id}] Starting...");
-                var threads = Process.GetCurrentProcess().Threads;
-                _listener.Start();
-                while (!_listenerTokenSource.IsCancellationRequested)
+                _listenerTask = new Task(async ()=>
                 {
-                    var socket = await _listener.AcceptSocketAsync();
-                    var args = _socketRecvArgsPool.Pop();
-                    var session = new GameSession();
-                    session.Server = this;
-                    session.Socket = socket;
-                    session.SocketAsyncEventArgs = args;
-                    args.UserToken = session;
-
-                    _sessions.TryAdd(session.Id, session);
-                    this.OnNewSessionConnected(session);
-
-                    _logger.LogDebug($"{session.Id}: Enter");
-
-                    bool willRaiseEvent = socket.ReceiveAsync(args);
-                    if (!willRaiseEvent)
+                    while (!_listenerTokenSource.IsCancellationRequested)
                     {
-                        ProcessReceive(args);
+                        var socket = await _listener.AcceptSocketAsync();
+                        var args = _socketRecvArgsPool.Pop();
+                        var session = new GameSession();
+                        session.Server = this;
+                        session.Socket = socket;
+                        session.SocketAsyncEventArgs = args;
+                        args.UserToken = session;
+
+                        _sessions.TryAdd(session.Id, session);
+                        this.OnNewSessionConnected(session);
+
+                        _logger.LogDebug($"{session.Id}: Enter");
+
+                        bool willRaiseEvent = socket.ReceiveAsync(args);
+                        if (!willRaiseEvent)
+                        {
+                            ProcessReceive(args);
+                        }
                     }
-                }
+                }, _listenerTokenSource.Token);                
+                _listener.Start();
+                _listenerTask.Start();
+                _logger.LogInformation($"Game Server [{Id}] Started");
+                
             }
         }
 
@@ -163,7 +170,7 @@ namespace SKit
                 _listenerTokenSource.Cancel();
                 _workingTaskTokenSource.Cancel();
                 _sendingTaskTokenSource.Cancel();
-                Task.WaitAll(_workingTask, _sendingTask);
+                Task.WaitAll(_listenerTask, _workingTask, _sendingTask);
                 IsRunning = false;
                 _logger.LogInformation($"Game Server [{Id}] Closed");
             }
@@ -566,7 +573,7 @@ namespace SKit
                 MethodInfo[] methods = type.GetMethods(BindingFlags.Public | BindingFlags.DeclaredOnly | BindingFlags.Instance);
                 foreach (var methodInfo in methods)
                 {
-                    if(methodInfo.IsSpecialName)
+                    if(methodInfo.IsSpecialName || !methodInfo.Name.StartsWith("Call_"))
                     {
                         continue;
                     }

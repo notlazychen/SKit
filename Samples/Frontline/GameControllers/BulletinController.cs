@@ -14,7 +14,7 @@ namespace Frontline.GameControllers
         /// </summary>
         /// <param name="c"></param>
         /// <param name="request"></param>
-        public void Info(BulletinRequest request)
+        public void Call_Info(BulletinRequest request)
         {
             BulletinResponse response = new BulletinResponse();
 

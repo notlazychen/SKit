@@ -125,7 +125,8 @@ namespace Frontline.GameDesign
                             {
                                 if (!string.IsNullOrEmpty(cell.StringCellValue))
                                 {
-                                    int[] ts = Array.ConvertAll(cell.StringCellValue.Trim(new []{'[',']'}).Split(','), int.Parse);
+                                    var arr = cell.StringCellValue.Trim(new[] { '[', ']' }).Split(',');
+                                    var ts = arr.Where(x=>!string.IsNullOrEmpty(x)).Select(int.Parse).ToArray();
                                     cellPair.Key.SetValue(ladderConfig, new JsonObject<int[]>(ts));
                                 }
                             }
@@ -133,7 +134,8 @@ namespace Frontline.GameDesign
                             {
                                 if (!string.IsNullOrEmpty(cell.StringCellValue))
                                 {
-                                    var ts = cell.StringCellValue.Trim(new[] { '[', ']' }).Split(',').Select(int.Parse).ToList();
+                                    var arr = cell.StringCellValue.Trim(new[] { '[', ']' }).Split(',');
+                                    var ts = arr.Where(x => !string.IsNullOrEmpty(x)).Select(int.Parse).ToList();
                                     cellPair.Key.SetValue(ladderConfig, new JsonObject<List<int>>(ts));
                                 }
                             }

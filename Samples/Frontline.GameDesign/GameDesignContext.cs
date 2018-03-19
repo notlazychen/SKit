@@ -46,6 +46,8 @@ namespace Frontline.GameDesign
 
         public DbSet<DEquip> DEquips { get; set; }
         public DbSet<DEquipLevelCost> DEquipLevelCosts { get; set; }
+        public DbSet<DRandom> DRandoms { get; set; }
+        
     }
 }
 

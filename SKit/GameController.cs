@@ -16,13 +16,24 @@ namespace SKit
 
         internal void RegisterEvents()
         {
+            OnReadGameDesignTables();
             OnRegisterEvents();
+        }
+
+        public void ReadGameDesigns()
+        {
+            OnReadGameDesignTables();
         }
 
         /// <summary>
         /// 建议在此处通过DI获得其他Controller并注册事件
         /// </summary>
         protected virtual void OnRegisterEvents()
+        {
+
+        }
+
+        protected virtual void OnReadGameDesignTables()
         {
 
         }

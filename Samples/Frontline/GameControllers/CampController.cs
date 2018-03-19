@@ -19,10 +19,10 @@ namespace Frontline.GameControllers
         private GameDesignContext _designDb;
         private DataContext _db;
 
-        List<DUnit> _dunits;
-        List<DUnitLevelUp> _dunitlevels;
-        List<DUnitGradeUp> _dunitgrades;
-        List<DUnitUnlock> _dunitunlocks;
+        Dictionary<int, DUnit> _dunits;//tid:x
+        Dictionary<int, DUnitLevelUp> _dunitlevels;//level:x
+        Dictionary<int, Dictionary<int, DUnitGradeUp>> _dunitgrades;//star:{grade:x}
+        Dictionary<int, DUnitUnlock> _dunitunlocks;//tid:x
 
         public CampController(DataContext db, GameDesignContext design)
         {
@@ -30,13 +30,16 @@ namespace Frontline.GameControllers
             _designDb = design;
         }
 
+        protected override void OnReadGameDesignTables()
+        {
+            _dunits = _designDb.DUnits.AsNoTracking().ToDictionary(x => x.tid, x => x);
+            _dunitlevels = _designDb.DUnitLevelUps.AsNoTracking().ToDictionary(x => x.level, x => x);
+            _dunitgrades = _designDb.DUnitGradeUps.GroupBy(x => x.star).AsNoTracking().ToDictionary(x => x.Key, x => x.ToDictionary(y => y.grade, y => y));
+            _dunitunlocks = _designDb.DUnitUnlocks.AsNoTracking().ToDictionary(x => x.tid, x => x);
+        }
+
         protected override void OnRegisterEvents()
         {
-            _dunits = _designDb.DUnits.AsNoTracking().ToList();
-            _dunitlevels = _designDb.DUnitLevelUps.AsNoTracking().ToList();
-            _dunitgrades = _designDb.DUnitGradeUps.AsNoTracking().ToList();
-            _dunitunlocks = _designDb.DUnitUnlocks.AsNoTracking().ToList();
-
             //事件注册
             var playerController = this.Server.GetController<PlayerController>();
             playerController.PlayerCreating += PlayerController_PlayerCreating;
@@ -130,14 +133,19 @@ namespace Frontline.GameControllers
             {
                 return;
             }
-            DUnit du = _dunits.FirstOrDefault(d => d.tid == unit.Tid);
-            DUnitGradeUp dug = _dunitgrades.FirstOrDefault(x => x.grade == unit.Grade + 1 && x.star == du.star);
+            DUnit du;
+            if(!_dunits.TryGetValue(unit.Tid, out du))
+            {
+                return;
+            }
+            int grade = unit.Grade == 0 ? 1 : unit.Grade;
+            DUnitGradeUp dug = _dunitgrades[du.star][grade];
 
             int restype = du.type == 2 ? CurrencyType.IRON : CurrencyType.SUPPLY;
             var playerController = this.Server.GetController<PlayerController>();
             while (unit.Level < player.Level && dug.max_level >= unit.Level)
             {
-                DUnitLevelUp dul = _dunitlevels.FirstOrDefault(x => x.level == unit.Level);
+                DUnitLevelUp dul = _dunitlevels[unit.Level];
                 int costExp = 0;
                 switch (du.star)
                 {
@@ -157,6 +165,7 @@ namespace Frontline.GameControllers
                         costExp = dul.star5;
                         break;
                 }
+                unit.Exp += exp;
                 if (unit.Exp < costExp)
                 {
                     if (usecurrency)
@@ -168,13 +177,21 @@ namespace Frontline.GameControllers
                             break;//用钱，但钱不足
                         }
                         playerController.AddCurrency(player, restype, -left, reason);
+                        unit.Exp = costExp;
                     }
                     else
                     {
                         break;//不用钱，经验不足
                     }
                 }
-                unit.Level += 1;
+                if(unit.Level < _dunitlevels.Count)
+                {
+                    unit.Level += 1;
+                }
+                else
+                {
+                    unit.Exp = costExp;
+                }
                 //Spring.bean(QuestService.class).onUnitLvUp(u.getPid(), u.getUid(), u.getLevel());
                 if (usecurrency && !once)
                 {
@@ -183,12 +200,12 @@ namespace Frontline.GameControllers
             }
         }
 
-        private UnitInfo ToUnitInfo(Unit u, DUnit du = null)
+        public UnitInfo ToUnitInfo(Unit u, DUnit du = null)
         {
             UnitInfo info = new UnitInfo();
             if (du == null)
             {
-                du = _dunits.FirstOrDefault(d => d.tid == u.Tid);
+                du = _dunits[u.Tid];
             }
             info.id = u.Id;
             info.number = u.Number;
@@ -295,8 +312,8 @@ namespace Frontline.GameControllers
                 return null;
             }
 
-            DUnitUnlock duc = _dunitunlocks.First(x => x.tid == uid);
-            DUnit du = _dunits.First(x => x.tid == uid);
+            DUnitUnlock duc = _dunitunlocks[uid];
+            DUnit du = _dunits[uid];
             var pkgController = Server.GetController<PkgController>();
 
             string reason = $"解锁兵种{uid}";
@@ -325,7 +342,7 @@ namespace Frontline.GameControllers
         /// <summary>
         /// 获取兵种信息
         /// </summary>
-        public void UnitList(UnitListRequest request)
+        public void Call_UnitList(UnitListRequest request)
         {
             UnitListResponse response = new UnitListResponse();
             response.success = true;
@@ -343,7 +360,7 @@ namespace Frontline.GameControllers
         /// <summary>
         /// 获取阵容信息
         /// </summary>
-        public void TeamList(TeamRequest request)
+        public void Call_TeamList(TeamRequest request)
         {
             TeamResponse response = new TeamResponse();
             response.success = true;
@@ -374,7 +391,7 @@ namespace Frontline.GameControllers
         /// <summary>
         /// 设置当前阵容
         /// </summary>
-        public void SetCurrentTeam(SetCurrentTeamRequest request)
+        public void Call_SetCurrentTeam(SetCurrentTeamRequest request)
         {
             SetCurrentTeamResponse response = new SetCurrentTeamResponse();
             response.success = true;
@@ -403,7 +420,7 @@ namespace Frontline.GameControllers
         /// <summary>
         /// 查看阵容详情
         /// </summary>
-        public void ShowTeam(GetTeamInfoRequest request)
+        public void Call_ShowTeam(GetTeamInfoRequest request)
         {
             GetTeamInfoResponse response = new GetTeamInfoResponse();
             response.success = true;
@@ -426,7 +443,7 @@ namespace Frontline.GameControllers
         /// <summary>
         /// 设置阵容
         /// </summary>
-        public void SetTeam(TeamSettingRequest request)
+        public void Call_SetTeam(TeamSettingRequest request)
         {
             TeamSettingResponse response = new TeamSettingResponse();
             response.success = true;
@@ -451,7 +468,7 @@ namespace Frontline.GameControllers
         /// <summary>
         /// 单位升级
         /// </summary>
-        public void LevelupUnit(LevelupUnitRequest request)
+        public void Call_LevelupUnit(LevelupUnitRequest request)
         {
             LevelupUnitResponse response = new LevelupUnitResponse();
             response.success = true;
@@ -479,7 +496,7 @@ namespace Frontline.GameControllers
         /// <summary>
         /// 单位进阶
         /// </summary>
-        public void UnitGradeUp(ClazupUnitRequest request)
+        public void Call_UnitGradeUp(ClazupUnitRequest request)
         {
             ClazupUnitResponse response = new ClazupUnitResponse();
             response.id = request.id;
@@ -487,7 +504,7 @@ namespace Frontline.GameControllers
             Unit unit = player.Units.First(x => x.Id == request.id);
 
 
-            DUnit du = _dunits.First(x => x.tid == unit.Tid);
+            DUnit du = _dunits[unit.Tid];
 
             int maxClaz = du.grade_max;
             int itemId = du.grade_item_id;
@@ -496,7 +513,7 @@ namespace Frontline.GameControllers
             {
                 return;
             }
-            DUnitGradeUp dug = _dunitgrades.First(x => x.grade == unit.Grade + 1 && x.star == du.star);     
+            DUnitGradeUp dug = _dunitgrades[du.star][unit.Grade + 1];
             int itemCount = dug.item_cnt;
 
             var pkgController = Server.GetController<PkgController>();
@@ -508,7 +525,7 @@ namespace Frontline.GameControllers
                 if (pkgController.TrySubItem(player, itemId, itemCount, reason, out item))
                 {
                     playerController.AddCurrency(player, CurrencyType.GOLD, -dug.gold, reason);
-                                        
+
                     unit.Grade += 1;
 
                     response.unitInfo = this.ToUnitInfo(unit, du);
@@ -531,19 +548,21 @@ namespace Frontline.GameControllers
         /// <summary>
         /// 兵种解锁
         /// </summary>
-        public void RequestUnlockUnit(UnlockUnitRequest request)
+        public void Call_UnlockUnit(UnlockUnitRequest request)
         {
             var player = this.CurrentSession.GetBindPlayer();
             this.UnlockUnit(player, request.unitId, false);
             _db.SaveChanges();
         }
 
-        public void EquipLevelUp(LevelupEquipRequest request)
+        public void Call_EquipLevelUp(LevelupEquipRequest request)
         {
+            var player = this.CurrentSession.GetBindPlayer();
+
 
         }
 
-        public void EquipGradeUp(UpGradeEquipRequest request)
+        public void Call_EquipGradeUp(UpGradeEquipRequest request)
         {
 
         }

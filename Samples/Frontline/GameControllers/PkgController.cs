@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Frontline.Domain;
 using Frontline.GameDesign;
 using System.Linq;
+using SKit.Common.Utils;
 
 namespace Frontline.GameControllers
 {
@@ -17,7 +18,8 @@ namespace Frontline.GameControllers
         private GameDesignContext _designDb;
         private DataContext _db;
 
-        List<DItem> _ditems;
+        Dictionary<int, DItem> _ditems;
+        Dictionary<int, DRandom> _drandoms;
 
         public PkgController(DataContext db, GameDesignContext design)
         {
@@ -25,10 +27,14 @@ namespace Frontline.GameControllers
             _designDb = design;
         }
 
+        protected override void OnReadGameDesignTables()
+        {
+            _ditems = _designDb.DItems.AsNoTracking().ToDictionary(x => x.tid, x => x);
+            _drandoms = _designDb.DRandoms.AsNoTracking().ToDictionary(x => x.id, x => x);
+        }
+
         protected override void OnRegisterEvents()
         {
-            _ditems = _designDb.DItems.AsNoTracking().ToList();
-
             //事件注册
             var playerController = this.Server.GetController<PlayerController>();
             playerController.PlayerCreating += _PlayerController_PlayerCreating;
@@ -61,15 +67,14 @@ namespace Frontline.GameControllers
         #endregion
 
         #region 辅助方法
-        private ItemInfo ToItemInfo(PlayerItem item)
+        public ItemInfo ToItemInfo(PlayerItem item)
         {
-            var ditem = _ditems.FirstOrDefault(d => d.tid == item.Tid);
-
             ItemInfo ii = new ItemInfo();
-            ii.id =  item.Id;
+            ii.id = item.Id;
             ii.tid = item.Tid;
             ii.lap = item.Count;
-            if (ditem != null)
+            DItem ditem;
+            if (_ditems.TryGetValue(item.Tid, out ditem))
             {
                 ii.name = ditem.name;
                 ii.desc = ditem.desc;
@@ -127,10 +132,113 @@ namespace Frontline.GameControllers
                 }
             }
         }
+
+        public PlayerItem AddItem(Player player, int itemId, int count, string reason)
+        {
+            var item = player.Items.FirstOrDefault(x => x.Tid == itemId);
+            if (item == null)
+            {
+                item = new PlayerItem()
+                {
+                    Tid = itemId,
+                    PlayerId = player.Id,
+                    Count = count,
+                    Id = Guid.NewGuid().ToString("N")
+                };
+                player.Items.Add(item);
+            }
+            else
+            {
+                item.Count += count;
+            }
+            return item;
+        }
+
+        public RewardInfo RandomReward(Player player, int randomId, string reason)
+        {
+            DRandom di = _drandoms[randomId];
+            RewardInfo ri = new RewardInfo();
+            ri.items = new List<RewardItem>();
+            ri.res = new List<ResInfo>();
+            if (di.weight.Object.Length <= 0)//必掉
+            {
+                if (di.gid.Object.Length > 0)
+                {
+                    for (int i = 0; i < di.gid.Object.Length; i++)
+                    {
+                        PlayerItem item = this.AddItem(player, di.gid.Object[i], di.count.Object[i], reason);
+                        DItem d = _ditems[di.gid.Object[i]];
+                        RewardItem rii = new RewardItem();
+                        rii.count = di.count.Object[i];
+                        rii.icon = d.icon;
+                        rii.id = di.gid.Object[i];
+                        rii.name = d.name;
+                        rii.quality = d.quality;
+                        rii.type = d.type;
+                        ri.items.Add(rii);
+                    }
+                }
+                if (di.res_type.Object.Length > 0)
+                {
+                    for (int i = 0; i < di.res_type.Object.Length; i++)
+                    {
+                        //Support su = Spring.bean(PlayerService.class).getSupport(pid);
+                        var playerController = Server.GetController<PlayerController>();
+                        playerController.AddCurrency(player, di.res_type.Object[i], di.res_count.Object[i], reason);
+                        ResInfo res = new ResInfo()
+                        {
+                            type = di.res_type.Object[i],
+                            count = di.res_count.Object[i]
+                        };
+                        ri.res.Add(res);
+                    }
+                }
+            }
+            else//随机一个
+            {
+                int index = MathUtil.RandomIndex(di.weight.Object);
+                if (di.gid.Object.Length > 0)
+                {
+                    //约定，如果随机的话，随机到小于等于0的id就是没随到东西
+                    int itemId = di.gid.Object[index];
+                    if (itemId > 0)
+                    {
+                        PlayerItem item = this.AddItem(player, di.gid.Object[index], di.count.Object[index], reason);
+                        DItem d = _ditems[di.gid.Object[index]];
+                        RewardItem rii = new RewardItem();
+                        rii.count = di.count.Object[index];
+                        rii.icon = d.icon;
+                        rii.id = di.gid.Object[index];
+                        rii.name = d.name;
+                        rii.quality = d.quality;
+                        rii.type = d.type;
+                        ri.items.Add(rii);
+                    }
+                }
+                else if (di.res_type.Object.Length > 0)
+                {
+                    //约定，如果随机的话，随机到小于等于0的id就是没随到东西
+                    int resType = di.res_type.Object[index];
+                    if (resType > 0)
+                    {
+                        var playerController = Server.GetController<PlayerController>();
+                        playerController.AddCurrency(player, di.res_type.Object[index], di.res_count.Object[index], reason);
+
+                        ResInfo res = new ResInfo()
+                        {
+                            type = di.res_type.Object[index],
+                            count = di.res_count.Object[index]
+                        };
+                        ri.res.Add(res);
+                    }
+                }
+            }
+            return ri;
+        }
         #endregion
 
         #region 客户端接口
-        public void PkgInfo(PkgInfoRequest request)
+        public void Call_PkgInfo(PkgInfoRequest request)
         {
             //PkgInfoResponse response = JsonConvert.DeserializeObject<PkgInfoResponse>("{\"pid\":\"10000f2\",\"items\":[{\"breakUnitId\":0,\"icon\":14001,\"breakRandomId\":60000001,\"synthCost\":0,\"type\":9,\"tid\":40000001,\"quality\":1,\"useable\":true,\"overlap\":1,\"breakCount\":0,\"synthCount\":0,\"price\":0,\"name\":\"新手礼包\",\"lap\":1,\"id\":\"10000f2i40000001\",\"synthId\":0,\"desc\":\"新手发展必不可少的礼包\"}],\"success\":true}");
             var items = this.CurrentSession.GetBind<Player>().Items;
@@ -146,7 +254,7 @@ namespace Frontline.GameControllers
             CurrentSession.SendAsync(response);
         }
 
-        public void UseItem(UseItemRequest request)
+        public void Call_UseItem(UseItemRequest request)
         {
 
             int itemCnt = 1;
@@ -162,7 +270,7 @@ namespace Frontline.GameControllers
             if (item.Count < itemCnt)
                 return;
 
-            DItem di = _ditems.First(d => d.tid == item.Tid);
+            DItem di = _ditems[item.Tid];
 
             if (!di.useable)
             {
@@ -173,43 +281,32 @@ namespace Frontline.GameControllers
             response.id = request.id;
             response.success = true;
             int unitId = di.breakUnitId;//使用后解锁的兵种id
+            string reason = $"使用道具{di.tid}";
             if (unitId > 0)
             {
-                //UnitService us = Spring.bean(UnitService.class);
-                //Unit u = us.addUnit(item.getPid(), unitId, 0);
-                //if (u != null) {
-                //    response.setSuccess(true);
-                //    response.setUnitInfo(us.unitInfo(rojo, u));
-                //}
+                var campController = Server.GetController<CampController>();
+                Unit u = campController.UnlockUnit(player, unitId, true);
+                UnitInfo ui = campController.ToUnitInfo(u);
+                response.unitInfo = ui;
             }
             else if (di.breakRandomId > 0)//使用后可以获得随机库
             {
-                //int randomId = di.getBreakRandomId();
-                // D_ItemGroup group = engine.get(D_ItemGroup.class, new File("./script/itemGroups/" + randomId + ".groovy"));
-                //PkgService ps = Spring.bean(PkgService.class);
-                //RewardInfo ri = new RewardInfo();
-                //for (int i = 0; i<cnt; i++) {
-                //    RewardInfo ri2 = ps.reward(item.getPid(), group, Reason.M_USEITEM + di.getName());
-                //    if (ri2 != null) {
-                //        ri.addReward(ri2);
-                //    }
-                //}
-                //response.setRewardInfo(ri);
-                //response.setSuccess(true);
+                RewardInfo reward = this.RandomReward(player, di.breakRandomId, reason);
+                response.rewardInfo = reward;
             }
             else if (di.breakCount > 0)//资源
             {
-                //                    response.setRewardInfo(new RewardInfo());
-                //                    Support su = Spring.bean(PlayerService.class).getSupport(item.getPid());
-
-                //int resType = type(di.getType());
-                //su.addRes(resType, di.getBreakCount() * cnt, Reason.M_USEITEM + di.getName());
-                //                    rojo.updateAndFlush(su, su.getResField(resType));
-                //                    response.getRewardInfo().addRes(resType, di.getBreakCount());
-                //response.setSuccess(true);
+                var playerController = Server.GetController<PlayerController>();
+                playerController.AddCurrency(player, di.type, di.breakCount, reason);
+                response.rewardInfo = new RewardInfo();
+                response.rewardInfo.res = new List<ResInfo>()
+                {
+                    new ResInfo(){type = di.type, count = di.breakCount}
+                };
             }
             else if (di.type == 18)
             {
+                //后勤基地工人+1
                 //        int maxCnt = engine.getInt(Application.systemFile, "worker_max_cnt");
                 //        Industry industry = Spring.bean(IndustryService.class).getIndustry(item.getPid());
                 //        if (industry.getTotalWorkers() + cnt > maxCnt) {

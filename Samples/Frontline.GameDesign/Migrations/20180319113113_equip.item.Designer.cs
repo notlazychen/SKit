@@ -12,9 +12,10 @@ using System.Collections.Generic;
 namespace Frontline.GameDesign.Migrations
 {
     [DbContext(typeof(GameDesignContext))]
-    partial class GameDesignContextModelSnapshot : ModelSnapshot
+    [Migration("20180319113113_equip.item")]
+    partial class equipitem
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -322,29 +323,6 @@ namespace Frontline.GameDesign.Migrations
                     b.HasKey("dungeon_id", "mid");
 
                     b.ToTable("DMonsterInDungeons");
-                });
-
-            modelBuilder.Entity("Frontline.GameDesign.DRandom", b =>
-                {
-                    b.Property<int>("id")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<JsonObject<Int32[]>>("count");
-
-                    b.Property<string>("desc")
-                        .HasMaxLength(32);
-
-                    b.Property<JsonObject<Int32[]>>("gid");
-
-                    b.Property<JsonObject<Int32[]>>("res_count");
-
-                    b.Property<JsonObject<Int32[]>>("res_type");
-
-                    b.Property<JsonObject<Int32[]>>("weight");
-
-                    b.HasKey("id");
-
-                    b.ToTable("DRandoms");
                 });
 
             modelBuilder.Entity("Frontline.GameDesign.DUnit", b =>

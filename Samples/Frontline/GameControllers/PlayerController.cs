@@ -27,7 +27,7 @@ namespace Frontline.GameControllers
         private GameConfig _config;
         private GameDesignContext _designDb;
 
-        List<DLevel> _dlevels;
+        Dictionary<int, DLevel> _dlevels;
 
         public PlayerController(DataContext db, GameDesignContext design, IOptions<GameConfig> config)
         {
@@ -41,10 +41,20 @@ namespace Frontline.GameControllers
 
         }
 
+        protected override void OnReadGameDesignTables()
+        {
+            _dlevels = _designDb.DLevels.AsNoTracking().ToDictionary(x => x.level, x => x);
+        }
+
         protected override void OnRegisterEvents()
         {
             base.OnRegisterEvents();
-            _dlevels = _designDb.DLevels.AsNoTracking().ToList();
+        }
+
+        public override void OnLeave(ClientCloseReason reason)
+        {
+            base.OnLeave(reason);
+            //_db.SaveChanges();
         }
 
         #region 事件
@@ -146,29 +156,47 @@ namespace Frontline.GameControllers
         public void AddExp(Player player, int exp, string reason)
         {
             player.Exp += exp;
-            int old = player.Level;
-            while (true)
+            if (player.Level == _dlevels.Count)
             {
-                var dl = _dlevels.First(d => d.level == player.Level);
-                if (player.Exp >= dl.exp)
+                var dl = _dlevels[_dlevels.Count];
+                if(player.Exp >= dl.exp)
                 {
-                    player.Level += 1;
-                }
-                else
-                {
-                    break;
+                    player.Exp = dl.exp;
                 }
             }
-            if (old != player.Level)
+            else
             {
-                //任务
-                //通知
-                LevelupNotify notify = new LevelupNotify();
-                notify.exp = player.Exp;
-                notify.level = player.Level;
-                notify.success = true;
-                Server.SendByUserNameAsync(player.Id, notify);//发送给当前player 
-            }
+                int old = player.Level;
+                while (true)
+                {
+                    DLevel dl;
+                    if (_dlevels.TryGetValue(player.Level, out dl))
+                    {
+                        if (player.Exp >= dl.exp)
+                        {
+                            player.Level += 1;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+                if (old != player.Level)
+                {
+                    //任务
+                    //通知
+                    LevelupNotify notify = new LevelupNotify();
+                    notify.exp = player.Exp;
+                    notify.level = player.Level;
+                    notify.success = true;
+                    Server.SendByUserNameAsync(player.Id, notify);//发送给当前player 
+                }
+            }            
         }
         #endregion
 
@@ -177,7 +205,7 @@ namespace Frontline.GameControllers
         /// 登录
         /// </summary>
         [AllowAnonymous]
-        public void Login(AuthRequest au)
+        public void Call_Login(AuthRequest au)
         {
             if (CurrentSession.IsAuthorized)
             {
@@ -265,12 +293,12 @@ namespace Frontline.GameControllers
         //}
 
         [AllowAnonymous]
-        public void Ping(Ping ping)
+        public void Call_Ping(Ping ping)
         {
             CurrentSession.SendAsync(new Pong() { success = true, time = ping.time });
         }
 
-        public void GetPlayerRes(ResRequest request)
+        public void Call_GetPlayerRes(ResRequest request)
         {
             var player = CurrentSession.GetBind<Player>();
             ResResponse response = new ResResponse();
@@ -311,13 +339,13 @@ namespace Frontline.GameControllers
                 _db.SaveChanges();
             }
             //一些配置表的内容
-            response.nextExp = _dlevels.Where(d => d.level == player.Level).Select(d => d.exp).SingleOrDefault();
+            response.nextExp = _dlevels[player.Level].exp;
             response.resistMaxWave = 1;
-            response.preExp = _dlevels.Where(d => d.level == player.Level - 1).Select(d => d.exp).SingleOrDefault();
+            response.preExp = player.Level == 1 ? 0:  _dlevels[player.Level - 1].exp;
             CurrentSession.SendAsync(response);
         }
 
-        public void GetGuide(GuideInfoRequest request)
+        public void Call_GetGuide(GuideInfoRequest request)
         {
             var player = CurrentSession.GetBind<Player>();
             GuideInfoResponse response = new GuideInfoResponse();
@@ -327,7 +355,7 @@ namespace Frontline.GameControllers
             CurrentSession.SendAsync(response);
         }
 
-        public void SetGuide(GuideDoneRequest request)
+        public void Call_SetGuide(GuideDoneRequest request)
         {
             var player = CurrentSession.GetBind<Player>();
             player.Guide = request.gindex;
@@ -345,7 +373,7 @@ namespace Frontline.GameControllers
         /// </summary>
         /// <param name="session"></param>
         /// <param name="request"></param>
-        public void RechargeInfo(RechargeInfoRequest request)
+        public void Call_RechargeInfo(RechargeInfoRequest request)
         {
             RechargeInfoResponse response = JsonConvert.DeserializeObject<RechargeInfoResponse>("{ \"rechargeDiamond\":0,\"rechargeInfos\":[],\"diamondConsume\":0,\"success\":true}");
             CurrentSession.SendAsync(response);

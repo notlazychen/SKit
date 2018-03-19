@@ -9,7 +9,7 @@ namespace Frontline.GameControllers
 {
     public class ScienceController : GameController
     {
-        public void info(ScienceInfoRequest request)
+        public void Call_Info(ScienceInfoRequest request)
         {
             ScienceInfoResponse response = new ScienceInfoResponse();
             response.success = true;

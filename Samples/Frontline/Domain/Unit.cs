@@ -20,5 +20,7 @@ namespace Frontline.Domain
         public int Number { get; set; }//能量
         public bool IsResting { get; set; }//休整结束时间
         public DateTime RestEndTime { get; set; }//休整结束时间
+
+        public List<Equip> Equips { get; set; }
     }    
 }

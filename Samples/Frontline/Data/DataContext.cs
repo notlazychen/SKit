@@ -39,6 +39,8 @@ namespace Frontline.Data
             modelBuilder.Entity<Team>().HasIndex(p => p.PlayerId);
             modelBuilder.Entity<PVPFormation>().HasIndex(p => p.PlayerId);
 
+            modelBuilder.Entity<Equip>().HasIndex(p => p.UnitId);
+
         }
 
         public DbSet<Player> Players { get; set; }
