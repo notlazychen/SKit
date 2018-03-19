@@ -103,7 +103,8 @@ namespace Frontline.GameControllers
                     item.Count -= count;
                     if (item.Count == 0)
                     {
-                        player.Items.Remove(item);
+                        //player.Items.Remove(item);
+                        _db.Items.Remove(item);
                     }
 
                     ResourceAmountChangedNotify notify = new ResourceAmountChangedNotify();

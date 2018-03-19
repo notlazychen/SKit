@@ -474,8 +474,59 @@ namespace Frontline.GameControllers
                 //Spring.bean(PlayerService.class).TryUpdateMaxPower(u.getPid(), rojo);
                 Server.SendByUserNameAsync(player.Id, response);
             }
-
         }
+
+        /// <summary>
+        /// 单位进阶
+        /// </summary>
+        public void UnitGradeUp(ClazupUnitRequest request)
+        {
+            ClazupUnitResponse response = new ClazupUnitResponse();
+            response.id= request.id;
+            var player = CurrentSession.GetBindPlayer();
+            Unit unit = player.Units.First(x=>x.Id == request.id);
+
+
+            DUnit du = _dunits.First(x => x.tid == unit.Tid);
+
+            int maxClaz = du.grade_max;
+            int itemId = du.grade_item_id;
+
+            if (!canClazup(u))
+            {
+                return;
+            }
+            DUnitGradeUp dug = _dunitgrades.FirstOrDefault(x => x.grade == unit.Grade + 1 && x.star == du.star);
+
+            int itemCount = dug.item_cnt;
+
+            var pkgController = Server.GetController<PkgController>();
+            string reason = $"兵种进阶{du.tid}";
+            PlayerItem item;
+            if(pkgController.TrySubItem(player, itemId, itemCount, reason, out item))
+            {
+
+            }
+            Support su = Spring.bean(PlayerService.class).getSupport(u.getPid());
+        su.addRes(Support.RES_GOLD, -du.getCost_gold(), Reason.M_CLAZUP_COST + u.getUid());
+            rojo.updateAndFlush(su, "gold", "supply", "iron");
+            response.setGold((int) su.getGold());
+            response.setItemId(itemId);
+            response.setCount(pkg.count(u.getPid(), itemId));
+            response.setSuccess(true);
+
+            u.setClaz(u.getClaz() + 1);
+            rojo.updateAndFlush(u, "claz");
+
+            Spring.bean(PlayerService.class).TryUpdateMaxPower(u.getPid(), rojo);
+        //任务
+        Spring.bean(QuestService.class).onUnitGradeUp(u.getPid(), u.getUid(), u.getClaz());
+        Spring.bean(PlayerService.class).TryUpdateMaxPower(u.getPid(), rojo);
+        Spring.bean(LogService.class).logHeroCount(u.getPid(), u.getUid(), "" + u.getUid(), 3, getUnitPower(rojo, u.getId()));
+            response.setUnitInfo(this.unitInfo(rojo, u));
+        
+        }
+
         /// <summary>
         /// 兵种解锁
         /// </summary>
