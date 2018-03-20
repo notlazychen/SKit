@@ -15,6 +15,5 @@ namespace Frontline.Domain
         public bool IsSelected { get; set; }
 
         public JsonObject<List<string>> Units { get; set; } = new JsonObject<List<string>>();
-        public JsonObject<List<int>> UnitPowers { get; set; } = new JsonObject<List<int>>();
     }
 }

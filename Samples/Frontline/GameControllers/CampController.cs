@@ -85,7 +85,7 @@ namespace Frontline.GameControllers
                     {
                         Id = Guid.NewGuid().ToString("N"),
                         Level = 1,
-                        Grade = 1,
+                        Grade = 0,
                         PlayerId = e.Id,
                         Pos = de.pos,
                         Tid = deid,
@@ -93,7 +93,7 @@ namespace Frontline.GameControllers
                     };
                     unit.Equips.Add(eq);
                 }
-
+                var unitInfo = this.ToUnitInfo(unit, du, true);
                 e.Units.Add(unit);
             }
 
@@ -156,9 +156,7 @@ namespace Frontline.GameControllers
         public event EventHandler<UnitGradeUpEventArgs> UnitGradeUp;
         public event EventHandler<EquipLevelUpEventArgs> EquipLevelUp;
         public event EventHandler<EquipGradeUpEventArgs> EquipGradeUp;
-
-        public event EventHandler<EquipGradeUpEventArgs> ChangeCurrentTeam;
-        public event EventHandler<EquipGradeUpEventArgs> SetTeamMember;
+        public event EventHandler<Team> TeamSettingChanged;
         #endregion
 
         #region 辅助方法
@@ -230,16 +228,23 @@ namespace Frontline.GameControllers
                 }
             }
 
-            UnitInfo ui = this.ToUnitInfo(unit, du);
-            UnitLevelUp?.Invoke(this, new UnitLevelUpEventArgs()
+            if (oldlevel != unit.Level)
             {
-                UnitInfo = ui,
-                OldLevel = oldlevel
-            });
-            return ui;
+                UnitInfo ui = this.ToUnitInfo(unit, du, true);
+                UnitLevelUp?.Invoke(this, new UnitLevelUpEventArgs()
+                {
+                    UnitInfo = ui,
+                    OldLevel = oldlevel
+                });
+                return ui;
+            }
+            else
+            {
+                return this.ToUnitInfo(unit, du); ;
+            }
         }
 
-        public UnitInfo ToUnitInfo(Unit u, DUnit du = null)
+        public UnitInfo ToUnitInfo(Unit u, DUnit du = null, bool calcPower = false)
         {
             UnitInfo info = new UnitInfo();
             if (du == null)
@@ -390,7 +395,16 @@ namespace Frontline.GameControllers
                     }
                 }
                 //战力计算
-                info.power = CalcPower(info);
+                if (calcPower)
+                {
+                    info.power = CalcPower(info);
+                    u.Power = info.power;
+                }
+                else
+                {
+                    info.power = u.Power;
+                }
+                
             }
 
             return info;
@@ -435,7 +449,7 @@ namespace Frontline.GameControllers
                     {
                         Id = Guid.NewGuid().ToString("N"),
                         Level = 1,
-                        Grade = 1,
+                        Grade = 0,
                         PlayerId = player.Id,
                         Pos = de.pos,
                         Tid = deid,
@@ -566,13 +580,31 @@ namespace Frontline.GameControllers
             response.type = request.type;
             response.tid = request.team.id;
             var player = this.CurrentSession.GetBindPlayer();
+            //判断是不是自己的兵
+            foreach(var id in request.team.bps)
+            {
+                if (!string.IsNullOrEmpty(id))
+                {
+                    if(!player.Units.Any(x=>x.Id == id))
+                    {
+                        return;
+                    }
+                }
+            }
             if (request.type == 1)
             {
-                var team = player.Teams.First(t => t.Id == request.team.id);
+                //判断长度
+                if(request.team.bps.Count > 5)
+                    return;
+                var team = player.Teams.First(t => t.Id == request.team.id);                
                 team.Units = new JsonObject<List<string>>(request.team.bps);
+                TeamSettingChanged?.Invoke(this, team);
             }
             else
             {
+                if (request.team.bps.Count > 10)
+                    return;
+
                 var team = player.Formations.First(t => t.Id == request.team.id);
                 team.Units = new JsonObject<List<string>>(request.team.bps);
             }
@@ -643,7 +675,7 @@ namespace Frontline.GameControllers
 
                     unit.Grade += 1;
 
-                    response.unitInfo = this.ToUnitInfo(unit, du);
+                    response.unitInfo = this.ToUnitInfo(unit, du, true);
                     response.gold = playerController.GetCurrencyValue(player, CurrencyType.GOLD);
                     response.itemId = itemId;
                     response.count = item.Count;
@@ -721,9 +753,11 @@ namespace Frontline.GameControllers
                 equipId = equip.Tid,
                 level = equip.Level
             };
-            var unitInfo = this.ToUnitInfo(unit, du);
+
+            UnitInfo unitInfo;
             if (oldlevel != equip.Level)
             {
+                unitInfo = this.ToUnitInfo(unit, du, true);
                 EquipLevelUp?.Invoke(this, new EquipLevelUpEventArgs()
                 {
                     EquipInfo = equipInfo,
@@ -731,6 +765,10 @@ namespace Frontline.GameControllers
                     OldLevel = oldlevel
                 });
                 _db.SaveChanges();
+            }
+            else
+            {
+                unitInfo = this.ToUnitInfo(unit, du);
             }
 
             LevelupEquipResponse response = new LevelupEquipResponse();
@@ -758,13 +796,14 @@ namespace Frontline.GameControllers
             string reason = $"兵种装备进阶{unit.Tid}:{equip.Tid}";
             pkgController.SubItems(player, de.grade_item_id.Object, de.grade_item_cnt.Object, reason);
             equip.Tid = de.next_id;
+            var unitInfo = this.ToUnitInfo(unit, du, true);
 
             _db.SaveChanges();
             UpGradeEquipResponse response = new UpGradeEquipResponse();
             response.success = true;
             response.position = equip.Pos;
             response.unitId = unit.Tid;
-            response.unitInfo = this.ToUnitInfo(unit, du);
+            response.unitInfo = unitInfo;
             response.equipInfo = new EquipInfo()
             {
                 id = equip.Id,
@@ -772,7 +811,7 @@ namespace Frontline.GameControllers
                 level = equip.Level
             };
 
-            EquipGradeUp?.Invoke(this, new EquipGradeUpEventArgs() { EquipInfo = response.equipInfo, OldGrade = de.grade, UnitInfo = response.unitInfo});
+            EquipGradeUp?.Invoke(this, new EquipGradeUpEventArgs() { EquipInfo = response.equipInfo, OldGrade = de.grade, UnitInfo = unitInfo});
             CurrentSession.SendAsync(response);
         }
         #endregion

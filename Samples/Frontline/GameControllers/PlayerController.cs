@@ -4,6 +4,7 @@ using Frontline.Domain;
 using Frontline.GameDesign;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -26,14 +27,16 @@ namespace Frontline.GameControllers
         private DataContext _db;
         private GameConfig _config;
         private GameDesignContext _designDb;
+        private ILogger<PlayerController> _logger;
 
         Dictionary<int, DLevel> _dlevels;
 
-        public PlayerController(DataContext db, GameDesignContext design, IOptions<GameConfig> config)
+        public PlayerController(DataContext db, GameDesignContext design, IOptions<GameConfig> config, ILogger<PlayerController> logger)
         {
             _db = db;
             _config = config.Value;
             _designDb = design;
+            _logger = logger;
         }
 
         public PlayerController()
@@ -49,6 +52,29 @@ namespace Frontline.GameControllers
         protected override void OnRegisterEvents()
         {
             base.OnRegisterEvents();
+            var camp = Server.GetController<CampController>();
+            camp.UnitLevelUp += (o, e) => UpdateMaxPower();
+            camp.UnitGradeUp += (o, e) => UpdateMaxPower();
+            camp.EquipLevelUp += (o, e) => UpdateMaxPower();
+            camp.EquipGradeUp += (o, e) => UpdateMaxPower();
+            camp.TeamSettingChanged += (o, e) => UpdateMaxPower();
+        }
+
+        private void UpdateMaxPower()
+        {
+            var player = CurrentSession.GetBindPlayer();
+            var team = player.Teams.FirstOrDefault(x=>x.IsSelected);
+            if(team != null)
+            {
+                int power = player.Units.Where(x =>team.Units.Object.Contains(x.Id)).Sum(x => x.Power);
+                if (player.MaxPower < power)
+                {
+                    player.MaxPower = power;
+                    _db.SaveChanges();
+                    //最大战力改变了
+                    _logger.LogDebug($"玩家{player.Id}:{player.NickName}最大战力改变{player.MaxPower}");
+                }
+            }
         }
 
         public override void OnLeave(ClientCloseReason reason)
@@ -176,6 +202,7 @@ namespace Frontline.GameControllers
         }
         #endregion
 
+        #region 客户端接口
 
         /// <summary>
         /// 登录
@@ -222,6 +249,7 @@ namespace Frontline.GameControllers
          
                 _db.Players.Add(player);
                 this.RaisePlayerCreating(player);
+                player.MaxPower = player.Units.Sum(x => x.Power);
                 _db.SaveChanges();
             }
             else
@@ -276,7 +304,7 @@ namespace Frontline.GameControllers
             response.exp = player.Exp;
             response.renameCnt = player.RenameNumb;
             response.vip = player.VIP;
-
+            
             response.resInfos = new List<ResInfo>();
             bool checkout = false;
             for (int ct = 1; ct <= CurrencyType.MAX_TYPE; ct++)
@@ -332,5 +360,7 @@ namespace Frontline.GameControllers
             RechargeInfoResponse response = JsonConvert.DeserializeObject<RechargeInfoResponse>("{ \"rechargeDiamond\":0,\"rechargeInfos\":[],\"diamondConsume\":0,\"success\":true}");
             CurrentSession.SendAsync(response);
         }
+
+        #endregion
     }
 }

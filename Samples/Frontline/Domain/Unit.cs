@@ -18,6 +18,7 @@ namespace Frontline.Domain
         public int Grade { get; set; }//阶
         public int Exp { get; set; }//经验
         public int Number { get; set; }//能量
+        public int Power { get; set; }//战斗力
         public bool IsResting { get; set; }//休整结束时间
         public DateTime RestEndTime { get; set; }//休整结束时间
 

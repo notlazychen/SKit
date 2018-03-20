@@ -31,11 +31,5 @@ namespace Frontline.GameControllers
         public EquipInfo EquipInfo { get; set; }
         public int OldGrade { get; set; }
     }
-
-    public class TeamSettingEventArgs : EventArgs
-    {
-        //public List<string> UnitInfo { get; set; }
-        //public EquipInfo EquipInfo { get; set; }
-        //public int OldGrade { get; set; }
-    }
+    
 }
