@@ -9,6 +9,9 @@ namespace Frontline.Domain.Temporary
     public class Battle
     {
         public string Id { get; set; }
+
+        public string PlayerId { get; set; }
+
         public DateTime BeginTime { get; set; }        
         public bool IsEnd { get; set; }
 

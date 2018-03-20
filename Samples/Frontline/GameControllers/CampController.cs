@@ -24,6 +24,9 @@ namespace Frontline.GameControllers
         Dictionary<int, Dictionary<int, DUnitGradeUp>> _dunitgrades;//star:{grade:x}
         Dictionary<int, DUnitUnlock> _dunitunlocks;//tid:x
 
+        Dictionary<int, DEquip> _dequips;//equiptid:x
+        Dictionary<int, DEquipLevelCost> _dequipcost;//level:x
+
         public CampController(DataContext db, GameDesignContext design)
         {
             _db = db;
@@ -36,6 +39,9 @@ namespace Frontline.GameControllers
             _dunitlevels = _designDb.DUnitLevelUps.AsNoTracking().ToDictionary(x => x.level, x => x);
             _dunitgrades = _designDb.DUnitGradeUps.GroupBy(x => x.star).AsNoTracking().ToDictionary(x => x.Key, x => x.ToDictionary(y => y.grade, y => y));
             _dunitunlocks = _designDb.DUnitUnlocks.AsNoTracking().ToDictionary(x => x.tid, x => x);
+
+            _dequips = _designDb.DEquips.AsNoTracking().ToDictionary(x => x.id, x => x);
+            _dequipcost = _designDb.DEquipLevelCosts.AsNoTracking().ToDictionary(x => x.level, x => x);
         }
 
         protected override void OnRegisterEvents()
@@ -63,12 +69,31 @@ namespace Frontline.GameControllers
 
                 Unit unit = new Unit()
                 {
-                    Id = Guid.NewGuid().ToString(),
+                    Id = Guid.NewGuid().ToString("N"),
                     PlayerId = e.Id,
                     Tid = uid,
                     Number = 81,
                     Level = 1,
+                    Equips = new List<Equip>()
                 };
+
+                DUnit du = _dunits[uid];
+                foreach (int deid in du.equip.Object)
+                {
+                    DEquip de = _dequips[deid];
+                    Equip eq = new Equip()
+                    {
+                        Id = Guid.NewGuid().ToString("N"),
+                        Level = 1,
+                        Grade = 1,
+                        PlayerId = e.Id,
+                        Pos = de.pos,
+                        Tid = deid,
+                        UnitId = unit.Id
+                    };
+                    unit.Equips.Add(eq);
+                }
+
                 e.Units.Add(unit);
             }
 
@@ -230,8 +255,15 @@ namespace Frontline.GameControllers
             }
             info.prepareEndTime = u.RestEndTime.ToUnixTime();
             info.preparing = u.IsResting;
-            //info.power = du.;
-            //info.equips = du.equip.Object;
+            info.equips = new List<EquipInfo>();
+            foreach(var eq in u.Equips)
+            {
+                var ei = new EquipInfo();
+                ei.id = eq.Id;
+                ei.equipId = eq.Tid;
+                ei.level = eq.Level;
+            }
+
 
             info.prepareEndTime = u.RestEndTime.ToUnixTime();
             if (du != null)
@@ -241,9 +273,7 @@ namespace Frontline.GameControllers
                 info.nation = du.nation;
                 info.desc = du.desc;
                 info.star = du.star;
-                info.hp = du.prop_val.Object[2];
-                info.att = du.prop_val.Object[0];
-                info.defence = du.prop_val.Object[1];
+
                 info.crit = du.crit;
                 info.crit_hurt = du.crit_hurt;
                 info.hurt_add = du.hurt_add;
@@ -264,9 +294,6 @@ namespace Frontline.GameControllers
                 info.hp_add = du.hp_add;
                 info.att_add = du.att_add;
                 info.def_add = du.def_add;
-                info.hp_growth = du.prop_grow_val.Object[2];
-                info.att_growth = du.prop_grow_val.Object[0];
-                info.defence_growth = du.prop_grow_val.Object[1];
 
                 info.type_detail = du.type_detail;
                 info.levelLimit = 0;
@@ -299,9 +326,68 @@ namespace Frontline.GameControllers
                 //info.hp_ex = du.hp_add;
                 //info.att_ex = ;
                 //info.def_ex = ;
+
+                //todo: 计算兵种属性和战力
+                info.hp = du.prop_val.Object[2];
+                info.att = du.prop_val.Object[0];
+                info.defence = du.prop_val.Object[1];
+
+                info.hp_growth = du.prop_grow_val.Object[2];
+                info.att_growth = du.prop_grow_val.Object[0];
+                info.defence_growth = du.prop_grow_val.Object[1];
+
+                //等级加成
+                info.hp = (int)(info.hp + info.hp_growth * u.Level);
+                info.defence = (int)(info.defence + info.defence_growth * u.Level);
+                info.att = (int)(info.att + info.att_growth * u.Level);
+                //进阶加成
+                if (u.Grade > 0)
+                {
+                    DUnitGradeUp dug = _dunitgrades[du.star][u.Grade];
+                    
+                    info.att += du.prop_val.Object[0] + (100 - 1) * du.prop_grow_val.Object[0] * dug.atk / 10000;
+                    info.defence += du.prop_val.Object[1] + (100 - 1) * du.prop_grow_val.Object[1] * dug.defence / 10000;
+                    info.hp += du.prop_val.Object[2] + (100 - 1) * du.prop_grow_val.Object[2] * dug.hp / 10000;
+                }
+                //装备加成
+                foreach (var eq in u.Equips)
+                {
+                    DEquip de = _dequips[eq.Tid];
+                    switch (de.base_attr_type)
+                    {
+                        case 1:
+                            {
+                                int v = de.base_attr_value + de.level_grow * (eq.Level -1) + de.grade_grow;
+                                info.att += v;
+                            }
+                            break;
+                        case 2:
+                            {
+                                int v = de.base_attr_value + de.level_grow * (eq.Level - 1) + de.grade_grow;
+                                info.defence += v;
+                            }
+                            break;
+                        case 3:
+                            {
+                                int v = de.base_attr_value + de.level_grow * (eq.Level - 1) + de.grade_grow;
+                                info.hp += v;
+                            }
+                            break;
+                    }
+                }
+                //战力计算
+                info.power = CalcPower(info);
             }
 
             return info;
+        }
+
+        const int ATK = 7152;
+        const int DEF = 7152;
+        const int HP = 14304;
+        public int CalcPower(UnitInfo info)
+        {
+            return info.power = (int)((info.hp / (1 - DEF / (info.att + DEF)) / (1 - 0)) * (info.att * (1 - DEF / (info.att + DEF)) * (1 - info.crit) + info.att * (1 - DEF / (info.att + DEF)) * info.crit * (1 + info.crit_hurt)));
         }
 
         public Unit UnlockUnit(Player player, int uid, bool force = false)
@@ -326,7 +412,23 @@ namespace Frontline.GameControllers
                     Level = 1,
                     Number = du.max_energy,
                     Tid = uid,
+                    Equips = new List<Equip>()
                 };
+                foreach (int deid in du.equip.Object)
+                {
+                    DEquip de = _dequips[deid];
+                    Equip eq = new Equip()
+                    {
+                        Id = Guid.NewGuid().ToString("N"),
+                        Level = 1,
+                        Grade = 1,
+                        PlayerId = player.Id,
+                        Pos = de.pos,
+                        Tid = deid,
+                        UnitId = unit.Id
+                    };
+                    unit.Equips.Add(eq);
+                }
                 player.Units.Add(unit);
                 UnlockUnitResponse response = new UnlockUnitResponse();
                 response.success = true;
@@ -558,13 +660,92 @@ namespace Frontline.GameControllers
         public void Call_EquipLevelUp(LevelupEquipRequest request)
         {
             var player = this.CurrentSession.GetBindPlayer();
+            var unit = player.Units.First(u => u.Tid == request.unitId);
 
+            DUnit du = _dunits[unit.Tid];
+            var equip = unit.Equips.First(e => e.Pos == request.position);
+            DEquip de = _dequips[equip.Tid];
+            var playerController = this.Server.GetController<PlayerController>();
+            string reason = $"兵种装备升级{unit.Tid}:{equip.Tid}";
+            int oldlevel = equip.Level;
+            while (true)
+            {
+                if(de.player_lv > player.Level)
+                {
+                    break;
+                }
 
+                if(equip.Level >= de.max_level)
+                {
+                    break;
+                }
+                //扣资源升级
+                DEquipLevelCost dl;
+                if(!_dequipcost.TryGetValue(equip.Level, out dl))
+                {
+                    break;
+                }
+                int rescont = (int)((du.type == 1 ? dl.soldier_gold : dl.tank_gold) * de.level_k / 10000d);
+                if(!playerController.IsCurrencyEnough(player, CurrencyType.GOLD, rescont))
+                {
+                    break;
+                }
+
+                playerController.AddCurrency(player, CurrencyType.GOLD, rescont, reason);
+                equip.Level += 1;
+
+                if (!request.multy)
+                {
+                    break;
+                }
+            }
+            if(oldlevel != equip.Level)
+            {
+                _db.SaveChanges();
+            }
+
+            LevelupEquipResponse response = new LevelupEquipResponse();
+            response.success = true;
+            response.equipInfo = new EquipInfo()
+            {
+                id = equip.Id,
+                equipId = equip.Tid,
+                level = equip.Level
+            };
+            response.unitInfo = this.ToUnitInfo(unit, du);
+            response.position = equip.Pos;
+            response.unitId = unit.Tid;
+            CurrentSession.SendAsync(response);
         }
 
         public void Call_EquipGradeUp(UpGradeEquipRequest request)
         {
+            var player = this.CurrentSession.GetBindPlayer();
+            var unit = player.Units.First(u => u.Tid == request.unitId);
+            DUnit du = _dunits[unit.Tid];
+            var equip = unit.Equips.First(e => e.Pos == request.position);
+            DEquip de = _dequips[equip.Tid];
 
+            var pkgController = this.Server.GetController<PkgController>();
+            bool itemenough = pkgController.IsItemEnough(player, de.grade_item_id.Object, de.grade_item_cnt.Object);
+            if (!itemenough)
+                return;
+            string reason = $"兵种装备进阶{unit.Tid}:{equip.Tid}";
+            pkgController.SubItems(player, de.grade_item_id.Object, de.grade_item_cnt.Object, reason);
+            equip.Tid = de.next_id;
+
+            _db.SaveChanges();
+            UpGradeEquipResponse response = new UpGradeEquipResponse();
+            response.success = true;
+            response.position = equip.Pos;
+            response.unitId = unit.Tid;
+            response.unitInfo = this.ToUnitInfo(unit, du);
+            response.equipInfo = new EquipInfo()
+            {
+                id = equip.Id,
+                equipId = equip.Tid,
+                level = equip.Level
+            };
         }
         #endregion
     }

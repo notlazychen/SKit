@@ -13,6 +13,8 @@ namespace Frontline.Domain
         public String PlayerId { get; set; } 
         public int Index { get; set; }
         public bool IsSelected { get; set; }
+
         public JsonObject<List<string>> Units { get; set; } = new JsonObject<List<string>>();
+        public JsonObject<List<int>> UnitPowers { get; set; } = new JsonObject<List<int>>();
     }
 }

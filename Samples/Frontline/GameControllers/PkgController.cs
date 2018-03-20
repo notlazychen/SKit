@@ -94,6 +94,20 @@ namespace Frontline.GameControllers
             return ii;
         }
 
+        public void SubItems(Player player, int[] itemids, int[] itemcnts, string reason)
+        {
+            for (int i = 0; i < itemids.Length; i++)
+            {
+                int itemid = itemids[i];
+                int itemcnt = itemcnts[i];
+                if (itemcnt == 0)
+                {
+                    continue;
+                }
+                PlayerItem item;
+                this.TrySubItem(player, itemid, itemcnt, reason, out item);
+            }
+        }
         public bool TrySubItem(Player player, int itemId, int count, string reason, out PlayerItem item)
         {
             item = player.Items.FirstOrDefault(x => x.Tid == itemId);
@@ -234,6 +248,36 @@ namespace Frontline.GameControllers
                 }
             }
             return ri;
+        }
+
+        public bool IsItemEnough(Player player, int[] itemids, int[] itemcnts)
+        {
+            if (itemids.Length > itemcnts.Length)
+            {
+                return false;
+            }
+            for (int i = 0; i < itemids.Length; i++)
+            {
+                int itemid = itemids[i];
+                int itemcnt = itemcnts[i];
+                if(itemcnt == 0)
+                {
+                    continue;
+                }
+                var item = player.Items.FirstOrDefault(x => x.Tid == itemid);
+                if (item == null)
+                {
+                    return false;
+                }
+                else
+                {
+                    if (item.Count < itemcnt)
+                    {
+                        return false;
+                    }
+                }
+            }
+            return true;
         }
         #endregion
 

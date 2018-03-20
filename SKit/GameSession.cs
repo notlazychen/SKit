@@ -5,7 +5,7 @@ using System.Text;
 
 namespace SKit
 {
-    public class GameSession
+    public class GameSession : IDisposable
     {
         public string Id { get;  }
         public Socket Socket { get; internal set; }
@@ -74,12 +74,22 @@ namespace SKit
 
         public T GetBind<T>() where T : class
         {
-            return _cacheStore[typeof(T)] as T;
+            Object o;
+            if(_cacheStore.TryGetValue(typeof(T), out o))
+            {
+                return o as T;
+            }
+            return null;
         }
 
         public void SetBind<T>(T data)
         {
             _cacheStore[typeof(T)] = data;
+        }
+
+        public void Dispose()
+        {
+            _cacheStore.Clear();
         }
     }
 }

@@ -12,14 +12,28 @@ using System.Collections.Generic;
 namespace Frontline.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20180320044124_fb")]
+    partial class fb
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn)
                 .HasAnnotation("ProductVersion", "2.0.1-rtm-125");
+
+            modelBuilder.Entity("Frontline.Domain.Currency", b =>
+                {
+                    b.Property<string>("PlayerId");
+
+                    b.Property<int>("Type");
+
+                    b.Property<int>("Value");
+
+                    b.HasKey("PlayerId", "Type");
+
+                    b.ToTable("Currencies");
+                });
 
             modelBuilder.Entity("Frontline.Domain.Dungeon", b =>
                 {
@@ -268,35 +282,12 @@ namespace Frontline.Migrations
                     b.ToTable("Units");
                 });
 
-            modelBuilder.Entity("Frontline.Domain.Wallet", b =>
+            modelBuilder.Entity("Frontline.Domain.Currency", b =>
                 {
-                    b.Property<string>("PlayerId");
-
-                    b.Property<int>("DIAMOND");
-
-                    b.Property<int>("GOLD");
-
-                    b.Property<int>("HORN");
-
-                    b.Property<int>("IRON");
-
-                    b.Property<int>("LEGIONCOIN");
-
-                    b.Property<int>("OIL");
-
-                    b.Property<int>("SMOKE");
-
-                    b.Property<int>("SUPPLY");
-
-                    b.Property<int>("TEC");
-
-                    b.Property<int>("TOKEN");
-
-                    b.Property<int>("WIPES");
-
-                    b.HasKey("PlayerId");
-
-                    b.ToTable("Wallets");
+                    b.HasOne("Frontline.Domain.Player")
+                        .WithMany("Currencies")
+                        .HasForeignKey("PlayerId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("Frontline.Domain.Dungeon", b =>
@@ -346,14 +337,6 @@ namespace Frontline.Migrations
                     b.HasOne("Frontline.Domain.Player")
                         .WithMany("Units")
                         .HasForeignKey("PlayerId");
-                });
-
-            modelBuilder.Entity("Frontline.Domain.Wallet", b =>
-                {
-                    b.HasOne("Frontline.Domain.Player")
-                        .WithOne("Wallet")
-                        .HasForeignKey("Frontline.Domain.Wallet", "PlayerId")
-                        .OnDelete(DeleteBehavior.Cascade);
                 });
 #pragma warning restore 612, 618
         }

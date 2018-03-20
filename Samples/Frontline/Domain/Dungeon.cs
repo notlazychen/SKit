@@ -29,6 +29,6 @@ namespace Frontline.Domain
         public bool IsLast { get; set; }
         public bool IsOpen { get; set; }//是否已经打开
 
-        public string PlayerSectionId { get; set; }
+        public string SectionId { get; set; }
     }
 }

@@ -18,10 +18,12 @@ namespace Frontline.GameControllers
         private GameDesignContext _designDb;
         private DataContext _db;
 
-        Dictionary<int, Dictionary<int, List<DDungeon>>> _ddungeons;//type:{section:x}
+        Dictionary<int, Dictionary<int, Dictionary<int, DDungeon>>> _ddungeons;//type:{section:{mission:x}}
         Dictionary<int, DMonster> _dmonsters;//tid:x
         Dictionary<int, DMonsterAbility> _dmonsterAbilities;//level:x
-        Dictionary<int , Dictionary<int, DMonsterInDungeon>> _dmonsterInDungeons;//dungeonid:{monsterid:x}
+        Dictionary<int, Dictionary<int, DMonsterInDungeon>> _dmonsterInDungeons;//dungeonid:{monsterid:x}
+
+        Dictionary<string, Battle> _battles = new Dictionary<string, Battle>();
 
         public DungeonController(DataContext db, GameDesignContext design)
         {
@@ -31,10 +33,10 @@ namespace Frontline.GameControllers
 
         protected override void OnReadGameDesignTables()
         {
-            _ddungeons = _designDb.DDungeons.GroupBy(x=>x.type).AsNoTracking().ToDictionary(x=>x.Key, x=>x.GroupBy(y=>y.section).ToDictionary(y=>y.Key, y=>y.ToList()));
-            _dmonsters = _designDb.DMonsters.AsNoTracking().ToDictionary(x=>x.id, x=>x);
-            _dmonsterAbilities = _designDb.DMonsterAbilities.AsNoTracking().ToDictionary(x=>x.level, x=>x);
-            _dmonsterInDungeons = _designDb.DMonsterInDungeons.GroupBy(x=>x.dungeon_id).AsNoTracking().ToDictionary(x=>x.Key, x=> x.ToDictionary(y=>y.mid, y=>y));
+            _ddungeons = _designDb.DDungeons.GroupBy(x => x.type).AsNoTracking().ToDictionary(x => x.Key, x => x.GroupBy(y => y.section).ToDictionary(y => y.Key, y => y.ToDictionary(z => z.mission, z => z)));
+            _dmonsters = _designDb.DMonsters.AsNoTracking().ToDictionary(x => x.id, x => x);
+            _dmonsterAbilities = _designDb.DMonsterAbilities.AsNoTracking().ToDictionary(x => x.level, x => x);
+            _dmonsterInDungeons = _designDb.DMonsterInDungeons.GroupBy(x => x.dungeon_id).AsNoTracking().ToDictionary(x => x.Key, x => x.ToDictionary(y => y.mid, y => y));
         }
 
         protected override void OnRegisterEvents()
@@ -57,30 +59,50 @@ namespace Frontline.GameControllers
             //在创建玩家的时候进行副本的初始化操作
             Section section = new Section()
             {
-                //Id = $"{e.Id}T1S1",
+                Id = Guid.NewGuid().ToString("N"),
                 PlayerId = e.Id,
                 Index = 1,
                 Type = 1,
                 Dungeons = new List<Dungeon>()
             };
             e.Sections.Add(section);
-            IEnumerable<DDungeon> dds = _ddungeons[1][1];
-            foreach (var dd in dds)
-            {
-                var dungeon = this.MakeDungeon(e, dd);
-                if (dungeon.Mission == 1)
-                    dungeon.IsOpen = true;
-                dungeon.PlayerSectionId = section.Id;
-                section.Dungeons.Add(dungeon);
-            }
+            var dd = _ddungeons[1][1][1];
+            var dungeon = this.MakeDungeon(e, dd, section);
+            //dungeon.IsOpen = true;
+            //dungeon.SectionId = section.Id;
+            section.Dungeons.Add(dungeon);
         }
 
         #region 辅助方法
-        public Dungeon MakeDungeon(Player p, DDungeon dd)
+        public bool CheckPassedSection(Player player, int type, int sectionIndex)
+        {
+            if (sectionIndex == 0)
+            {
+                return true;
+            }
+            var section = player.Sections.FirstOrDefault(s => s.Type == type && s.Index == sectionIndex);
+            if (section == null)
+            {
+                return false;
+            }
+
+            var dungeon = section.Dungeons.FirstOrDefault(d => d.IsLast);
+            if (dungeon == null)
+            {
+                return false;
+            }
+            if (dungeon.Star > 0)
+            {
+                return true;
+            }
+            return false;
+        }
+
+        public Dungeon MakeDungeon(Player p, DDungeon dd, Section section)
         {
             Dungeon dungeon = new Dungeon()
             {
-                //Id = $"{p.Id}T{dd.type}S{dd.section}M{dd.mission}",
+                Id = Guid.NewGuid().ToString("N"),
                 PlayerId = p.Id,
                 Tid = dd.id,
                 Type = dd.type,
@@ -92,6 +114,8 @@ namespace Frontline.GameControllers
                 Next = dd.next,
                 ResetNumb = 0,
                 IsLast = dd.next == 0,
+                IsOpen = true,
+                SectionId = section.Id
             };
             return dungeon;
         }
@@ -197,48 +221,41 @@ namespace Frontline.GameControllers
             response.receiveds = new List<int>();
             response.id = section.PlayerId;
 
-            IEnumerable<DDungeon> dds = _ddungeons[section.Type][section.Index];
+            var dds = _ddungeons[section.Type][section.Index].Values;
             foreach (var dd in dds)
             {
+                FBInfo fi = new FBInfo();
+                fi.id = dd.id;
+                fi.type = dd.type;
+                fi.desc = dd.desc;
+                fi.name = dd.name;
+                fi.icon = dd.icon;
+                fi.screen_id = dd.screen_id;
+                fi.level_limit = dd.level_limit;
+                fi.exp = dd.exp;
+                fi.gold = dd.gold;
+                fi.power = dd.power;
+                fi.random_id = dd.random_id;
+                fi.oil_cost = dd.oil_cost;
+                fi.time_limit_1 = dd.time_limit_1;
+                fi.time_limit_2 = dd.time_limit_2;
+                fi.time_limit_3 = dd.time_limit_3;
+                fi.wipe_cost = dd.wipe_cost;
+                fi.map_fighting = dd.map_fighting;
+                fi.map_file_name = dd.map_file_name;
+                fi.map_res_name = dd.map_res_name;
+                fi.dropItems = dd.drop_items.Object;
+                fi.fight_times = dd.fight_times;
                 var dungeon = section.Dungeons.FirstOrDefault(d => d.Tid == dd.id);
                 if (dungeon != null)
                 {
-                    FBInfo fi = new FBInfo();
                     fi.star = dungeon.Star;
                     fi.fid = dungeon.Id;
-                    fi.id = dungeon.Tid;
                     fi.open = dungeon.IsOpen;
                     fi.remainTimes = dd.fight_times - dungeon.FightTimes;
-                    fi.type = dd.type;
-                    fi.desc = dd.desc;
-                    fi.name = dd.name;
-                    fi.icon = dd.icon;
-                    fi.screen_id = dd.screen_id;
-                    fi.level_limit = dd.level_limit;
-                    fi.exp = dd.exp;
-                    fi.gold = dd.gold;
-                    fi.power = dd.power;
-                    fi.random_id = dd.random_id;
-                    fi.oil_cost = dd.oil_cost;
-                    fi.time_limit_1 = dd.time_limit_1;
-                    fi.time_limit_2 = dd.time_limit_2;
-                    fi.time_limit_3 = dd.time_limit_3;
-                    fi.wipe_cost = dd.wipe_cost;
-                    fi.map_fighting = dd.map_fighting;
-                    fi.map_file_name = dd.map_file_name;
-                    fi.map_res_name = dd.map_res_name;
-                    fi.dropItems = dd.drop_items.Object;
                     fi.resetRemainNumb = 3 - dungeon.ResetNumb;
-                    fi.remainBuyTimes = 0;
-                    fi.fight_times = dd.fight_times;
-
-                    response.fbs.Add(fi);
                 }
-                else
-                {
-                    //可能是加新副本了,请在此加入添加新副本的代码
-
-                }
+                response.fbs.Add(fi);
             }
             CurrentSession.SendAsync(response);
         }
@@ -319,9 +336,10 @@ namespace Frontline.GameControllers
                 Id = Guid.NewGuid().ToString("N"),
                 BeginTime = DateTime.Now,
                 IsEnd = false,
-                Dungeon = dungeon,                
+                Dungeon = dungeon,
+                PlayerId = player.Id
             };
-            this.CurrentSession.SetBind(battle);
+            _battles[battle.Id] = battle;
 
             FBFightResponse response = new FBFightResponse();
             response.id = dungeon.Id;
@@ -341,18 +359,21 @@ namespace Frontline.GameControllers
         {
             FBFightResultResponse response = new FBFightResultResponse();
             response.success = true;
-
-            Battle battle = this.CurrentSession.GetBind<Battle>();
-            if(battle == null)
+            response.win = false;
+            response.id = request.id;
+            Battle battle;
+            if (!this._battles.TryGetValue(request.token, out battle) || battle.PlayerId != CurrentSession.UserId || battle.Dungeon.Id != request.id)
             {
+                CurrentSession.SendAsync(response);
                 return;
             }
-
+            _battles.Remove(battle.Id);
+            
             if (request.token != battle.Id && request.win)
             {
                 var player = this.CurrentSession.GetBindPlayer();
                 Dungeon dungeon = battle.Dungeon;
-                DDungeon ddungeon = _ddungeons[dungeon.Type][dungeon.Section].First(x => x.id == dungeon.Tid);
+                DDungeon ddungeon = _ddungeons[dungeon.Type][dungeon.Section][dungeon.Mission];
 
                 string reason = $"副本{ddungeon.id}:{ddungeon.name}战斗胜利";
                 dungeon.FightTimes += 1;
@@ -376,21 +397,83 @@ namespace Frontline.GameControllers
                 }
 
                 int star = 1;
-                if (living == 0)
+                if (living != 0)
                 {
                     star = _stars[uscnt - 1][living - 1];
                 }
 
-                if(dungeon.Star == 0)//第一次通关
+                if (dungeon.Star == 0)//第一次通关
                 {
-                    //todo: 尝试开启下一关
+                    
+                    if (dungeon.Next != 0)//开启下一关
+                    {
+                        var ddnext = _ddungeons[dungeon.Type][dungeon.Section][dungeon.Mission + 1];
+                        var section = player.Sections.First(s => s.Id == dungeon.SectionId);
+                        var dnext = this.MakeDungeon(player, ddnext, section);
+                        section.Dungeons.Add(dnext);
+                    }
+                    else//开启下一章
+                    {
+                        if(dungeon.Type == 1)//普通副本直接开启下一章，尝试打开精英副本当前章
+                        {
+                            Section secionNext = new Section()
+                            {
+                                Id = Guid.NewGuid().ToString("N"),
+                                PlayerId = player.Id,
+                                Index = dungeon.Section + 1,
+                                Type = dungeon.Type,
+                                Dungeons = new List<Dungeon>()
+                            };
+                            player.Sections.Add(secionNext);
+                            var dd = _ddungeons[dungeon.Type][secionNext.Index][1];
+                            var dnext = this.MakeDungeon(player, dd, secionNext);
+                            secionNext.Dungeons.Add(dnext);
 
+                            //检查精英副本是否已经通关上一章
+                            bool preExSectionPassed = this.CheckPassedSection(player, 2, dungeon.Section - 1);
+                            if (preExSectionPassed)
+                            {
+                                Section secionEx = new Section()
+                                {
+                                    Id = Guid.NewGuid().ToString("N"),
+                                    PlayerId = player.Id,
+                                    Index = dungeon.Section,
+                                    Type = 2,
+                                    Dungeons = new List<Dungeon>()
+                                };
+                                player.Sections.Add(secionEx);
+                                var ddEx = _ddungeons[2][secionEx.Index][1];
+                                var dnextEx = this.MakeDungeon(player, ddEx, secionEx);
+                                secionEx.Dungeons.Add(dnextEx);
+                            }
+                        }
+                        else//精英副本检查普通本是否通关下一章，通关则开启下一章
+                        {
+                            bool nextNormalSectionPassed = this.CheckPassedSection(player, 1, dungeon.Section + 1);
+                            if (nextNormalSectionPassed)
+                            {
+                                Section secionEx = new Section()
+                                {
+                                    Id = Guid.NewGuid().ToString("N"),
+                                    PlayerId = player.Id,
+                                    Index = dungeon.Section + 1,
+                                    Type = 2,
+                                    Dungeons = new List<Dungeon>()
+                                };
+                                player.Sections.Add(secionEx);
+                                var ddEx = _ddungeons[2][secionEx.Index][1];
+                                var dnextEx = this.MakeDungeon(player, ddEx, secionEx);
+                                secionEx.Dungeons.Add(dnextEx);
+                            }
+                        }
+                    }
                 }
-                else if(dungeon.Star < star)
+
+                if (dungeon.Star < star)
                 {
                     dungeon.Star = star;
                 }
-                
+
                 //派发奖励
                 var playerController = this.Server.GetController<PlayerController>();
                 playerController.AddCurrency(player, CurrencyType.OIL, -ddungeon.oil_cost, reason);
@@ -409,6 +492,7 @@ namespace Frontline.GameControllers
                 }
                 var pkgController = this.Server.GetController<PkgController>();
                 RewardInfo reward = pkgController.RandomReward(player, ddungeon.random_id, reason);
+
                 _db.SaveChanges();
 
                 reward.exp = ddungeon.exp;
@@ -425,6 +509,7 @@ namespace Frontline.GameControllers
             response.win = request.win;
             CurrentSession.SendAsync(response);
         }
+
         #endregion
     }
 }

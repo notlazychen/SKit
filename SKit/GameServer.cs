@@ -385,6 +385,7 @@ namespace SKit
 
             this.OnSessionClosed(token);
             _sessions.TryRemove(token.Id, out s);
+            token?.Dispose();
             // Free the SocketAsyncEventArg so they can be reused by another client
             _socketRecvArgsPool.Push(e);
             _logger.LogDebug($"{token.Id}: LEAVE, reason: {reason}");

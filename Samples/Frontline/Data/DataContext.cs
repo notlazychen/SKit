@@ -27,9 +27,8 @@ namespace Frontline.Data
             //modelBuilder.Entity<Player>().HasMany(p => p.Items);
             //modelBuilder.Entity<Player>().HasMany(p => p.Sections);
             //modelBuilder.Entity<Player>().HasMany(p => p.Currencies);
-            modelBuilder.Entity<Currency>().HasKey(pc => new { pc.PlayerId, pc.Type });
-            modelBuilder.Entity<Currency>().HasOne<Player>().WithMany(p=>p.Currencies).IsRequired();
-            modelBuilder.Entity<Dungeon>().HasIndex(d => d.PlayerId);
+            modelBuilder.Entity<Wallet>().HasOne<Player>().WithOne(p=>p.Wallet).IsRequired();
+            modelBuilder.Entity<Dungeon>().HasIndex(d => d.SectionId);
             modelBuilder.Entity<Dungeon>().HasIndex(d => new { d.Tid, d.PlayerId });
             modelBuilder.Entity<Section>().HasIndex(s => s.PlayerId);
             modelBuilder.Entity<Section>().HasMany(s=> s.Dungeons).WithOne();
@@ -44,7 +43,7 @@ namespace Frontline.Data
         }
 
         public DbSet<Player> Players { get; set; }
-        public DbSet<Currency> Currencies { get; set; } 
+        public DbSet<Wallet> Wallets { get; set; } 
         public DbSet<Section> Sections { get; set; } 
         public DbSet<PlayerItem> Items { get; set; } 
         public DbSet<Unit> Units { get; set; }

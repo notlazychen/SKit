@@ -54,6 +54,7 @@ namespace Frontline.GameControllers
         public override void OnLeave(ClientCloseReason reason)
         {
             base.OnLeave(reason);
+
             //_db.SaveChanges();
         }
 
@@ -74,6 +75,7 @@ namespace Frontline.GameControllers
         internal event EventHandler<PlayerLoader> PlayerLoading;
         private void RaisePlayerLoading(PlayerLoader loader)
         {
+            loader.Loader = loader.Loader.Include(p => p.Wallet);
             PlayerLoading?.Invoke(this, loader);
         }
 
@@ -87,32 +89,19 @@ namespace Frontline.GameControllers
         #region 辅助方法
         public int GetCurrencyValue(Player player, int type)
         {
-            var currency = player.Currencies.FirstOrDefault(c => c.Type == type);
-            if (currency == null)
-            {
-                return 0;
-            }
-            else
-            {
-                return currency.Value;
-            }
+            return player.Wallet.GetCurrency(type);
         }
+
         public bool IsCurrencyEnough(Player player, int type, int value)
         {
             if (value == 0)
             {
                 return true;
             }
-            var currency = player.Currencies.FirstOrDefault(c => c.Type == type);
-            if (currency == null)
-            {
-                return false;
-            }
-            else
-            {
-                return currency.Value >= value;
-            }
+            var currency = player.Wallet.GetCurrency(type);
+            return currency >= value;
         }
+
         /// <summary>
         /// 添加资源
         /// </summary>
@@ -122,20 +111,7 @@ namespace Frontline.GameControllers
             {
                 return;
             }
-            var currency = player.Currencies.FirstOrDefault(c => c.Type == type);
-            if (currency == null)
-            {
-                currency = new Currency()
-                {
-                    PlayerId = player.Id,
-                    Type = type,
-                    Value = value
-                };
-            }
-            else
-            {
-                currency.Value += value;
-            }
+            var currency = player.Wallet.AddCurrency(type, value);
 
             ResourceAmountChangedNotify notify = new ResourceAmountChangedNotify();
             notify.success = true;
@@ -145,7 +121,7 @@ namespace Frontline.GameControllers
                 {
                     type = 1,
                     id = type,
-                    count = currency.Value
+                    count = currency
                 }
             };
             Server.SendByUserNameAsync(player.Id, notify);
@@ -233,26 +209,17 @@ namespace Frontline.GameControllers
                 player.LastVipUpTime = player.LastLvUpTime = player.LastLoginTime = player.CreateTime = DateTime.Now;
                 player.IsBind = false;
                 player.IP = (CurrentSession.Socket.RemoteEndPoint as IPEndPoint)?.Address.ToString();
-                player.Currencies = new List<Currency>();
-                //初始化资源
-                for (int ct = 1; ct <= CurrencyType.MAX_TYPE; ct++)
+                player.Wallet = new Wallet()
                 {
-                    int v = 0;
-                    switch (ct)
-                    {
-                        case CurrencyType.GOLD: v = 300000; break;
-                        case CurrencyType.DIAMOND: v = 12888; break;
-                        case CurrencyType.IRON: v = 10000; break;
-                        case CurrencyType.SUPPLY: v = 10000; break;
-                        case CurrencyType.OIL: v = 300; break;
-                    }
-                    player.Currencies.Add(new Currency()
-                    {
-                        PlayerId = player.Id,
-                        Type = ct,
-                        Value = v
-                    });
-                }
+                    PlayerId = player.Id,
+                };
+                //初始化资源
+                player.Wallet.AddCurrency(CurrencyType.GOLD, 300000);
+                player.Wallet.AddCurrency(CurrencyType.DIAMOND, 12888);
+                player.Wallet.AddCurrency(CurrencyType.IRON, 10000);
+                player.Wallet.AddCurrency(CurrencyType.SUPPLY, 10000);
+                player.Wallet.AddCurrency(CurrencyType.OIL, 300);
+         
                 _db.Players.Add(player);
                 this.RaisePlayerCreating(player);
                 _db.SaveChanges();
@@ -260,8 +227,7 @@ namespace Frontline.GameControllers
             else
             {
                 var queryPlayer = _db.Players
-                    .Where(p => p.UserCode == usercode)
-                    .Include(p => p.Currencies);
+                    .Where(p => p.UserCode == usercode);
                 PlayerLoader loader = new PlayerLoader()
                 {
                     Loader = queryPlayer
@@ -312,28 +278,16 @@ namespace Frontline.GameControllers
             response.vip = player.VIP;
 
             response.resInfos = new List<ResInfo>();
-            //顺便检查下初始化资源
             bool checkout = false;
             for (int ct = 1; ct <= CurrencyType.MAX_TYPE; ct++)
             {
-                var currency = player.Currencies.FirstOrDefault(c => c.Type == ct);
-                if (currency == null)
-                {
-                    checkout = true;
-                    currency = new Currency()
-                    {
-                        PlayerId = player.Id,
-                        Type = ct,
-                        Value = 0
-                    };
-                    player.Currencies.Add(currency);
-                }
                 response.resInfos.Add(new ResInfo()
                 {
                     type = ct,
-                    count = currency.Value
+                    count = player.Wallet.GetCurrency(ct)
                 });
             }
+
             if (checkout)
             {
                 _db.SaveChanges();
