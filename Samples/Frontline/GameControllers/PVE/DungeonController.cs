@@ -486,8 +486,8 @@ namespace Frontline.GameControllers
                 {
                     foreach (var unit in player.Units.Where(u => team.Units.Object.Contains(u.Id)))
                     {
-                        campController.AddUnitExp(player, unit, ddungeon.exp_element, false, true, reason);
-                        response.units.Add(campController.ToUnitInfo(unit));
+                        UnitInfo ui = campController.AddUnitExp(player, unit, ddungeon.exp_element, false, true, reason);
+                        response.units.Add(ui);
                     }
                 }
                 var pkgController = this.Server.GetController<PkgController>();

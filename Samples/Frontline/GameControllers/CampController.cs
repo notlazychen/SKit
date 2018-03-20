@@ -150,22 +150,28 @@ namespace Frontline.GameControllers
             }
         }
 
-        #region 辅助方法
-        public void AddUnitExp(Player player, Unit unit, int exp, bool usecurrency, bool once, string reason)
-        {
 
-            if (unit == null)
-            {
-                return;
-            }
+        #region 事件
+        public event EventHandler<UnitLevelUpEventArgs> UnitLevelUp;
+        public event EventHandler<UnitGradeUpEventArgs> UnitGradeUp;
+        public event EventHandler<EquipLevelUpEventArgs> EquipLevelUp;
+        public event EventHandler<EquipGradeUpEventArgs> EquipGradeUp;
+
+        public event EventHandler<EquipGradeUpEventArgs> ChangeCurrentTeam;
+        public event EventHandler<EquipGradeUpEventArgs> SetTeamMember;
+        #endregion
+
+        #region 辅助方法
+        public UnitInfo AddUnitExp(Player player, Unit unit, int exp, bool usecurrency, bool once, string reason)
+        {
             DUnit du;
             if(!_dunits.TryGetValue(unit.Tid, out du))
             {
-                return;
+                return null;
             }
             int grade = unit.Grade == 0 ? 1 : unit.Grade;
             DUnitGradeUp dug = _dunitgrades[du.star][grade];
-
+            int oldlevel = unit.Level;
             int restype = du.type == 2 ? CurrencyType.IRON : CurrencyType.SUPPLY;
             var playerController = this.Server.GetController<PlayerController>();
             while (unit.Level < player.Level && dug.max_level >= unit.Level)
@@ -223,6 +229,14 @@ namespace Frontline.GameControllers
                     break;
                 }
             }
+
+            UnitInfo ui = this.ToUnitInfo(unit, du);
+            UnitLevelUp?.Invoke(this, new UnitLevelUpEventArgs()
+            {
+                UnitInfo = ui,
+                OldLevel = oldlevel
+            });
+            return ui;
         }
 
         public UnitInfo ToUnitInfo(Unit u, DUnit du = null)
@@ -581,7 +595,7 @@ namespace Frontline.GameControllers
             int oldLevel = unit.Level;
             string reason = $"兵种[{unit.Tid}]升级";
 
-            this.AddUnitExp(player, unit, 0, true, request.adv, reason);
+            UnitInfo ui = this.AddUnitExp(player, unit, 0, true, request.adv, reason);
 
             if (oldLevel != unit.Level)
             {
@@ -589,8 +603,7 @@ namespace Frontline.GameControllers
                 var playerController = this.Server.GetController<PlayerController>();
                 response.iron = playerController.GetCurrencyValue(player, CurrencyType.IRON);
                 response.supply = playerController.GetCurrencyValue(player, CurrencyType.SUPPLY);
-                response.unitInfo = this.ToUnitInfo(unit);
-                //Spring.bean(PlayerService.class).TryUpdateMaxPower(u.getPid(), rojo);
+                response.unitInfo = ui;
                 Server.SendByUserNameAsync(player.Id, response);
             }
         }
@@ -636,12 +649,15 @@ namespace Frontline.GameControllers
                     response.count = item.Count;
                     response.success = true;
 
+                    _db.SaveChanges();
+
                     CurrentSession.SendAsync(response);
+
                     //任务
-                    //Spring.bean(PlayerService.class).TryUpdateMaxPower(u.getPid(), rojo);
-                    //Spring.bean(QuestService.class).onUnitGradeUp(u.getPid(), u.getUid(), u.getClaz());
-                    //Spring.bean(PlayerService.class).TryUpdateMaxPower(u.getPid(), rojo);
-                    //Spring.bean(LogService.class).logHeroCount(u.getPid(), u.getUid(), "" + u.getUid(), 3, getUnitPower(rojo, u.getId()));
+                    UnitGradeUp?.Invoke(this, new UnitGradeUpEventArgs() {
+                        UnitInfo = response.unitInfo,
+                        OldGrade = unit.Grade -1
+                    });
                 }
             }
 
@@ -699,20 +715,28 @@ namespace Frontline.GameControllers
                     break;
                 }
             }
-            if(oldlevel != equip.Level)
-            {
-                _db.SaveChanges();
-            }
-
-            LevelupEquipResponse response = new LevelupEquipResponse();
-            response.success = true;
-            response.equipInfo = new EquipInfo()
+            var equipInfo = new EquipInfo()
             {
                 id = equip.Id,
                 equipId = equip.Tid,
                 level = equip.Level
             };
-            response.unitInfo = this.ToUnitInfo(unit, du);
+            var unitInfo = this.ToUnitInfo(unit, du);
+            if (oldlevel != equip.Level)
+            {
+                EquipLevelUp?.Invoke(this, new EquipLevelUpEventArgs()
+                {
+                    EquipInfo = equipInfo,
+                    UnitInfo = unitInfo,
+                    OldLevel = oldlevel
+                });
+                _db.SaveChanges();
+            }
+
+            LevelupEquipResponse response = new LevelupEquipResponse();
+            response.success = true;
+            response.equipInfo = equipInfo;
+            response.unitInfo = unitInfo;
             response.position = equip.Pos;
             response.unitId = unit.Tid;
             CurrentSession.SendAsync(response);
@@ -725,7 +749,8 @@ namespace Frontline.GameControllers
             DUnit du = _dunits[unit.Tid];
             var equip = unit.Equips.First(e => e.Pos == request.position);
             DEquip de = _dequips[equip.Tid];
-
+            if (de.next_id == 0)
+                return;
             var pkgController = this.Server.GetController<PkgController>();
             bool itemenough = pkgController.IsItemEnough(player, de.grade_item_id.Object, de.grade_item_cnt.Object);
             if (!itemenough)
@@ -746,6 +771,9 @@ namespace Frontline.GameControllers
                 equipId = equip.Tid,
                 level = equip.Level
             };
+
+            EquipGradeUp?.Invoke(this, new EquipGradeUpEventArgs() { EquipInfo = response.equipInfo, OldGrade = de.grade, UnitInfo = response.unitInfo});
+            CurrentSession.SendAsync(response);
         }
         #endregion
     }
