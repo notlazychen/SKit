@@ -15,6 +15,6 @@ namespace Frontline.Domain
         public int Pos { get; set; }
         public int Tid { get; set; }
         public int Level { get; set; }
-        public int Grade { get; set; }
+        public int GradeId { get; set; }
     }
 }

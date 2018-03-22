@@ -22,6 +22,16 @@ namespace protocol
         /// </summary>
 		[ProtoMember(3, IsRequired = false)]
 		public int remainNumber;
+        /// <summary>
+        ///  经验
+        /// </summary>
+		[ProtoMember(4, IsRequired = false)]
+		public int exp;
+        /// <summary>
+        ///  等级
+        /// </summary>
+		[ProtoMember(5, IsRequired = false)]
+		public int lv;
 
 	}
 }

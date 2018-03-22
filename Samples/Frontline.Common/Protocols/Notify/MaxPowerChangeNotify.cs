@@ -1,20 +1,21 @@
-using ProtoBuf;
 using System.Collections.Generic;
 using System;
+using ProtoBuf;
 
 namespace protocol
 {
     /// <summary>
-    /// cz 协议:-5
+    /// 最高战力变更推送 协议:-717
     /// </summary>
-	[Proto(value=-5,description="cz")]
+	[Proto(value=-717,description="最高战力变更推送")]
 	[ProtoContract]
-	public class RechargeResponse
+	public class MaxPowerChangeNotify
 	{
+        /// <summary>
+        ///  当前最高战力
+        /// </summary>
 		[ProtoMember(3, IsRequired = false)]
-		public int cnt;
-		[ProtoMember(4, IsRequired = false)]
-		public int id;
+		public int Power;
         /// <summary>
         ///  是否成功
         /// </summary>

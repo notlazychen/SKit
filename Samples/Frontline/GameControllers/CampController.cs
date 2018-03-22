@@ -26,6 +26,7 @@ namespace Frontline.GameControllers
 
         Dictionary<int, DEquip> _dequips;//equiptid:x
         Dictionary<int, DEquipLevelCost> _dequipcost;//level:x
+        Dictionary<int, DEquipGrade> _dequipgrades;//grade_id:x
 
         public CampController(DataContext db, GameDesignContext design)
         {
@@ -42,6 +43,7 @@ namespace Frontline.GameControllers
 
             _dequips = _designDb.DEquips.AsNoTracking().ToDictionary(x => x.id, x => x);
             _dequipcost = _designDb.DEquipLevelCosts.AsNoTracking().ToDictionary(x => x.level, x => x);
+            _dequipgrades = _designDb.DEquipGrades.AsNoTracking().ToDictionary(x => x.id, x => x);
         }
 
         protected override void OnRegisterEvents()
@@ -55,7 +57,7 @@ namespace Frontline.GameControllers
         private void PlayerController_PlayerLoading(object sender, PlayerLoader e)
         {
             e.Loader = e.Loader
-                .Include(p => p.Units)
+                .Include(p => p.Units).ThenInclude(u=>u.Equips)
                 .Include(p => p.Teams)
                 .Include(p => p.Formations);
         }
@@ -85,7 +87,7 @@ namespace Frontline.GameControllers
                     {
                         Id = Guid.NewGuid().ToString("N"),
                         Level = 1,
-                        Grade = 0,
+                        GradeId = de.gradeid,
                         PlayerId = e.Id,
                         Pos = de.pos,
                         Tid = deid,
@@ -275,13 +277,6 @@ namespace Frontline.GameControllers
             info.prepareEndTime = u.RestEndTime.ToUnixTime();
             info.preparing = u.IsResting;
             info.equips = new List<EquipInfo>();
-            foreach(var eq in u.Equips)
-            {
-                var ei = new EquipInfo();
-                ei.id = eq.Id;
-                ei.equipId = eq.Tid;
-                ei.level = eq.Level;
-            }
 
 
             info.prepareEndTime = u.RestEndTime.ToUnixTime();
@@ -372,23 +367,29 @@ namespace Frontline.GameControllers
                 foreach (var eq in u.Equips)
                 {
                     DEquip de = _dequips[eq.Tid];
+                    DEquipGrade deg = _dequipgrades[eq.GradeId];
+                    var ei = new EquipInfo();
+                    ei.grade = deg.grade;
+                    ei.equipId = eq.Tid;
+                    ei.level = eq.Level;
+                    info.equips.Add(ei);
                     switch (de.base_attr_type)
                     {
                         case 1:
                             {
-                                int v = de.base_attr_value + de.level_grow * (eq.Level -1) + de.grade_grow;
+                                int v = de.base_attr_value + de.level_grow * (eq.Level -1) + deg.grade_grow;
                                 info.att += v;
                             }
                             break;
                         case 2:
                             {
-                                int v = de.base_attr_value + de.level_grow * (eq.Level - 1) + de.grade_grow;
+                                int v = de.base_attr_value + de.level_grow * (eq.Level - 1) + deg.grade_grow;
                                 info.defence += v;
                             }
                             break;
                         case 3:
                             {
-                                int v = de.base_attr_value + de.level_grow * (eq.Level - 1) + de.grade_grow;
+                                int v = de.base_attr_value + de.level_grow * (eq.Level - 1) + deg.grade_grow;
                                 info.hp += v;
                             }
                             break;
@@ -449,7 +450,7 @@ namespace Frontline.GameControllers
                     {
                         Id = Guid.NewGuid().ToString("N"),
                         Level = 1,
-                        Grade = 0,
+                        GradeId = de.gradeid,
                         PlayerId = player.Id,
                         Pos = de.pos,
                         Tid = deid,
@@ -712,18 +713,19 @@ namespace Frontline.GameControllers
 
             DUnit du = _dunits[unit.Tid];
             var equip = unit.Equips.First(e => e.Pos == request.position);
-            DEquip de = _dequips[equip.Tid];
             var playerController = this.Server.GetController<PlayerController>();
             string reason = $"兵种装备升级{unit.Tid}:{equip.Tid}";
             int oldlevel = equip.Level;
+            DEquip de = _dequips[equip.Tid];
+            DEquipGrade deg = _dequipgrades[equip.GradeId];
             while (true)
             {
-                if(de.player_lv > player.Level)
+                if(equip.Level >= player.Level)
                 {
                     break;
                 }
 
-                if(equip.Level >= de.max_level)
+                if(equip.Level >= deg.max_level)
                 {
                     break;
                 }
@@ -749,7 +751,7 @@ namespace Frontline.GameControllers
             }
             var equipInfo = new EquipInfo()
             {
-                id = equip.Id,
+                grade = deg.grade,
                 equipId = equip.Tid,
                 level = equip.Level
             };
@@ -787,15 +789,18 @@ namespace Frontline.GameControllers
             DUnit du = _dunits[unit.Tid];
             var equip = unit.Equips.First(e => e.Pos == request.position);
             DEquip de = _dequips[equip.Tid];
-            if (de.next_id == 0)
+            DEquipGrade deg = _dequipgrades[equip.GradeId];
+            if (deg.next_id == 0)
                 return;
             var pkgController = this.Server.GetController<PkgController>();
-            bool itemenough = pkgController.IsItemEnough(player, de.grade_item_id.Object, de.grade_item_cnt.Object);
+            bool itemenough = pkgController.IsItemEnough(player, deg.grade_item_id.Object, deg.grade_item_cnt.Object);
             if (!itemenough)
                 return;
             string reason = $"兵种装备进阶{unit.Tid}:{equip.Tid}";
-            pkgController.SubItems(player, de.grade_item_id.Object, de.grade_item_cnt.Object, reason);
-            equip.Tid = de.next_id;
+            pkgController.SubItems(player, deg.grade_item_id.Object, deg.grade_item_cnt.Object, reason);
+            equip.Tid = deg.next_id;
+            DEquip denext = _dequips[equip.Tid];
+            equip.GradeId = denext.gradeid;
             var unitInfo = this.ToUnitInfo(unit, du, true);
 
             _db.SaveChanges();
@@ -806,12 +811,12 @@ namespace Frontline.GameControllers
             response.unitInfo = unitInfo;
             response.equipInfo = new EquipInfo()
             {
-                id = equip.Id,
+                grade = denext.gradeid,
                 equipId = equip.Tid,
                 level = equip.Level
             };
 
-            EquipGradeUp?.Invoke(this, new EquipGradeUpEventArgs() { EquipInfo = response.equipInfo, OldGrade = de.grade, UnitInfo = unitInfo});
+            EquipGradeUp?.Invoke(this, new EquipGradeUpEventArgs() { EquipInfo = response.equipInfo, OldGrade = deg.grade, UnitInfo = unitInfo});
             CurrentSession.SendAsync(response);
         }
         #endregion

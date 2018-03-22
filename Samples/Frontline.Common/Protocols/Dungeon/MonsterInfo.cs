@@ -5,143 +5,173 @@ using System;
 namespace protocol
 {
 	[ProtoContract]
-	public class FBInfo
+	public class MonsterInfo
 	{
         /// <summary>
-        ///  关卡ID（数据库id）
+        ///  怪物ID
         /// </summary>
 		[ProtoMember(1, IsRequired = false)]
-		public string fid;
-        /// <summary>
-        ///  关卡ID(策划id)
-        /// </summary>
-		[ProtoMember(2, IsRequired = false)]
 		public int id;
         /// <summary>
-        ///  是否已经打开
+        ///  怪物名称
         /// </summary>
-		[ProtoMember(3, IsRequired = false)]
-		public bool open;
-        /// <summary>
-        ///  历史最高战绩（星级）
-        /// </summary>
-		[ProtoMember(4, IsRequired = false)]
-		public int star;
-        /// <summary>
-        ///  今日剩余挑战次数（-1表示无限次数）
-        /// </summary>
-		[ProtoMember(5, IsRequired = false)]
-		public int remainTimes;
-        /// <summary>
-        ///  今日剩余可购买次数
-        /// </summary>
-		[ProtoMember(6, IsRequired = false)]
-		public int remainBuyTimes;
-        /// <summary>
-        ///  副本分类
-        /// </summary>
-		[ProtoMember(7, IsRequired = false)]
-		public int type;
-        /// <summary>
-        ///  关卡名称
-        /// </summary>
-		[ProtoMember(8, IsRequired = false)]
+		[ProtoMember(2, IsRequired = false)]
 		public string name;
         /// <summary>
-        ///  关卡介绍
+        ///  怪物等级
         /// </summary>
-		[ProtoMember(9, IsRequired = false)]
+		[ProtoMember(3, IsRequired = false)]
+		public int lv;
+        /// <summary>
+        ///  类型
+        /// </summary>
+		[ProtoMember(4, IsRequired = false)]
+		public int type;
+        /// <summary>
+        ///  兵种细分类型
+        /// </summary>
+		[ProtoMember(5, IsRequired = false)]
+		public int type_detail;
+        /// <summary>
+        ///  国籍（1德国2苏联3美国4英国5中国6日本）
+        /// </summary>
+		[ProtoMember(6, IsRequired = false)]
+		public int nation;
+        /// <summary>
+        ///  备注说明
+        /// </summary>
+		[ProtoMember(7, IsRequired = false)]
 		public string desc;
         /// <summary>
-        ///  关卡ICON
+        ///  生命
+        /// </summary>
+		[ProtoMember(8, IsRequired = false)]
+		public int hp;
+        /// <summary>
+        ///  火力
+        /// </summary>
+		[ProtoMember(9, IsRequired = false)]
+		public int att;
+        /// <summary>
+        ///  防御
         /// </summary>
 		[ProtoMember(10, IsRequired = false)]
-		public string icon;
+		public int defence;
         /// <summary>
-        ///  场景ID
+        ///  暴击率
         /// </summary>
 		[ProtoMember(11, IsRequired = false)]
-		public string screen_id;
+		public float crit;
         /// <summary>
-        ///  进入玩家等级
+        ///  暴击伤害
         /// </summary>
 		[ProtoMember(12, IsRequired = false)]
-		public int level_limit;
+		public float crit_hurt;
         /// <summary>
-        ///  消耗原油值
+        ///  伤害加成%
         /// </summary>
 		[ProtoMember(13, IsRequired = false)]
-		public int oil_cost;
+		public float hurt_add;
         /// <summary>
-        ///  每日挑战次数
+        ///  伤害减免%
         /// </summary>
 		[ProtoMember(14, IsRequired = false)]
-		public int fight_times;
+		public float hurt_sub;
         /// <summary>
-        ///  推荐战力值
+        ///  护甲
         /// </summary>
 		[ProtoMember(15, IsRequired = false)]
-		public int power;
+		public int armor;
         /// <summary>
-        ///  奖励经验
+        ///  穿透力（伤害系数）
         /// </summary>
 		[ProtoMember(16, IsRequired = false)]
-		public int exp;
+		public float hurt_multiple;
         /// <summary>
-        ///  奖励金币
+        ///  装弹时间（秒）
         /// </summary>
 		[ProtoMember(17, IsRequired = false)]
-		public int gold;
+		public float cd;
         /// <summary>
-        ///  奖励的随机库ID
+        ///  攻击距离（m)
         /// </summary>
 		[ProtoMember(18, IsRequired = false)]
-		public int random_id;
+		public float distance;
         /// <summary>
-        ///  通关限制时间（秒）
+        ///  杀伤半径（m)
         /// </summary>
 		[ProtoMember(19, IsRequired = false)]
-		public int time_limit_1;
+		public float r;
         /// <summary>
-        ///  2星通关时间（ 秒）
+        ///  攻击偏移
         /// </summary>
 		[ProtoMember(20, IsRequired = false)]
-		public int time_limit_2;
+		public float off;
         /// <summary>
-        ///  3星通关时间（秒）
+        ///  炮塔转速
         /// </summary>
 		[ProtoMember(21, IsRequired = false)]
-		public int time_limit_3;
+		public float rev;
         /// <summary>
-        ///  扫荡消耗扫荡点数
+        ///  转弯速度
         /// </summary>
 		[ProtoMember(22, IsRequired = false)]
-		public int wipe_cost;
+		public float rev_body;
         /// <summary>
-        ///  地图资源文件名
+        ///  移动速度
         /// </summary>
 		[ProtoMember(23, IsRequired = false)]
-		public string map_res_name;
+		public float speed;
         /// <summary>
-        ///  地图战斗信息资源名
+        ///  兵种单位（小队）数量
         /// </summary>
 		[ProtoMember(24, IsRequired = false)]
-		public string map_fighting;
+		public int count;
         /// <summary>
-        ///  关卡文件名
+        ///  单次攻击持续时间（秒）
         /// </summary>
 		[ProtoMember(25, IsRequired = false)]
-		public string map_file_name;
+		public float last_time;
         /// <summary>
-        ///  战前可能掉落显示
+        ///  单次扫出子弹数
         /// </summary>
 		[ProtoMember(26, IsRequired = false)]
-		public List<int> dropItems;
+		public int bullet_count;
         /// <summary>
-        ///  剩余重置次数
+        ///  怪物模型
         /// </summary>
 		[ProtoMember(27, IsRequired = false)]
-		public int resetRemainNumb;
+		public string model;
+        /// <summary>
+        ///  模型缩放比例
+        /// </summary>
+		[ProtoMember(28, IsRequired = false)]
+		public float scale;
+        /// <summary>
+        ///  攻击音效
+        /// </summary>
+		[ProtoMember(29, IsRequired = false)]
+		public string att_effect;
+        /// <summary>
+        ///  移动音效
+        /// </summary>
+		[ProtoMember(30, IsRequired = false)]
+		public string move_effect;
+        /// <summary>
+        ///  死亡后模型名
+        /// </summary>
+		[ProtoMember(31, IsRequired = false)]
+		public string die_model;
+        /// <summary>
+        ///  获得能量点
+        /// </summary>
+		[ProtoMember(32, IsRequired = false)]
+		public int energy;
+        /// <summary>
+        ///  战力
+        /// </summary>
+		[ProtoMember(33, IsRequired = false)]
+		public int power;
 
 	}
 }

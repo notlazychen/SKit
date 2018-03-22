@@ -476,8 +476,10 @@ namespace Frontline.GameControllers
 
                 //派发奖励
                 var playerController = this.Server.GetController<PlayerController>();
+                //扣体力
                 playerController.AddCurrency(player, CurrencyType.OIL, -ddungeon.oil_cost, reason);
-                playerController.AddExp(player, ddungeon.exp, reason);
+                playerController.AddExp(player, ddungeon.exp, reason);                
+
                 //发放兵种经验
                 response.units = new List<UnitInfo>();
                 var campController = this.Server.GetController<CampController>();

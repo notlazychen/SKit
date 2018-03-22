@@ -30,6 +30,7 @@ namespace Frontline.GameDesign
             ReadConfigAndWriteToDB("兵种购买表.xlsx", db.DUnitUnlocks);
             ReadConfigAndWriteToDB("兵种装备表.xlsx", db.DEquips);
             ReadConfigAndWriteToDB("兵种装备升级消耗.xlsx", db.DEquipLevelCosts);
+            ReadConfigAndWriteToDB("兵种装备升阶表.xlsx", db.DEquipGrades);
             ReadConfigAndWriteToDB("随机库表.xlsx", db.DRandoms);
             db.SaveChanges();
         }
