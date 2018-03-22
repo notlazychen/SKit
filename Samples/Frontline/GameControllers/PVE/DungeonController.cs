@@ -15,15 +15,15 @@ namespace Frontline.GameControllers
 {
     public class DungeonController : GameController
     {
-        private GameDesignContext _designDb;
-        private DataContext _db;
+        private readonly GameDesignContext _designDb;
+        private readonly DataContext _db;
 
-        Dictionary<int, Dictionary<int, Dictionary<int, DDungeon>>> _ddungeons;//type:{section:{mission:x}}
-        Dictionary<int, DMonster> _dmonsters;//tid:x
-        Dictionary<int, DMonsterAbility> _dmonsterAbilities;//level:x
-        Dictionary<int, Dictionary<int, DMonsterInDungeon>> _dmonsterInDungeons;//dungeonid:{monsterid:x}
+        public Dictionary<int, Dictionary<int, Dictionary<int, DDungeon>>> DDungeons { get; private set; }//type:{section:{mission:x}}
+        public Dictionary<int, DMonster> DMonsters { get; private set; }//tid:x
+        public Dictionary<int, DMonsterAbility> DMonsterAbilities { get; private set; }//level:x
+        public Dictionary<int, Dictionary<int, DMonsterInDungeon>> DMonsterInDungeons { get; private set; }//dungeonid:{monsterid:x}
 
-        Dictionary<string, Battle> _battles = new Dictionary<string, Battle>();
+        private readonly Dictionary<string, Battle> _battles = new Dictionary<string, Battle>();
 
         public DungeonController(DataContext db, GameDesignContext design)
         {
@@ -33,10 +33,10 @@ namespace Frontline.GameControllers
 
         protected override void OnReadGameDesignTables()
         {
-            _ddungeons = _designDb.DDungeons.GroupBy(x => x.type).AsNoTracking().ToDictionary(x => x.Key, x => x.GroupBy(y => y.section).ToDictionary(y => y.Key, y => y.ToDictionary(z => z.mission, z => z)));
-            _dmonsters = _designDb.DMonsters.AsNoTracking().ToDictionary(x => x.id, x => x);
-            _dmonsterAbilities = _designDb.DMonsterAbilities.AsNoTracking().ToDictionary(x => x.level, x => x);
-            _dmonsterInDungeons = _designDb.DMonsterInDungeons.GroupBy(x => x.dungeon_id).AsNoTracking().ToDictionary(x => x.Key, x => x.ToDictionary(y => y.mid, y => y));
+            DDungeons = _designDb.DDungeons.GroupBy(x => x.type).AsNoTracking().ToDictionary(x => x.Key, x => x.GroupBy(y => y.section).ToDictionary(y => y.Key, y => y.ToDictionary(z => z.mission, z => z)));
+            DMonsters = _designDb.DMonsters.AsNoTracking().ToDictionary(x => x.id, x => x);
+            DMonsterAbilities = _designDb.DMonsterAbilities.AsNoTracking().ToDictionary(x => x.level, x => x);
+            DMonsterInDungeons = _designDb.DMonsterInDungeons.GroupBy(x => x.dungeon_id).AsNoTracking().ToDictionary(x => x.Key, x => x.ToDictionary(y => y.mid, y => y));
         }
 
         protected override void OnRegisterEvents()
@@ -66,7 +66,7 @@ namespace Frontline.GameControllers
                 Dungeons = new List<Dungeon>()
             };
             e.Sections.Add(section);
-            var dd = _ddungeons[1][1][1];
+            var dd = DDungeons[1][1][1];
             var dungeon = this.MakeDungeon(e, dd, section);
             //dungeon.IsOpen = true;
             //dungeon.SectionId = section.Id;
@@ -122,8 +122,8 @@ namespace Frontline.GameControllers
 
         public MonsterInfo ToMonsterInfo(int mid, int lv)
         {
-            var dm = _dmonsters[mid];
-            var dma = _dmonsterAbilities[lv];
+            var dm = DMonsters[mid];
+            var dma = DMonsterAbilities[lv];
 
             MonsterInfo mi = new MonsterInfo()
             {
@@ -221,7 +221,7 @@ namespace Frontline.GameControllers
             response.receiveds = new List<int>();
             response.id = section.PlayerId;
 
-            var dds = _ddungeons[section.Type][section.Index].Values;
+            var dds = DDungeons[section.Type][section.Index].Values;
             foreach (var dd in dds)
             {
                 FBInfo fi = new FBInfo();
@@ -289,7 +289,7 @@ namespace Frontline.GameControllers
             }
 
             List<MonsterInfo> monster = new List<MonsterInfo>();
-            var dms = _dmonsterInDungeons[dungeon.Tid];
+            var dms = DMonsterInDungeons[dungeon.Tid];
 
             FBMonsterInfoResponse response = new FBMonsterInfoResponse();
             response.id = dungeon.Id;
@@ -373,7 +373,7 @@ namespace Frontline.GameControllers
             {
                 var player = this.CurrentSession.GetBindPlayer();
                 Dungeon dungeon = battle.Dungeon;
-                DDungeon ddungeon = _ddungeons[dungeon.Type][dungeon.Section][dungeon.Mission];
+                DDungeon ddungeon = DDungeons[dungeon.Type][dungeon.Section][dungeon.Mission];
 
                 string reason = $"副本{ddungeon.id}:{ddungeon.name}战斗胜利";
                 dungeon.FightTimes += 1;
@@ -407,7 +407,7 @@ namespace Frontline.GameControllers
                     
                     if (dungeon.Next != 0)//开启下一关
                     {
-                        var ddnext = _ddungeons[dungeon.Type][dungeon.Section][dungeon.Mission + 1];
+                        var ddnext = DDungeons[dungeon.Type][dungeon.Section][dungeon.Mission + 1];
                         var section = player.Sections.First(s => s.Id == dungeon.SectionId);
                         var dnext = this.MakeDungeon(player, ddnext, section);
                         section.Dungeons.Add(dnext);
@@ -425,7 +425,7 @@ namespace Frontline.GameControllers
                                 Dungeons = new List<Dungeon>()
                             };
                             player.Sections.Add(secionNext);
-                            var dd = _ddungeons[dungeon.Type][secionNext.Index][1];
+                            var dd = DDungeons[dungeon.Type][secionNext.Index][1];
                             var dnext = this.MakeDungeon(player, dd, secionNext);
                             secionNext.Dungeons.Add(dnext);
 
@@ -442,7 +442,7 @@ namespace Frontline.GameControllers
                                     Dungeons = new List<Dungeon>()
                                 };
                                 player.Sections.Add(secionEx);
-                                var ddEx = _ddungeons[2][secionEx.Index][1];
+                                var ddEx = DDungeons[2][secionEx.Index][1];
                                 var dnextEx = this.MakeDungeon(player, ddEx, secionEx);
                                 secionEx.Dungeons.Add(dnextEx);
                             }
@@ -461,7 +461,7 @@ namespace Frontline.GameControllers
                                     Dungeons = new List<Dungeon>()
                                 };
                                 player.Sections.Add(secionEx);
-                                var ddEx = _ddungeons[2][secionEx.Index][1];
+                                var ddEx = DDungeons[2][secionEx.Index][1];
                                 var dnextEx = this.MakeDungeon(player, ddEx, secionEx);
                                 secionEx.Dungeons.Add(dnextEx);
                             }

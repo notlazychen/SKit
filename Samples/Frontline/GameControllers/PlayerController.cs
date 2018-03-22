@@ -73,6 +73,13 @@ namespace Frontline.GameControllers
                     _db.SaveChanges();
                     //最大战力改变了
                     _logger.LogDebug($"玩家{player.Id}:{player.NickName}最大战力改变{player.MaxPower}");
+
+                    MaxPowerChangeNotify notify = new MaxPowerChangeNotify()
+                    {
+                        Power = (int)player.MaxPower,
+                        success = true,
+                    };
+                    CurrentSession.SendAsync(notify);
                 }
             }
         }

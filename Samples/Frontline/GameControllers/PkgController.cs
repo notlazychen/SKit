@@ -126,15 +126,17 @@ namespace Frontline.GameControllers
                         _db.Items.Remove(item);
                     }
 
-                    ResourceAmountChangedNotify notify = new ResourceAmountChangedNotify();
-                    notify.success = true;
-                    notify.items = new List<ResourceInfo>()
+                    ResourceAmountChangedNotify notify = new ResourceAmountChangedNotify
                     {
-                        new ResourceInfo()
+                        success = true,
+                        items = new List<ResourceInfo>()
                         {
-                            type = 2,
-                            id = itemId,
-                            count = item.Count
+                            new ResourceInfo()
+                            {
+                                type = 2,
+                                id = itemId,
+                                count = item.Count
+                            }
                         }
                     };
                     Server.SendByUserNameAsync(player.Id, notify);
@@ -165,6 +167,21 @@ namespace Frontline.GameControllers
             {
                 item.Count += count;
             }
+
+            ResourceAmountChangedNotify notify = new ResourceAmountChangedNotify
+            {
+                success = true,
+                items = new List<ResourceInfo>()
+                {
+                    new ResourceInfo()
+                    {
+                        type = 2,
+                        id = itemId,
+                        count = item.Count
+                    }
+                }
+            };
+            Server.SendByUserNameAsync(player.Id, notify);
             return item;
         }
 
@@ -286,10 +303,12 @@ namespace Frontline.GameControllers
         {
             //PkgInfoResponse response = JsonConvert.DeserializeObject<PkgInfoResponse>("{\"pid\":\"10000f2\",\"items\":[{\"breakUnitId\":0,\"icon\":14001,\"breakRandomId\":60000001,\"synthCost\":0,\"type\":9,\"tid\":40000001,\"quality\":1,\"useable\":true,\"overlap\":1,\"breakCount\":0,\"synthCount\":0,\"price\":0,\"name\":\"新手礼包\",\"lap\":1,\"id\":\"10000f2i40000001\",\"synthId\":0,\"desc\":\"新手发展必不可少的礼包\"}],\"success\":true}");
             var items = this.CurrentSession.GetBind<Player>().Items;
-            PkgInfoResponse response = new PkgInfoResponse();
-            response.success = true;
-            response.pid = this.CurrentSession.UserId;
-            response.items = new List<ItemInfo>();
+            PkgInfoResponse response = new PkgInfoResponse
+            {
+                success = true,
+                pid = this.CurrentSession.UserId,
+                items = new List<ItemInfo>()
+            };
             foreach (var item in items)
             {
                 var ii = this.ToItemInfo(item);
@@ -329,8 +348,7 @@ namespace Frontline.GameControllers
             if (unitId > 0)
             {
                 var campController = Server.GetController<CampController>();
-                Unit u = campController.UnlockUnit(player, unitId, true);
-                UnitInfo ui = campController.ToUnitInfo(u);
+                UnitInfo ui = campController.UnlockUnit(player, unitId);
                 response.unitInfo = ui;
             }
             else if (di.breakRandomId > 0)//使用后可以获得随机库
@@ -348,27 +366,27 @@ namespace Frontline.GameControllers
                     new ResInfo(){type = di.type, count = di.breakCount}
                 };
             }
-            else if (di.type == 18)
-            {
-                //后勤基地工人+1
-                //        int maxCnt = engine.getInt(Application.systemFile, "worker_max_cnt");
-                //        Industry industry = Spring.bean(IndustryService.class).getIndustry(item.getPid());
-                //        if (industry.getTotalWorkers() + cnt > maxCnt) {
-                //            response.setInfo(Spring.errCode("item_use_fail_workersmax"));
-                //            return response;
-                //        }
-                //        industry.setIdleWorkers(industry.getIdleWorkers() + cnt);
-                //        industry.setTotalWorkers(industry.getTotalWorkers() + cnt);
-                //        rojo.updateAndFlush(industry, "idleWorkers", "totalWorkers");
-                //        BuyWorkerResponse resp = new BuyWorkerResponse();
-                //resp.setSuccess(true);
-                //        resp.setIdleWorkers(industry.getIdleWorkers());
-                //        resp.setTotalWorkers(industry.getTotalWorkers());
-                //        Support su = Spring.bean(PlayerService.class).getSupport(item.getPid());
-                //    resp.setDiamond((int) su.getDiamond());
-                //        Context.getContextServer().send(resp, item.getPid());
-                //    response.setSuccess(true);
-            }
+            //else if (di.type == 18)
+            //{
+            //    //后勤基地工人+1
+            //    //        int maxCnt = engine.getInt(Application.systemFile, "worker_max_cnt");
+            //    //        Industry industry = Spring.bean(IndustryService.class).getIndustry(item.getPid());
+            //    //        if (industry.getTotalWorkers() + cnt > maxCnt) {
+            //    //            response.setInfo(Spring.errCode("item_use_fail_workersmax"));
+            //    //            return response;
+            //    //        }
+            //    //        industry.setIdleWorkers(industry.getIdleWorkers() + cnt);
+            //    //        industry.setTotalWorkers(industry.getTotalWorkers() + cnt);
+            //    //        rojo.updateAndFlush(industry, "idleWorkers", "totalWorkers");
+            //    //        BuyWorkerResponse resp = new BuyWorkerResponse();
+            //    //resp.setSuccess(true);
+            //    //        resp.setIdleWorkers(industry.getIdleWorkers());
+            //    //        resp.setTotalWorkers(industry.getTotalWorkers());
+            //    //        Support su = Spring.bean(PlayerService.class).getSupport(item.getPid());
+            //    //    resp.setDiamond((int) su.getDiamond());
+            //    //        Context.getContextServer().send(resp, item.getPid());
+            //    //    response.setSuccess(true);
+            //}
 
 
             item.Count -= itemCnt;//减少堆叠

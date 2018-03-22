@@ -38,8 +38,8 @@ namespace SKit
             {
                 return;
             }
-            this.Server.SetLogin(this);
             this.UserId = userid;
+            this.Server.SetLogin(this);
             IsAuthorized = true;
             LoginTime = DateTime.Now;
         }
@@ -61,7 +61,14 @@ namespace SKit
 
         public void SendAsync(Object msg)
         {
-            this.Server.SendBySessionIdAsync(this.Id, msg);
+            if (IsAuthorized)
+            {
+                this.Server.SendByUserNameAsync(UserId, msg);
+            }
+            else
+            {
+                this.Server.SendBySessionIdAsync(this.Id, msg);
+            }
         }
 
         public bool TryGetBind<T>(out T data) where T : class

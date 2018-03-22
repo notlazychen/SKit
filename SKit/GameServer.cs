@@ -131,36 +131,44 @@ namespace SKit
 
                 //启动接收线程
                 _listenerTokenSource = new CancellationTokenSource();
-                _listenerTask = new Task(()=>
+                _listenerTask = new Task(() =>
                 {
                     while (!_listenerTokenSource.IsCancellationRequested)
                     {
-                        var socket = _listener.AcceptSocket();
-                        var args = _socketRecvArgsPool.Pop();
-                        var session = new GameSession();
-                        session.Server = this;
-                        session.Socket = socket;
-                        session.SocketAsyncEventArgs = args;
-                        args.UserToken = session;
-
-                        _sessions.TryAdd(session.Id, session);
-                        this.OnNewSessionConnected(session);
-
-                        _logger.LogDebug($"{session.Id}: Enter");
-
-                        bool willRaiseEvent = socket.ReceiveAsync(args);
-                        if (!willRaiseEvent)
+                        try
                         {
-                            ProcessReceive(args);
-                        }
+                            var socket = _listener.AcceptSocket();
+                            var args = _socketRecvArgsPool.Pop();
+                            var session = new GameSession
+                            {
+                                Server = this,
+                                Socket = socket,
+                                SocketAsyncEventArgs = args
+                            };
+                            args.UserToken = session;
 
+                            _sessions.TryAdd(session.Id, session);
+                            this.OnNewSessionConnected(session);
+
+                            _logger.LogDebug($"{session.Id}: Enter");
+
+                            bool willRaiseEvent = socket.ReceiveAsync(args);
+                            if (!willRaiseEvent)
+                            {
+                                ProcessReceive(args);
+                            }
+                        }
+                        catch (SocketException)
+                        {
+                            //ignore
+                        }
                         Thread.Sleep(1);
                     }
-                }, _listenerTokenSource.Token);                
+                }, _listenerTokenSource.Token);
                 _listener.Start();
                 _listenerTask.Start();
                 _logger.LogInformation($"Game Server [{Id}] Started");
-                
+
             }
         }
 
@@ -169,11 +177,12 @@ namespace SKit
             if (IsRunning)
             {
                 _logger.LogInformation($"Game Server [{Id}] Closing...");
-                _listener.Stop();
-                
                 _listenerTokenSource.Cancel();
-                _workingTaskTokenSource.Cancel();
                 _sendingTaskTokenSource.Cancel();
+                _workingTaskTokenSource.Cancel();
+
+                _listener.Stop();
+
                 Task.WaitAll(_listenerTask, _workingTask, _sendingTask);
                 IsRunning = false;
                 _logger.LogInformation($"Game Server [{Id}] Closed");
@@ -187,16 +196,13 @@ namespace SKit
 
         internal void SetLogin(GameSession session)
         {
-            if (session.IsAuthorized)
+            _users.AddOrUpdate(session.UserId, session, (username, oldSession) =>
             {
-                _users.AddOrUpdate(session.UserId, session, (username, oldSession) =>
-                {
                     //把原来的玩家踢下线
                     oldSession.Logout();
-                    CloseClientSocket(oldSession.SocketAsyncEventArgs, ClientCloseReason.Displacement);
-                    return session;
-                });
-            }
+                CloseClientSocket(oldSession.SocketAsyncEventArgs, ClientCloseReason.Displacement);
+                return session;
+            });
         }
 
         /// <summary>
@@ -361,10 +367,13 @@ namespace SKit
                 token.Socket.Shutdown(SocketShutdown.Send);
             }
             // throws if client process has already closed
-            catch (Exception) { }
+            catch (Exception)
+            {
+                // ignored
+            }
+
             token.Socket.Close();
 
-            GameSession s;
             var task = new GamePlayerLeaveTask(token, reason, _controllers.Values);
             if (reason == ClientCloseReason.Displacement)
             {
@@ -383,12 +392,12 @@ namespace SKit
                 _workingQueue.Enqueue(task);
                 if (token.IsAuthorized)
                 {
-                    _users.TryRemove(token.UserId, out s);
+                    _users.TryRemove(token.UserId, out _);
                 }
             }
 
             this.OnSessionClosed(token);
-            _sessions.TryRemove(token.Id, out s);
+            _sessions.TryRemove(token.Id, out _);
             token?.Dispose();
             // Free the SocketAsyncEventArg so they can be reused by another client
             _socketRecvArgsPool.Push(e);
@@ -455,8 +464,7 @@ namespace SKit
                                     break;
                                 case MessageType.ToSession:
                                     {
-                                        GameSession session;
-                                        if (_sessions.TryGetValue(message.DestId, out session))
+                                        if (_sessions.TryGetValue(message.DestId, out var session))
                                         {
                                             if (!session.Socket.SendAsync(args))
                                             {
@@ -467,8 +475,7 @@ namespace SKit
                                     break;
                                 case MessageType.ToUser:
                                     {
-                                        GameSession session;
-                                        if (_users.TryGetValue(message.DestId, out session))
+                                        if (_users.TryGetValue(message.DestId, out var session))
                                         {
                                             if (!session.Socket.SendAsync(args))
                                             {
@@ -578,7 +585,7 @@ namespace SKit
                 MethodInfo[] methods = type.GetMethods(BindingFlags.Public | BindingFlags.DeclaredOnly | BindingFlags.Instance);
                 foreach (var methodInfo in methods)
                 {
-                    if(methodInfo.IsSpecialName || !methodInfo.Name.StartsWith("Call_"))
+                    if (methodInfo.IsSpecialName || !methodInfo.Name.StartsWith("Call_"))
                     {
                         continue;
                     }
