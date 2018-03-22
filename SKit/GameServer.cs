@@ -131,11 +131,11 @@ namespace SKit
 
                 //启动接收线程
                 _listenerTokenSource = new CancellationTokenSource();
-                _listenerTask = new Task(async ()=>
+                _listenerTask = new Task(()=>
                 {
                     while (!_listenerTokenSource.IsCancellationRequested)
                     {
-                        var socket = await _listener.AcceptSocketAsync();
+                        var socket = _listener.AcceptSocket();
                         var args = _socketRecvArgsPool.Pop();
                         var session = new GameSession();
                         session.Server = this;
@@ -153,6 +153,8 @@ namespace SKit
                         {
                             ProcessReceive(args);
                         }
+
+                        Thread.Sleep(1);
                     }
                 }, _listenerTokenSource.Token);                
                 _listener.Start();
@@ -167,6 +169,8 @@ namespace SKit
             if (IsRunning)
             {
                 _logger.LogInformation($"Game Server [{Id}] Closing...");
+                _listener.Stop();
+                
                 _listenerTokenSource.Cancel();
                 _workingTaskTokenSource.Cancel();
                 _sendingTaskTokenSource.Cancel();
