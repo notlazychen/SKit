@@ -4,8 +4,13 @@ using System.Text;
 
 namespace Frontline.Common
 {
-    public enum GameErrorCode
+    public enum GameErrorCode :int
     {
-
+        OK
     }
+
+    //public enum GG : GameErrorCode
+    //{
+
+    //}
 }

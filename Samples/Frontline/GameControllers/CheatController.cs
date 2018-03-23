@@ -44,7 +44,7 @@ namespace Frontline.GameControllers
 
         #region 客户端接口
         private const string reason = "GM命令";
-        private Dictionary<string, Action<string[]>> _actions = new Dictionary<string, Action<string[]>>();
+        private readonly Dictionary<string, Action<string[]>> _actions = new Dictionary<string, Action<string[]>>();
 
         private void AddResource(string[] args)
         {
@@ -129,7 +129,7 @@ namespace Frontline.GameControllers
 
                 CurrentSession.SendAsync(response);
             }
-            response.success = false;           
+            response.success = false;
         }
         #endregion
     }

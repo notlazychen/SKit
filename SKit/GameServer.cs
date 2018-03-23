@@ -122,33 +122,25 @@ namespace SKit
                 _workingTaskTokenSource = new CancellationTokenSource();
                 _workingTask = new Task(LoopWorking, _workingTaskTokenSource.Token);
                 _workingTask.Start();
-                _logger.LogInformation($"Game Server [{Id}] Starting...1");
 
                 //启动发送线程
                 //_sendingTaskTokenSource = new CancellationTokenSource();
                 _sendingTask = new Task(LoopSending, _workingTaskTokenSource.Token);
                 _sendingTask.Start();
-                _logger.LogInformation($"Game Server [{Id}] Starting...2");
-
 
                 IPEndPoint endPoint = new IPEndPoint(IPAddress.Any, Config.Port);
                 _listener = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-                _logger.LogInformation($"Game Server [{Id}] Starting...3");
 
                 _listener.Bind(endPoint);
-                _logger.LogInformation($"Game Server [{Id}] Starting...4");
                 _listener.Listen(Config.Backlog);
-                _logger.LogInformation($"Game Server [{Id}] Starting...5");
 
                 _listener.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
-                _logger.LogInformation($"Game Server [{Id}] Starting...x");
+                _listener.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                 //_listener.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.DontLinger, true);
 
-                _logger.LogInformation($"Game Server [{Id}] Starting...6");
                 SocketAsyncEventArgs acceptEventArg = new SocketAsyncEventArgs();
                 _acceptEventArg = acceptEventArg;
                 acceptEventArg.Completed += acceptEventArg_Completed;
-                _logger.LogInformation($"Game Server [{Id}] Starting...7");
 
                 if (!_listener.AcceptAsync(acceptEventArg))
                     ProcessAccept(acceptEventArg);
@@ -168,12 +160,10 @@ namespace SKit
                     //_listenerTokenSource.Cancel();
                     //_sendingTaskTokenSource.Cancel();
                     _workingTaskTokenSource.Cancel();
-                    _logger.LogInformation($"Game Server [{Id}] Closing...1");
 
                     _acceptEventArg.Completed -= acceptEventArg_Completed;
                     _acceptEventArg.Dispose();
                     _acceptEventArg = null;
-                    _logger.LogInformation($"Game Server [{Id}] Closing...2");
 
                     try
                     {
@@ -183,7 +173,6 @@ namespace SKit
                     {
                         _listener = null;
                     }
-                    _logger.LogInformation($"Game Server [{Id}] Closing...3");
 
                     foreach (var session in _sessions.Values)
                     {
@@ -196,8 +185,8 @@ namespace SKit
                             _logger.LogError(ex, ex.Message);
                         }
                     }
+
                     _users.Clear();
-                    _logger.LogInformation($"Game Server [{Id}] Closing...");
 
                     Task.WaitAll(_workingTask, _sendingTask);
                     IsRunning = false;
@@ -206,6 +195,10 @@ namespace SKit
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, ex.Message);
+                }
+                finally
+                {
+                    GC.Collect();
                 }
             }
         }
@@ -638,15 +631,24 @@ namespace SKit
                 //如果没有处理器，先刷掉一批
                 return false;
             }
+
             var handler = this._Handlers[cmd];
             var type = handler.RequestType;
             if (Filter(session, handler))
             {
                 return false;
             }
+
             var request = _serializer.Deserialize(type, data.Array, data.Offset, data.Count);
             var task = new GameRequestTask(handler.ProcessAction, session, request);
-            this._workingQueue.Enqueue(task);
+            if (handler.AllowAnonymous)
+            {
+                task.DoAction();
+            }
+            else
+            {
+                this._workingQueue.Enqueue(task);
+            }
             return true;
         }
         #endregion
