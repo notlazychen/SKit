@@ -38,14 +38,16 @@ namespace SKit
 
         private ConcurrentQueue<GameTask> _workingQueue = new ConcurrentQueue<GameTask>();
         private Task _workingTask;
+        //private CancellationTokenSource _listenerTokenSource;
+        //private CancellationTokenSource _sendingTaskTokenSource;
         private CancellationTokenSource _workingTaskTokenSource;
 
-        private CancellationTokenSource _listenerTokenSource;
-        private Task _listenerTask;
+        private SocketAsyncEventArgs _acceptEventArg;
+
+        //private Task _listenerTask;
 
         private ConcurrentQueue<GameMessage> _sendingQueue = new ConcurrentQueue<GameMessage>();
         private Task _sendingTask;
-        private CancellationTokenSource _sendingTaskTokenSource;
 
 
         private ElasticPool<SocketAsyncEventArgs> _socketRecvArgsPool;//输入缓冲池
@@ -66,7 +68,7 @@ namespace SKit
         /// <summary>
         /// 核心监听客户端TCP
         /// </summary>
-        private TcpListener _listener;
+        private Socket _listener;
         private readonly ILogger<GameServer> _logger;
 
         #region 开放方法
@@ -100,8 +102,6 @@ namespace SKit
                 args.Completed += IO_Completed;
                 return args;
             }, Config.PresetUserCount);
-            IPEndPoint endPoint = new IPEndPoint(IPAddress.Any, Config.Port);
-            _listener = new TcpListener(endPoint);
             //_listener.AllowNatTraversal(true);
         }
 
@@ -122,51 +122,37 @@ namespace SKit
                 _workingTaskTokenSource = new CancellationTokenSource();
                 _workingTask = new Task(LoopWorking, _workingTaskTokenSource.Token);
                 _workingTask.Start();
+                _logger.LogInformation($"Game Server [{Id}] Starting...1");
 
                 //启动发送线程
-                _sendingTaskTokenSource = new CancellationTokenSource();
-                _sendingTask = new Task(LoopSending, _sendingTaskTokenSource.Token);
+                //_sendingTaskTokenSource = new CancellationTokenSource();
+                _sendingTask = new Task(LoopSending, _workingTaskTokenSource.Token);
                 _sendingTask.Start();
+                _logger.LogInformation($"Game Server [{Id}] Starting...2");
 
 
-                //启动接收线程
-                _listenerTokenSource = new CancellationTokenSource();
-                _listenerTask = new Task(() =>
-                {
-                    while (!_listenerTokenSource.IsCancellationRequested)
-                    {
-                        try
-                        {
-                            var socket = _listener.AcceptSocket();
-                            var args = _socketRecvArgsPool.Pop();
-                            var session = new GameSession
-                            {
-                                Server = this,
-                                Socket = socket,
-                                SocketAsyncEventArgs = args
-                            };
-                            args.UserToken = session;
+                IPEndPoint endPoint = new IPEndPoint(IPAddress.Any, Config.Port);
+                _listener = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                _logger.LogInformation($"Game Server [{Id}] Starting...3");
 
-                            _sessions.TryAdd(session.Id, session);
-                            this.OnNewSessionConnected(session);
+                _listener.Bind(endPoint);
+                _logger.LogInformation($"Game Server [{Id}] Starting...4");
+                _listener.Listen(Config.Backlog);
+                _logger.LogInformation($"Game Server [{Id}] Starting...5");
 
-                            _logger.LogDebug($"{session.Id}: Enter");
+                _listener.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
+                _logger.LogInformation($"Game Server [{Id}] Starting...x");
+                //_listener.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.DontLinger, true);
 
-                            bool willRaiseEvent = socket.ReceiveAsync(args);
-                            if (!willRaiseEvent)
-                            {
-                                ProcessReceive(args);
-                            }
-                        }
-                        catch (SocketException)
-                        {
-                            //ignore
-                        }
-                        Thread.Sleep(1);
-                    }
-                }, _listenerTokenSource.Token);
-                _listener.Start();
-                _listenerTask.Start();
+                _logger.LogInformation($"Game Server [{Id}] Starting...6");
+                SocketAsyncEventArgs acceptEventArg = new SocketAsyncEventArgs();
+                _acceptEventArg = acceptEventArg;
+                acceptEventArg.Completed += acceptEventArg_Completed;
+                _logger.LogInformation($"Game Server [{Id}] Starting...7");
+
+                if (!_listener.AcceptAsync(acceptEventArg))
+                    ProcessAccept(acceptEventArg);
+
                 _logger.LogInformation($"Game Server [{Id}] Started");
 
             }
@@ -176,16 +162,51 @@ namespace SKit
         {
             if (IsRunning)
             {
-                _logger.LogInformation($"Game Server [{Id}] Closing...");
-                _listenerTokenSource.Cancel();
-                _sendingTaskTokenSource.Cancel();
-                _workingTaskTokenSource.Cancel();
+                try
+                {
+                    _logger.LogInformation($"Game Server [{Id}] Closing...");
+                    //_listenerTokenSource.Cancel();
+                    //_sendingTaskTokenSource.Cancel();
+                    _workingTaskTokenSource.Cancel();
+                    _logger.LogInformation($"Game Server [{Id}] Closing...1");
 
-                _listener.Stop();
+                    _acceptEventArg.Completed -= acceptEventArg_Completed;
+                    _acceptEventArg.Dispose();
+                    _acceptEventArg = null;
+                    _logger.LogInformation($"Game Server [{Id}] Closing...2");
 
-                Task.WaitAll(_listenerTask, _workingTask, _sendingTask);
-                IsRunning = false;
-                _logger.LogInformation($"Game Server [{Id}] Closed");
+                    try
+                    {
+                        _listener.Close();
+                    }
+                    finally
+                    {
+                        _listener = null;
+                    }
+                    _logger.LogInformation($"Game Server [{Id}] Closing...3");
+
+                    foreach (var session in _sessions.Values)
+                    {
+                        try
+                        {
+                            CloseClientSocket(session.SocketAsyncEventArgs, ClientCloseReason.ServerClose);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, ex.Message);
+                        }
+                    }
+                    _users.Clear();
+                    _logger.LogInformation($"Game Server [{Id}] Closing...");
+
+                    Task.WaitAll(_workingTask, _sendingTask);
+                    IsRunning = false;
+                    _logger.LogInformation($"Game Server [{Id}] Closed");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, ex.Message);
+                }
             }
         }
 
@@ -288,6 +309,84 @@ namespace SKit
         }
 
         #region 网络部分
+        void acceptEventArg_Completed(object sender, SocketAsyncEventArgs e)
+        {
+            ProcessAccept(e);
+        }
+
+        void ProcessAccept(SocketAsyncEventArgs e)
+        {
+            Socket socket = null;
+
+            if (e.SocketError != SocketError.Success)
+            {
+                var errorCode = (int)e.SocketError;
+
+                //The listen socket was closed
+                if (errorCode == 995 || errorCode == 10004 || errorCode == 10038)
+                    return;
+
+                _logger.LogError(new SocketException(errorCode), e.SocketError.ToString());
+            }
+            else
+            {
+                socket = e.AcceptSocket;
+            }
+
+            e.AcceptSocket = null;
+
+            bool willRaiseEvent = false;
+
+            try
+            {
+                willRaiseEvent = _listener.AcceptAsync(e);
+            }
+            catch (ObjectDisposedException)
+            {
+                //The listener was stopped
+                //Do nothing
+                //make sure ProcessAccept won't be executed in this thread
+                willRaiseEvent = true;
+            }
+            catch (NullReferenceException)
+            {
+                //The listener was stopped
+                //Do nothing
+                //make sure ProcessAccept won't be executed in this thread
+                willRaiseEvent = true;
+            }
+            catch (Exception exc)
+            {
+                _logger.LogError(exc, exc.Message);
+                //make sure ProcessAccept won't be executed in this thread
+                willRaiseEvent = true;
+            }
+
+            if (socket != null)
+            {
+                var args = _socketRecvArgsPool.Pop();
+                var session = new GameSession
+                {
+                    Server = this,
+                    Socket = socket,
+                    SocketAsyncEventArgs = args
+                };
+                args.UserToken = session;
+                _sessions.TryAdd(session.Id, session);
+                this.OnNewSessionConnected(session);
+
+                _logger.LogDebug($"{session.Id}: Enter");
+                bool willRaiseEventRecv = socket.ReceiveAsync(args);
+                if (!willRaiseEventRecv)
+                {
+                    ProcessReceive(args);
+                }
+            }
+
+            if (!willRaiseEvent)
+                ProcessAccept(e);
+        }
+
         /// <summary>
         /// 拆包
         /// </summary>
@@ -428,7 +527,7 @@ namespace SKit
         #region 任务执行派发部分
         private void LoopSending()
         {
-            while (!_sendingTaskTokenSource.IsCancellationRequested)
+            while (!_workingTaskTokenSource.IsCancellationRequested)
             {
                 try
                 {

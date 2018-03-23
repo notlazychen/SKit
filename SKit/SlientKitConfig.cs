@@ -12,6 +12,7 @@ namespace SKit
         /// 客户端监听端口
         /// </summary>
         public short Port { get; set; }
+        public int Backlog{ get; set; } = 3000;
         /// <summary>
         /// 接收缓冲大小
         /// </summary>
