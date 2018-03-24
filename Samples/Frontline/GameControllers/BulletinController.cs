@@ -14,12 +14,13 @@ namespace Frontline.GameControllers
         /// </summary>
         /// <param name="c"></param>
         /// <param name="request"></param>
-        public void Call_Info(BulletinRequest request)
+        public int Call_Info(BulletinRequest request)
         {
             BulletinResponse response = new BulletinResponse();
 
             response.success = true;
             CurrentSession.SendAsync(response);
+            return 0;
         }
     }
 }

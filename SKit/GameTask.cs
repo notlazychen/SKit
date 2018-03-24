@@ -13,12 +13,12 @@ namespace SKit
             Session = session;
         }
 
-        public void DoAction()
+        public int DoAction()
         {
-            OnDoAction();
+            return OnDoAction();
         }
 
-        protected abstract void OnDoAction();
+        protected abstract int OnDoAction();
     }
 
     /// <summary>
@@ -26,20 +26,30 @@ namespace SKit
     /// </summary>
     public class GameRequestTask : GameTask
     {
-        public GameRequestTask(Delegate handler, GameSession session, Object entity) 
+        public GameRequestTask(GameProtoHandlerInfo handler, GameSession session, Object entity) 
             : base(session)
         {
-            ProcessAction = handler;
+            Handler = handler;
             Entity = entity;
         }
 
-        public Delegate ProcessAction { get; private set; }
+        public GameProtoHandlerInfo Handler { get; private set; }
 
         public Object Entity { get; private set; }
 
-        protected override void OnDoAction()
+        protected override int OnDoAction()
         {
-            this.ProcessAction.DynamicInvoke(Entity);
+            var parameters = new List<Object>();
+            switch (Handler.ParameterTypes)
+            {
+                case GameProtoHandlerParameters.Request:
+                    return (int)this.Handler.ProcessAction.DynamicInvoke(Entity);
+                case GameProtoHandlerParameters.RequestAndGameSession:
+                    return (int)this.Handler.ProcessAction.DynamicInvoke(Entity, Session);
+                case GameProtoHandlerParameters.GameSessionAndRequest:
+                    return (int)this.Handler.ProcessAction.DynamicInvoke(Session, Entity);
+            }
+            return 0;
         }
     }
 
@@ -54,12 +64,13 @@ namespace SKit
             _controllers = controllers;
         }
 
-        protected override void OnDoAction()
+        protected override int OnDoAction()
         {
             foreach(var c in this._controllers)
             {
                 c.OnLeave(Reason);
             }
+            return 0;
         }
     }
 }

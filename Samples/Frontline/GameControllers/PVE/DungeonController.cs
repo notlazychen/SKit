@@ -10,6 +10,7 @@ using Microsoft.EntityFrameworkCore;
 using Frontline.Domain;
 using Frontline.GameDesign;
 using Frontline.Domain.Temporary;
+using Frontline.Common;
 
 namespace Frontline.GameControllers
 {
@@ -181,7 +182,7 @@ namespace Frontline.GameControllers
         /// <summary>
         /// 章
         /// </summary>
-        public void Call_SectionInfo(SectionInfoRequest request)
+        public int Call_SectionInfo(SectionInfoRequest request)
         {
             var sections = CurrentSession.GetBindPlayer().Sections;
             SectionInfoResponse response = new SectionInfoResponse();
@@ -200,18 +201,19 @@ namespace Frontline.GameControllers
 
             //var response = JsonConvert.DeserializeObject<SectionInfoResponse>("{\"id\":\"10000f3\",\"sections\":[{\"name\":\"初临战场\",\"id\":1,\"type\":1,\"open\":true},{\"name\":\"初临战场\",\"id\":1,\"type\":2,\"open\":false},{\"name\":\"激烈交战\",\"id\":2,\"type\":1,\"open\":false},{\"name\":\"激烈交战\",\"id\":2,\"type\":2,\"open\":false},{\"name\":\"白色方案\",\"id\":3,\"type\":1,\"open\":false},{\"name\":\"白色方案\",\"id\":3,\"type\":2,\"open\":false},{\"name\":\"闪电战\",\"id\":4,\"type\":1,\"open\":false},{\"name\":\"闪电战\",\"id\":4,\"type\":2,\"open\":false},{\"name\":\"西线战场\",\"id\":5,\"type\":1,\"open\":false},{\"name\":\"西线战场\",\"id\":5,\"type\":2,\"open\":false},{\"name\":\"北非战场\",\"id\":6,\"type\":1,\"open\":false},{\"name\":\"北非战场\",\"id\":6,\"type\":2,\"open\":false},{\"name\":\"巴巴罗萨计划\",\"id\":7,\"type\":1,\"open\":false},{\"name\":\"巴巴罗萨计划\",\"id\":7,\"type\":2,\"open\":false},{\"name\":\"霸王行动\",\"id\":8,\"type\":1,\"open\":false},{\"name\":\"霸王行动\",\"id\":8,\"type\":2,\"open\":false},{\"name\":\"突破包围网\",\"id\":9,\"type\":1,\"open\":false},{\"name\":\"突破包围网\",\"id\":9,\"type\":2,\"open\":false},{\"name\":\"帝国的毁灭\",\"id\":10,\"type\":1,\"open\":false},{\"name\":\"帝国的毁灭\",\"id\":10,\"type\":2,\"open\":false},{\"name\":\"斩首行动\",\"id\":11,\"type\":1,\"open\":false},{\"name\":\"斩首行动\",\"id\":11,\"type\":2,\"open\":false},{\"name\":\"殊死一战\",\"id\":12,\"type\":1,\"open\":false},{\"name\":\"殊死一战\",\"id\":12,\"type\":2,\"open\":false}],\"success\":true}");
             this.CurrentSession.SendAsync(response);
+            return 0;
         }
 
         /// <summary>
         /// 节
         /// </summary>
-        public void Call_FbInfo(FBInfoRequest request)
+        public int Call_FbInfo(FBInfoRequest request)
         {
             var sections = CurrentSession.GetBindPlayer().Sections;
             var section = sections.FirstOrDefault(s => s.Index == request.section && s.Type == request.type);
             if (section == null)
             {
-                return;
+                return (int)GameErrorCode.副本章节还未开启;
             }
             FBInfoResponse response = new FBInfoResponse();
             response.success = true;
@@ -258,17 +260,18 @@ namespace Frontline.GameControllers
                 response.fbs.Add(fi);
             }
             CurrentSession.SendAsync(response);
+            return 0;
         }
 
         /// <summary>
         /// 关卡野怪
         /// </summary>
         /// <param name="request"></param>
-        public void Call_MonsterInfo(FBMonsterInfoRequest request)
+        public int Call_MonsterInfo(FBMonsterInfoRequest request)
         {
             if (request.id == null)
             {
-                return;
+                return -1;
             }
             var player = this.CurrentSession.GetBindPlayer();
             Dungeon dungeon = null;
@@ -285,7 +288,7 @@ namespace Frontline.GameControllers
             }
             if (dungeon == null)
             {
-                return;
+                return (int)GameErrorCode.关卡并不存在;
             }
 
             List<MonsterInfo> monster = new List<MonsterInfo>();
@@ -301,13 +304,14 @@ namespace Frontline.GameControllers
                 response.monster.Add(mi);
             }
             CurrentSession.SendAsync(response);
+            return 0;
         }
 
-        public void Call_FightBegin(FBFightRequest request)
+        public int Call_FightBegin(FBFightRequest request)
         {
             if (request.id == null)
             {
-                return;
+                return -1;
             }
             var player = this.CurrentSession.GetBindPlayer();
             Dungeon dungeon = null;
@@ -324,16 +328,16 @@ namespace Frontline.GameControllers
             }
             if (dungeon == null)
             {
-                return;
+                return (int)GameErrorCode.关卡并不存在;
             }
             if (!dungeon.IsOpen)
             {
-                return;
+                return (int)GameErrorCode.关卡尚未开启;
             }
 
             var battle = new Battle()
             {
-                Id = Guid.NewGuid().ToString("N"),
+                Id = Guid.NewGuid().ToString("D"),
                 BeginTime = DateTime.Now,
                 IsEnd = false,
                 Dungeon = dungeon,
@@ -346,6 +350,7 @@ namespace Frontline.GameControllers
             response.success = true;
             response.token = battle.Id;
             CurrentSession.SendAsync(response);
+            return 0;
         }
 
 
@@ -355,17 +360,20 @@ namespace Frontline.GameControllers
         new int []{1, 2, 3, 3, 3},
         new int []{1, 2, 2, 3, 3},
         new int []{1, 1, 2, 2, 3}};
-        public void Call_FightEnd(FBFightResultRequest request)
+        public int Call_FightEnd(FBFightResultRequest request)
         {
             FBFightResultResponse response = new FBFightResultResponse();
             response.success = true;
             response.win = false;
             response.id = request.id;
             Battle battle;
+            if(request.token == null)
+            {
+                return (int)GameErrorCode.副本战斗令牌错误或战斗已经失效;
+            }
             if (!this._battles.TryGetValue(request.token, out battle) || battle.PlayerId != CurrentSession.UserId || battle.Dungeon.Id != request.id)
             {
-                CurrentSession.SendAsync(response);
-                return;
+                return (int)GameErrorCode.副本战斗令牌错误或战斗已经失效;
             }
             _battles.Remove(battle.Id);
             
@@ -510,6 +518,7 @@ namespace Frontline.GameControllers
             response.id = request.id;
             response.win = request.win;
             CurrentSession.SendAsync(response);
+            return 0;
         }
 
         #endregion

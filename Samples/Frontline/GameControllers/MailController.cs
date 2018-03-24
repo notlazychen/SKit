@@ -9,7 +9,7 @@ namespace Frontline.GameControllers
 {
     public class MailController : GameController
     {
-        public void Call_MailList(MailListRequest request)
+        public int Call_MailList(MailListRequest request)
         {
             String pid = CurrentSession.UserId;
             MailListResponse response = new MailListResponse();
@@ -21,6 +21,7 @@ namespace Frontline.GameControllers
             response.mails = ms;
             response.success = true;
             CurrentSession.SendAsync(response);
+            return 0;
         }
     }
 }

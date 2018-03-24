@@ -470,7 +470,7 @@ namespace Frontline.GameControllers
         /// <summary>
         /// 获取兵种信息
         /// </summary>
-        public void Call_UnitList(UnitListRequest request)
+        public int Call_UnitList(UnitListRequest request)
         {
             UnitListResponse response = new UnitListResponse();
             response.success = true;
@@ -483,12 +483,13 @@ namespace Frontline.GameControllers
                 response.units.Add(u);
             }
             CurrentSession.SendAsync(response);
+            return 0;
         }
 
         /// <summary>
         /// 获取阵容信息
         /// </summary>
-        public void Call_TeamList(TeamRequest request)
+        public int Call_TeamList(TeamRequest request)
         {
             TeamResponse response = new TeamResponse();
             response.success = true;
@@ -514,12 +515,13 @@ namespace Frontline.GameControllers
                 response.teams10.Add(ti);
             }
             CurrentSession.SendAsync(response);
+            return 0;
         }
 
         /// <summary>
         /// 设置当前阵容
         /// </summary>
-        public void Call_SetCurrentTeam(SetCurrentTeamRequest request)
+        public int Call_SetCurrentTeam(SetCurrentTeamRequest request)
         {
             SetCurrentTeamResponse response = new SetCurrentTeamResponse();
             response.success = true;
@@ -543,12 +545,13 @@ namespace Frontline.GameControllers
             }
             _db.SaveChanges();
             CurrentSession.SendAsync(response);
+            return 0;
         }
 
         /// <summary>
         /// 查看阵容详情
         /// </summary>
-        public void Call_ShowTeam(GetTeamInfoRequest request)
+        public int Call_ShowTeam(GetTeamInfoRequest request)
         {
             GetTeamInfoResponse response = new GetTeamInfoResponse();
             response.success = true;
@@ -566,12 +569,13 @@ namespace Frontline.GameControllers
             }
 
             CurrentSession.SendAsync(response);
+            return 0;
         }
 
         /// <summary>
         /// 设置阵容
         /// </summary>
-        public void Call_SetTeam(TeamSettingRequest request)
+        public int Call_SetTeam(TeamSettingRequest request)
         {
             TeamSettingResponse response = new TeamSettingResponse();
             response.success = true;
@@ -585,7 +589,7 @@ namespace Frontline.GameControllers
                 {
                     if (!player.Units.Any(x => x.Id == id))
                     {
-                        return;
+                        return (int)GameErrorCode.阵容设置必须是自己的兵种;
                     }
                 }
             }
@@ -593,7 +597,7 @@ namespace Frontline.GameControllers
             {
                 //判断长度
                 if (request.team.bps.Count > 5)
-                    return;
+                    return (int)GameErrorCode.阵容不能超过五个兵种;
                 var team = player.Teams.First(t => t.Id == request.team.id);
                 team.Units = new JsonObject<List<string>>(request.team.bps);
                 OnTeamSettingChanged(team);
@@ -601,7 +605,7 @@ namespace Frontline.GameControllers
             else
             {
                 if (request.team.bps.Count > 10)
-                    return;
+                    return (int)GameErrorCode.阵容不能超过十个兵种;
 
                 var team = player.Formations.First(t => t.Id == request.team.id);
                 team.Units = new JsonObject<List<string>>(request.team.bps);
@@ -609,12 +613,13 @@ namespace Frontline.GameControllers
             _db.SaveChanges();
 
             CurrentSession.SendAsync(response);
+            return 0;
         }
 
         /// <summary>
         /// 单位升级
         /// </summary>
-        public void Call_LevelupUnit(LevelupUnitRequest request)
+        public int Call_LevelupUnit(LevelupUnitRequest request)
         {
             LevelupUnitResponse response = new LevelupUnitResponse();
             response.success = true;
@@ -636,12 +641,13 @@ namespace Frontline.GameControllers
                 response.unitInfo = ui;
                 Server.SendByUserNameAsync(player.Id, response);
             }
+            return 0;
         }
 
         /// <summary>
         /// 单位进阶
         /// </summary>
-        public void Call_UnitGradeUp(ClazupUnitRequest request)
+        public int Call_UnitGradeUp(ClazupUnitRequest request)
         {
             ClazupUnitResponse response = new ClazupUnitResponse();
             response.id = request.id;
@@ -656,12 +662,12 @@ namespace Frontline.GameControllers
 
             if (unit.Grade >= du.grade_max)
             {
-                return;
+                return (int)GameErrorCode.兵种已经最高阶;
             }
             DUnitGradeUp dug = DUnitGrades[du.star][unit.Grade + 1];
             if (unit.Level < dug.min_level)
             {
-                return;
+                return (int)GameErrorCode.兵种不满足升阶等级; ;
             }
             int itemCount = dug.item_cnt;
 
@@ -694,13 +700,13 @@ namespace Frontline.GameControllers
                     });
                 }
             }
-
+            return 0;
         }
 
         /// <summary>
         /// 兵种解锁
         /// </summary>
-        public void Call_UnlockUnit(UnlockUnitRequest request)
+        public int Call_UnlockUnit(UnlockUnitRequest request)
         {
             var player = this.CurrentSession.GetBindPlayer();
             int uid = request.unitId;
@@ -710,11 +716,16 @@ namespace Frontline.GameControllers
             if (pkgController.TrySubItem(player, duc.item_id, duc.item_cnt, reason, out var item))
             {
                 this.UnlockUnit(player, uid);
+                _db.SaveChanges();
+                return 0;
             }
-            _db.SaveChanges();
+            else
+            {
+                return (int)GameErrorCode.道具不足;
+            }
         }
 
-        public void Call_EquipLevelUp(LevelupEquipRequest request)
+        public int Call_EquipLevelUp(LevelupEquipRequest request)
         {
             var player = this.CurrentSession.GetBindPlayer();
             var unit = player.Units.First(u => u.Tid == request.unitId);
@@ -788,9 +799,10 @@ namespace Frontline.GameControllers
             response.position = equip.Pos;
             response.unitId = unit.Tid;
             CurrentSession.SendAsync(response);
+            return 0;
         }
 
-        public void Call_EquipGradeUp(UpGradeEquipRequest request)
+        public int Call_EquipGradeUp(UpGradeEquipRequest request)
         {
             var player = this.CurrentSession.GetBindPlayer();
             var unit = player.Units.First(u => u.Tid == request.unitId);
@@ -799,11 +811,11 @@ namespace Frontline.GameControllers
             DEquip de = DEquips[equip.Tid];
             DEquipGrade deg = DEquipGrades[equip.GradeId];
             if (deg.next_id == 0)
-                return;
+                return (int)GameErrorCode.装备已经最高阶;
             var pkgController = this.Server.GetController<PkgController>();
             bool itemenough = pkgController.IsItemEnough(player, deg.grade_item_id.Object, deg.grade_item_cnt.Object);
             if (!itemenough)
-                return;
+                return (int)GameErrorCode.道具不足;
             string reason = $"兵种装备进阶{unit.Tid}:{equip.Tid}";
             pkgController.SubItems(player, deg.grade_item_id.Object, deg.grade_item_cnt.Object, reason);
 
@@ -826,6 +838,7 @@ namespace Frontline.GameControllers
 
             OnEquipGradeUp(new EquipGradeUpEventArgs() { EquipInfo = response.equipInfo, OldGrade = deg.grade, UnitInfo = unitInfo });
             CurrentSession.SendAsync(response);
+            return 0;
         }
         #endregion
 
@@ -860,12 +873,12 @@ namespace Frontline.GameControllers
         {
             TeamSettingChanged?.Invoke(this, e);
         }
-        #endregion
-
         protected virtual void OnUnitUnlock(UnitInfo e)
         {
             UnitUnlock?.Invoke(this, e);
         }
+        #endregion
+
     }
 }
 

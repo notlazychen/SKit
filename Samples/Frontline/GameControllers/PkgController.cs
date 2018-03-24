@@ -10,6 +10,7 @@ using Frontline.Domain;
 using Frontline.GameDesign;
 using System.Linq;
 using SKit.Common.Utils;
+using Frontline.Common;
 
 namespace Frontline.GameControllers
 {
@@ -299,7 +300,7 @@ namespace Frontline.GameControllers
         #endregion
 
         #region 客户端接口
-        public void Call_PkgInfo(PkgInfoRequest request)
+        public int Call_PkgInfo(PkgInfoRequest request)
         {
             //PkgInfoResponse response = JsonConvert.DeserializeObject<PkgInfoResponse>("{\"pid\":\"10000f2\",\"items\":[{\"breakUnitId\":0,\"icon\":14001,\"breakRandomId\":60000001,\"synthCost\":0,\"type\":9,\"tid\":40000001,\"quality\":1,\"useable\":true,\"overlap\":1,\"breakCount\":0,\"synthCount\":0,\"price\":0,\"name\":\"新手礼包\",\"lap\":1,\"id\":\"10000f2i40000001\",\"synthId\":0,\"desc\":\"新手发展必不可少的礼包\"}],\"success\":true}");
             var items = this.CurrentSession.GetBind<Player>().Items;
@@ -315,9 +316,10 @@ namespace Frontline.GameControllers
                 response.items.Add(ii);
             }
             CurrentSession.SendAsync(response);
+            return 0;
         }
 
-        public void Call_UseItem(UseItemRequest request)
+        public int Call_UseItem(UseItemRequest request)
         {
 
             int itemCnt = 1;
@@ -328,16 +330,16 @@ namespace Frontline.GameControllers
             var player = CurrentSession.GetBindPlayer();
             var item = player.Items.FirstOrDefault(x => x.Id == request.id);
             if (item == null)
-                return;
+                return (int)GameErrorCode.道具并不存在;
 
             if (item.Count < itemCnt)
-                return;
+                return (int)GameErrorCode.道具不足;
 
             DItem di = _ditems[item.Tid];
 
             if (!di.useable)
             {
-                return;
+                return (int)GameErrorCode.道具不可使用;
             }
 
             UseItemResponse response = new UseItemResponse();
@@ -398,6 +400,7 @@ namespace Frontline.GameControllers
             _db.SaveChanges();
             response.lap = item.Count;
             CurrentSession.SendAsync(response);
+            return 0;
         }
         #endregion
     }

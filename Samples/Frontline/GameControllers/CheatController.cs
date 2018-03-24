@@ -40,9 +40,6 @@ namespace Frontline.GameControllers
         #endregion
 
         #region 辅助方法
-        #endregion
-
-        #region 客户端接口
         private const string reason = "GM命令";
         private readonly Dictionary<string, Action<string[]>> _actions = new Dictionary<string, Action<string[]>>();
 
@@ -110,11 +107,14 @@ namespace Frontline.GameControllers
                     }
                 }
             }
-        
+
             _db.SaveChanges();
         }
-        
-        public void Call_Cheat(CheatRequest request)
+        #endregion
+
+        #region 客户端接口
+
+        public int Call_Cheat(CheatRequest request)
         {
             String[] strs = request.action.Split(new[] { ',', ' ', '.', '。', '，'});
             string cmd = strs[0];
@@ -130,6 +130,7 @@ namespace Frontline.GameControllers
                 CurrentSession.SendAsync(response);
             }
             response.success = false;
+            return 0;
         }
         #endregion
     }

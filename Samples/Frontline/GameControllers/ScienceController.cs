@@ -9,7 +9,7 @@ namespace Frontline.GameControllers
 {
     public class ScienceController : GameController
     {
-        public void Call_Info(ScienceInfoRequest request)
+        public int Call_Info(ScienceInfoRequest request)
         {
             ScienceInfoResponse response = new ScienceInfoResponse();
             response.success = true;
@@ -17,6 +17,7 @@ namespace Frontline.GameControllers
             response.sciences = new List<ScienceInfo>();
             response.devs = new List<int>();
             CurrentSession.SendAsync(response);
+            return 0;
         }
 
     }

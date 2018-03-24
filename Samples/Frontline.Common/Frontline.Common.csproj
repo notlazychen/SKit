@@ -5,6 +5,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Protocols\**" />
+    <EmbeddedResource Remove="Protocols\**" />
+    <None Remove="Protocols\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="11.0.1" />
     <PackageReference Include="Portable.BouncyCastle" Version="1.8.1.4" />
     <PackageReference Include="protobuf-net" Version="2.3.7" />

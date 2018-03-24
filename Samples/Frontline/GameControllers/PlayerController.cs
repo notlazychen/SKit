@@ -58,6 +58,21 @@ namespace Frontline.GameControllers
             camp.EquipLevelUp += (o, e) => UpdateMaxPower();
             camp.EquipGradeUp += (o, e) => UpdateMaxPower();
             camp.TeamSettingChanged += (o, e) => UpdateMaxPower();
+
+            Server.GameTaskDone += Server_GameTaskDone;
+        }
+
+        private void Server_GameTaskDone(object sender, GameTaskDoneEventArgs e)
+        {
+            if(e.ResultCode != 0)
+            {
+                var code = (GameErrorCode)e.ResultCode;
+                e.GameSession.SendAsync(new LevelupUnitResponse()
+                {
+                    success = false,
+                    info = code.ToString()
+                });
+            }
         }
 
         private void UpdateMaxPower()
@@ -215,11 +230,11 @@ namespace Frontline.GameControllers
         /// 登录
         /// </summary>
         [AllowAnonymous]
-        public void Call_Login(AuthRequest au)
+        public int Call_Login(GameSession session, AuthRequest au)
         {
-            if (CurrentSession.IsAuthorized)
+            if (session.IsAuthorized)
             {
-                return;
+                return (int)GameErrorCode.重复登录;
             }
             var json = JObject.Parse(DES.DesDecrypt(au.loginid, _config.DESKey));
             var ucenterId = json.Value<long>("id");
@@ -230,7 +245,7 @@ namespace Frontline.GameControllers
             {
                 //创建角色信息
                 player = new Player();
-                player.Id = $"S{CurrentSession.Server.Id}P{ucenterId}";
+                player.Id = $"S{session.Server.Id}P{ucenterId}";
                 int numb = _db.Players.Count();
                 player.NickName = "No." + numb;
                 player.UserCenterId = ucenterId;
@@ -242,7 +257,7 @@ namespace Frontline.GameControllers
                 player.VIP = 0;
                 player.LastVipUpTime = player.LastLvUpTime = player.LastLoginTime = player.CreateTime = DateTime.Now;
                 player.IsBind = false;
-                player.IP = (CurrentSession.Socket.RemoteEndPoint as IPEndPoint)?.Address.ToString();
+                player.IP = (session.Socket.RemoteEndPoint as IPEndPoint)?.Address.ToString();
                 player.Wallet = new Wallet()
                 {
                     PlayerId = player.Id,
@@ -270,8 +285,8 @@ namespace Frontline.GameControllers
                 this.RaisePlayerLoading(loader);
                 player = loader.Loader.First();
             }
-            CurrentSession.Login(player.Id);
-            CurrentSession.SetBind(player);
+            session.Login(player.Id);
+            session.SetBind(player);
 
             this.RaisePlayerEntered(player);
             AuthResponse response = new AuthResponse()
@@ -279,7 +294,9 @@ namespace Frontline.GameControllers
                 success = true,
                 pid = player.Id
             };
-            CurrentSession.SendAsync(response);
+            session.SendAsync(response);
+
+            return 0;
         }
 
         //[AllowAnonymous]
@@ -294,12 +311,13 @@ namespace Frontline.GameControllers
         //}
 
         [AllowAnonymous]
-        public void Call_Ping(Ping ping)
+        public int Call_Ping(GameSession session, Ping ping)
         {
-            CurrentSession.SendAsync(new Pong() { success = true, time = ping.time });
+            session.SendAsync(new Pong() { success = true, time = ping.time });
+            return 0;
         }
 
-        public void Call_GetPlayerRes(ResRequest request)
+        public int Call_GetPlayerRes(ResRequest request)
         {
             var player = CurrentSession.GetBind<Player>();
             ResResponse response = new ResResponse();
@@ -332,9 +350,10 @@ namespace Frontline.GameControllers
             response.resistMaxWave = 1;
             response.preExp = player.Level == 1 ? 0:  _dlevels[player.Level - 1].exp;
             CurrentSession.SendAsync(response);
+            return 0;
         }
 
-        public void Call_GetGuide(GuideInfoRequest request)
+        public int Call_GetGuide(GuideInfoRequest request)
         {
             var player = CurrentSession.GetBind<Player>();
             GuideInfoResponse response = new GuideInfoResponse();
@@ -342,9 +361,10 @@ namespace Frontline.GameControllers
             response.id = player.Id;
             response.guide = 1000;// player.Guide;
             CurrentSession.SendAsync(response);
+            return 0;
         }
 
-        public void Call_SetGuide(GuideDoneRequest request)
+        public int Call_SetGuide(GuideDoneRequest request)
         {
             var player = CurrentSession.GetBind<Player>();
             player.Guide = request.gindex;
@@ -355,6 +375,7 @@ namespace Frontline.GameControllers
             response.success = true;
             response.gindex = player.Guide;
             CurrentSession.SendAsync(response);
+            return 0;
         }
 
         /// <summary>
@@ -362,10 +383,11 @@ namespace Frontline.GameControllers
         /// </summary>
         /// <param name="session"></param>
         /// <param name="request"></param>
-        public void Call_RechargeInfo(RechargeInfoRequest request)
+        public int Call_RechargeInfo(RechargeInfoRequest request)
         {
             RechargeInfoResponse response = JsonConvert.DeserializeObject<RechargeInfoResponse>("{ \"rechargeDiamond\":0,\"rechargeInfos\":[],\"diamondConsume\":0,\"success\":true}");
             CurrentSession.SendAsync(response);
+            return 0;
         }
 
         #endregion

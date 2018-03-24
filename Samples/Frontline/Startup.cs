@@ -62,7 +62,8 @@ namespace Frontline
             }
 
             app.UseSKit();
-            app.UseMvc();
+            app.UseMvcWithDefaultRoute();
+            //app.UseMvc();
         }
     }
 }

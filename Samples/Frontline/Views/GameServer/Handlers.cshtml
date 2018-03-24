@@ -1,0 +1,21 @@
+﻿@using System.Collections.Generic;
+@using Frontline.Common;
+@model IEnumerable<GameHandlerInfo>
+
+<h2>Handlers</h2>
+<table border="1">
+    <tr>
+        <th>CMD</th>
+        <th>Type</th>
+        <th>Method</th>
+    </tr>
+    @foreach (GameHandlerInfo h in Model)
+    {
+        <tr>
+            <td>@h.CMD</td>
+            <td>@h.Type</td>
+            <td>@h.Name</td>
+        </tr>
+    }
+</table>
+

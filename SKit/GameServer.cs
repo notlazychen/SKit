@@ -7,6 +7,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
@@ -21,6 +22,7 @@ namespace SKit
     /// </summary>
     public class GameServer : IDisposable
     {
+        public const string MainWorldThreadName = "MainWorldThread";
         public int Id { get; }
         public bool IsRunning { get; private set; }
         /// <summary>
@@ -64,14 +66,28 @@ namespace SKit
         private readonly ConcurrentDictionary<string, GameSession> _users = new ConcurrentDictionary<string, GameSession>();//登录的连接 Key:UserName
         #endregion
 
-        private readonly Dictionary<string, GameProtocolProcessHandler> _handlers = new Dictionary<string, GameProtocolProcessHandler>();
+        private readonly Dictionary<string, GameProtoHandlerInfo> _handlers = new Dictionary<string, GameProtoHandlerInfo>();
         private readonly Dictionary<Type, GameController> _controllers = new Dictionary<Type, GameController>();
-
+        public IEnumerable<GameProtoHandlerInfo> Handlers
+        {
+            get
+            {
+                return _handlers.Values;
+            }
+        }
         /// <summary>
         /// 核心监听客户端TCP
         /// </summary>
         private Socket _listener;
         private readonly ILogger<GameServer> _logger;
+
+        #region 事件
+        public event EventHandler<GameTaskDoneEventArgs> GameTaskDone;
+        private void OnGameTaskDone(GameTaskDoneEventArgs args)
+        {
+            GameTaskDone?.Invoke(this, args);
+        }
+        #endregion
 
         #region 开放方法
         public GameServer(IServiceCollection services)
@@ -123,6 +139,7 @@ namespace SKit
                 //启动任务工作线程
                 _workingTaskTokenSource = new CancellationTokenSource();
                 _workingTask = new Thread(LoopWorking);
+                _workingTask.Name = MainWorldThreadName;
                 _workingTask.Start();
 
                 //启动发送线程
@@ -298,7 +315,7 @@ namespace SKit
         /// 接收消息前，可用于重写Filter
         /// </summary>
         /// <returns>是否过滤掉</returns>
-        protected virtual bool Filter(GameSession session, GameProtocolProcessHandler handler)
+        protected virtual bool Filter(GameSession session, GameProtoHandlerInfo handler)
         {
             if (!handler.AllowAnonymous && !session.IsAuthorized)
             {
@@ -611,10 +628,16 @@ namespace SKit
                 {
                     if (!_workingQueue.IsEmpty)
                     {
-                        if (_workingQueue.TryDequeue(out var task))
+                        while (_workingQueue.TryDequeue(out var task))
                         {
                             CurrentWorkingSession = task.Session;
-                            task.DoAction();
+                            int result = task.DoAction();
+
+                            this.OnGameTaskDone(new GameTaskDoneEventArgs()
+                            {
+                                GameSession = task.Session,
+                                ResultCode = result,
+                            });
                         }
                     }
                 }
@@ -653,7 +676,7 @@ namespace SKit
             }
 
             var request = _serializer.Deserialize(type, data.Array, data.Offset, data.Count);
-            var task = new GameRequestTask(handler.ProcessAction, session, request);
+            var task = new GameRequestTask(handler, session, request);
             if (handler.AllowAnonymous)
             {
                 //当遇到allowanonymous的任务时，即表示此任务不需要其他游戏逻辑线程同步，只要session同步即可，那么可以不放入逻辑线程而直接执行
@@ -704,26 +727,64 @@ namespace SKit
                     {
                         continue;
                     }
-                    ParameterInfo[] parameterInfos = methodInfo.GetParameters();
-                    if (parameterInfos.Length == 1)
+                    if(methodInfo.ReturnType != typeof(int))
                     {
-                        Type requestType = parameterInfos[0].ParameterType;
+                        _logger.LogWarning($"Method handler [{controller.GetType().Name}.{methodInfo.Name}] has wrong return type!");
+                        continue;
+                    }
+                    ParameterInfo[] parameterInfos = methodInfo.GetParameters();
+                    bool allowanonymous = methodInfo.GetCustomAttribute<AllowAnonymousAttribute>() != null;                    
+                    if(parameterInfos.Length > 2 || parameterInfos.Length < 1)
+                    {
+                        _logger.LogWarning($"Protocol Handler {controller.GetType().Name }.{methodInfo.Name} parameters count wrong!");
+                    }
+                    else
+                    {
+                        List<Type> parameterTypes = new List<Type>();
+                        foreach (var p in parameterInfos)
+                        {
+                            parameterTypes.Add(p.ParameterType);
+                        }
+                        var requestType = parameterTypes.FirstOrDefault(x=>x != typeof(GameSession));
+                        if (requestType == null)
+                        {
+                            _logger.LogWarning($"Protocol Handler {controller.GetType().Name }.{methodInfo.Name} parameters not contains request entity!");
+                            continue;
+                        }
                         String cmd = requestType.Name;
-                        Type[] templateTypeSet = new[] { requestType };
-                        Type methodGenericType = typeof(Action<>);
-                        Type methodType = methodGenericType.MakeGenericType(templateTypeSet);
+                        Type methodGenericType;
+                        GameProtoHandlerParameters paramSeq;
+                        if (parameterTypes.Count == 1)
+                        {
+                            methodGenericType = typeof(Func<,>);
+                            paramSeq = GameProtoHandlerParameters.Request;
+                        }
+                        else
+                        {
+                            methodGenericType = typeof(Func<,,>);
+                            if (parameterTypes[0] == typeof(GameSession))
+                            {
+                                paramSeq = GameProtoHandlerParameters.GameSessionAndRequest;
+                            }
+                            else
+                            {
+                                paramSeq = GameProtoHandlerParameters.RequestAndGameSession;
+                            }
+                        }
+                        parameterTypes.Add(typeof(int));
+                        Type methodType = methodGenericType.MakeGenericType(parameterTypes.ToArray());
                         Delegate actionMethod = Delegate.CreateDelegate(methodType, controller, methodInfo);
-                        bool allowanonymous = methodInfo.GetCustomAttribute<AllowAnonymousAttribute>() != null;
-                        var handler = new GameProtocolProcessHandler()
+                        var handler = new GameProtoHandlerInfo()
                         {
                             CMD = cmd,
                             MethodInfo = methodInfo,
                             ProcessAction = actionMethod,
                             RequestType = requestType,
                             Controller = controller,
-                            AllowAnonymous = allowanonymous
+                            AllowAnonymous = allowanonymous,
+                            ParameterTypes = paramSeq
                         };
-                        GameProtocolProcessHandler oldhandler = null;
+                        GameProtoHandlerInfo oldhandler = null;
                         if (!_handlers.TryGetValue(handler.CMD, out oldhandler))
                         {
                             _handlers.Add(handler.CMD, handler);
@@ -731,10 +792,9 @@ namespace SKit
                         }
                         else
                         {
-                            throw new Exception($"Request CMD [{handler.CMD}] in [{handler.Controller.GetType().Name }.{handler.MethodInfo.Name}] already declared in method: [{oldhandler.Controller.GetType().Name }.{oldhandler.MethodInfo.Name}]");
+                            _logger.LogWarning($"Request CMD [{handler.CMD}] in [{handler.Controller.GetType().Name }.{handler.MethodInfo.Name}] already declared in method: [{oldhandler.Controller.GetType().Name }.{oldhandler.MethodInfo.Name}]");
                         }
                     }
-
                 }
             }
 

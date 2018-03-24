@@ -15,7 +15,17 @@ namespace SKit
         /// 获取当前执行线程中的GameSession
         /// </summary>
         /// <remarks>注意不要在匿名允许的处理函数中使用, 匿名session处理函数为异步调用, 并不存在CurrenSession</remarks>
-        public GameSession CurrentSession => this.Server.CurrentWorkingSession;
+        public GameSession CurrentSession
+        {
+            get
+            {
+                if (Thread.CurrentThread.Name != GameServer.MainWorldThreadName)
+                {
+                    throw new Exception("错误的使用方式, 在异步调用中无法使用本属性");
+                }
+                return this.Server.CurrentWorkingSession;
+            }
+        }
 
 
         internal void RegisterEvents()
