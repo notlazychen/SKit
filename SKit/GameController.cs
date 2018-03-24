@@ -11,7 +11,11 @@ namespace SKit
     public abstract class GameController
     {
         public GameServer Server { get; internal set; }
-        public GameSession CurrentSession { get { return this.Server._currentWorkingSession;  } }
+        /// <summary>
+        /// 获取当前执行线程中的GameSession
+        /// </summary>
+        /// <remarks>注意不要在匿名允许的处理函数中使用, 匿名session处理函数为异步调用, 并不存在CurrenSession</remarks>
+        public GameSession CurrentSession => this.Server.CurrentWorkingSession;
 
 
         internal void RegisterEvents()

@@ -7,7 +7,7 @@ using System.Text;
 
 namespace SKit.Client
 {
-    public class GameClient
+    public class GameClient :IDisposable
     {
         private TcpClient _tcpClient;
         private NetworkStream _stream;
@@ -124,6 +124,11 @@ namespace SKit.Client
         {
             var type = typeof(T);
             _actions.Add(type.Name, type);
+        }
+
+        public void Dispose()
+        {
+            CloseSocket();
         }
     }
 }

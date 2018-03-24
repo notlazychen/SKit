@@ -1,14 +1,14 @@
-﻿using SKit.Client;
+﻿using System;
+using System.Diagnostics;
+using Frontline.Common;
+using Frontline.Common.Network;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
+using SKit.Client;
 using SKit.Common.Packagers;
 using SKit.Common.Serialization;
-using System;
-using System.Diagnostics;
-using System.Net;
-using System.Net.Sockets;
-using System.Threading.Tasks;
-using System.Threading;
 
-namespace ChatRoomClientSample
+namespace Frontline.Client
 {
     class Program
     {
@@ -52,16 +52,20 @@ namespace ChatRoomClientSample
         private static GameClient CreateClient()
         {
             //1 创建客户端
-            GameClient client = new GameClient(new StringMessagePackager(), new StringSerializer());
+            GameClient client = new GameClient(new VerintHeadPackager(), new ProtoBufSerializer(new GameConfig()
+            {
+                DESKey = "421w6tW1ivg=",
+                Secret = "whoareyou?"
+            }, new ConsoleLogger("A", (s, level) => true, true)));
             //string ip = "192.168.1.5";
-            //string ip = "139.196.21.206";
-            string ip = "101.132.118.172";
-            
+            string ip = "139.196.21.206";
+            //string ip = "101.132.118.172";
+
             //注册接收
             client.Register<String>();
             client.MessageReceived += Client_MessageReceived;
             //启动
-            client.Start(ip, 15000);
+            client.Start(ip, 6003);
             return client;
         }
 

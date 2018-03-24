@@ -29,7 +29,7 @@ namespace SKit
 
         internal GameSession()
         {
-            Id = Guid.NewGuid().ToString("N");
+            Id = Guid.NewGuid().ToString("D");
         }
 
         public void Login(string userid)
@@ -73,12 +73,16 @@ namespace SKit
 
         public bool TryGetBind<T>(out T data) where T : class
         {
-            Object o;
-            bool result = _cacheStore.TryGetValue(typeof(T), out o);
+            _cacheStore.TryGetValue(typeof(T), out var o);
             data = o as T;
             return data != null;
         }
 
+        /// <summary>
+        /// 获取绑定的数据
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
         public T GetBind<T>() where T : class
         {
             Object o;

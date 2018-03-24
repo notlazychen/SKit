@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using SKit.Common;
 
 namespace ChatRoomSample.GameControllers
 {
@@ -17,7 +18,8 @@ namespace ChatRoomSample.GameControllers
             _logger = logger;
         }
 
-        public void Chat(string msg)
+        [AllowAnonymous]
+        public void Call_Chat(string msg)
         {
             string str;
             //if (s.IsAuthorized)

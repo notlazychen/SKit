@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\SKit.Client\SKit.Client.csproj" />
+    <ProjectReference Include="..\Frontline.Common\Frontline.Common.csproj" />
+    <ProjectReference Include="..\Frontline.GameDesign\Frontline.GameDesign.csproj" />
+  </ItemGroup>
+
+</Project>

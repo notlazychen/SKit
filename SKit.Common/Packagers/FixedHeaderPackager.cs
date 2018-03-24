@@ -13,9 +13,7 @@ namespace SKit.Common.Packagers
 
         public override ArraySegment<byte> UnPack(byte[] buffer, int offset, int count, ref int readlength)
         {
-            int bodySize = 0;
-            int headSize = 0;
-            if(TryGetHeadLengthAndBodyLength(buffer, offset, count, out headSize, out bodySize))
+            if(TryGetHeadLengthAndBodyLength(buffer, offset, count, out var headSize, out var bodySize))
             {
                 int total = headSize + bodySize;
                 if(total <= count)
@@ -52,12 +50,15 @@ namespace SKit.Common.Packagers
         /// <param name="length">可用长度</param>
         /// <returns></returns>
         protected abstract ArraySegment<byte> ToHead(byte[] sendData, int offset, int length);
+
         /// <summary>
         /// 获取固定头部的长度
         /// </summary>
         /// <param name="buffer"></param>
         /// <param name="offset">当前偏移</param>
         /// <param name="length">可读取长度</param>
+        /// <param name="headLength"></param>
+        /// <param name="bodyLength"></param>
         /// <returns></returns>
         protected abstract bool TryGetHeadLengthAndBodyLength(byte[] buffer, int offset, int length, out int headLength, out int bodyLength);
 

@@ -26,18 +26,20 @@ namespace SKit
         /// <summary>
         /// 监听端口
         /// </summary>
-        public int Port { get { return Config.Port; } }
+        public int Port => Config.Port;
+
         /// <summary>
         /// 在线人数
         /// </summary>
-        public int ClientCount { get { return _sessions.Count; } }
+        public int ClientCount => _sessions.Count;
+
         /// <summary>
         /// 登录玩家数
         /// </summary>
-        public int UserCount { get { return _users.Count; } }
+        public int UserCount => _users.Count;
 
-        private ConcurrentQueue<GameTask> _workingQueue = new ConcurrentQueue<GameTask>();
-        private Task _workingTask;
+        private readonly ConcurrentQueue<GameTask> _workingQueue = new ConcurrentQueue<GameTask>();
+        private Thread _workingTask;
         //private CancellationTokenSource _listenerTokenSource;
         //private CancellationTokenSource _sendingTaskTokenSource;
         private CancellationTokenSource _workingTaskTokenSource;
@@ -46,24 +48,24 @@ namespace SKit
 
         //private Task _listenerTask;
 
-        private ConcurrentQueue<GameMessage> _sendingQueue = new ConcurrentQueue<GameMessage>();
-        private Task _sendingTask;
+        private readonly ConcurrentQueue<GameMessage> _sendingQueue = new ConcurrentQueue<GameMessage>();
+        private Thread _sendingTask;
 
 
-        private ElasticPool<SocketAsyncEventArgs> _socketRecvArgsPool;//输入缓冲池
-        private ElasticPool<SocketAsyncEventArgs> _socketSendArgsPool;//输出缓冲池
-        private Packager _packager;//拆包打包器
-        private Serializer _serializer;//正反序列化工具
+        private readonly ElasticPool<SocketAsyncEventArgs> _socketRecvArgsPool;//输入缓冲池
+        private readonly ElasticPool<SocketAsyncEventArgs> _socketSendArgsPool;//输出缓冲池
+        private readonly Packager _packager;//拆包打包器
+        private readonly Serializer _serializer;//正反序列化工具
         private SKitConfig Config { get; }//配置
-        private IServiceCollection _services;//DI容器
+        private readonly IServiceCollection _services;//DI容器
 
         #region 连接管理
-        private ConcurrentDictionary<string, GameSession> _sessions = new ConcurrentDictionary<string, GameSession>();//所有连接 Key:SessionId
-        private ConcurrentDictionary<string, GameSession> _users = new ConcurrentDictionary<string, GameSession>();//登录的连接 Key:UserName
+        private readonly ConcurrentDictionary<string, GameSession> _sessions = new ConcurrentDictionary<string, GameSession>();//所有连接 Key:SessionId
+        private readonly ConcurrentDictionary<string, GameSession> _users = new ConcurrentDictionary<string, GameSession>();//登录的连接 Key:UserName
         #endregion
 
-        private Dictionary<string, GameProtocolProcessHandler> _Handlers = new Dictionary<string, GameProtocolProcessHandler>();
-        private Dictionary<Type, GameController> _controllers = new Dictionary<Type, GameController>();
+        private readonly Dictionary<string, GameProtocolProcessHandler> _handlers = new Dictionary<string, GameProtocolProcessHandler>();
+        private readonly Dictionary<Type, GameController> _controllers = new Dictionary<Type, GameController>();
 
         /// <summary>
         /// 核心监听客户端TCP
@@ -120,12 +122,12 @@ namespace SKit
 
                 //启动任务工作线程
                 _workingTaskTokenSource = new CancellationTokenSource();
-                _workingTask = new Task(LoopWorking, _workingTaskTokenSource.Token);
+                _workingTask = new Thread(LoopWorking);
                 _workingTask.Start();
 
                 //启动发送线程
                 //_sendingTaskTokenSource = new CancellationTokenSource();
-                _sendingTask = new Task(LoopSending, _workingTaskTokenSource.Token);
+                _sendingTask = new Thread(LoopSending);
                 _sendingTask.Start();
 
                 IPEndPoint endPoint = new IPEndPoint(IPAddress.Any, Config.Port);
@@ -159,7 +161,6 @@ namespace SKit
                     _logger.LogInformation($"Game Server [{Id}] Closing...");
                     //_listenerTokenSource.Cancel();
                     //_sendingTaskTokenSource.Cancel();
-                    _workingTaskTokenSource.Cancel();
 
                     _acceptEventArg.Completed -= acceptEventArg_Completed;
                     _acceptEventArg.Dispose();
@@ -169,13 +170,15 @@ namespace SKit
                     {
                         _listener.Close();
                     }
-                    finally
+                    catch (Exception)
                     {
-                        _listener = null;
+                        // ignored
                     }
 
+                    int i = 1;
                     foreach (var session in _sessions.Values)
                     {
+                        _logger.LogDebug("关闭第[{0}]个连接", i++);
                         try
                         {
                             CloseClientSocket(session.SocketAsyncEventArgs, ClientCloseReason.ServerClose);
@@ -186,9 +189,12 @@ namespace SKit
                         }
                     }
 
+                    _workingTaskTokenSource.Cancel();
+                    _sendingTask.Join(10000);
+                    _workingTask.Join(10000);
+
                     _users.Clear();
 
-                    Task.WaitAll(_workingTask, _sendingTask);
                     IsRunning = false;
                     _logger.LogInformation($"Game Server [{Id}] Closed");
                 }
@@ -212,8 +218,8 @@ namespace SKit
         {
             _users.AddOrUpdate(session.UserId, session, (username, oldSession) =>
             {
-                    //把原来的玩家踢下线
-                    oldSession.Logout();
+                //把原来的玩家踢下线
+                oldSession.Logout();
                 CloseClientSocket(oldSession.SocketAsyncEventArgs, ClientCloseReason.Displacement);
                 return session;
             });
@@ -278,14 +284,14 @@ namespace SKit
         /// <remarks>这里是网络通信部分，与游戏逻辑处理不是同一线程</remarks>
         protected virtual void OnNewSessionConnected(GameSession session)
         {
-
+            _logger.LogDebug($"当前连接数: {ClientCount}");
         }
         /// <summary>
         /// 连接断开
         /// </summary>
         protected virtual void OnSessionClosed(GameSession session)
         {
-
+            _logger.LogDebug($"当前连接数: {ClientCount}");
         }
 
         /// <summary>
@@ -454,17 +460,28 @@ namespace SKit
         {
             GameSession token = e.UserToken as GameSession;
             // close the socket associated with the client
+            if (token == null)
+                return;
+
             try
             {
-                token.Socket.Shutdown(SocketShutdown.Send);
+                this.OnSessionClosed(token);
+                if (token.Socket.Connected)
+                    token.Socket.Shutdown(SocketShutdown.Both);
             }
-            // throws if client process has already closed
             catch (Exception)
             {
                 // ignored
             }
 
-            token.Socket.Close();
+            try
+            {
+                token.Socket.Close();
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
 
             var task = new GamePlayerLeaveTask(token, reason, _controllers.Values);
             if (reason == ClientCloseReason.Displacement)
@@ -488,7 +505,6 @@ namespace SKit
                 }
             }
 
-            this.OnSessionClosed(token);
             _sessions.TryRemove(token.Id, out _);
             token?.Dispose();
             // Free the SocketAsyncEventArg so they can be reused by another client
@@ -526,11 +542,9 @@ namespace SKit
                 {
                     if (!_sendingQueue.IsEmpty)
                     {
-                        GameMessage message = null;
-                        if (_sendingQueue.TryDequeue(out message))
+                        while (_sendingQueue.TryDequeue(out var message))
                         {
                             var args = _socketSendArgsPool.Pop();
-                            //string cmd = _serializer.EntityToCmd(message.Msg);
                             byte[] data = _serializer.Serialize(message.Msg);
                             ArraySegment<byte> encodedMessage = _packager.Pack(data, args.Buffer, 0, args.Buffer.Length);
                             args.SetBuffer(0, encodedMessage.Count);
@@ -588,7 +602,7 @@ namespace SKit
             }
         }
 
-        internal GameSession _currentWorkingSession;
+        internal GameSession CurrentWorkingSession;
         private void LoopWorking()
         {
             while (!_workingTaskTokenSource.IsCancellationRequested)
@@ -597,10 +611,9 @@ namespace SKit
                 {
                     if (!_workingQueue.IsEmpty)
                     {
-                        GameTask task = null;
-                        if (_workingQueue.TryDequeue(out task))
+                        if (_workingQueue.TryDequeue(out var task))
                         {
-                            _currentWorkingSession = task.Session;
+                            CurrentWorkingSession = task.Session;
                             task.DoAction();
                         }
                     }
@@ -626,13 +639,13 @@ namespace SKit
         protected bool DigestRecevedData(GameSession session, ArraySegment<byte> data)
         {
             string cmd = _serializer.DataToCmd(data.Array, data.Offset, data.Count);
-            if (cmd == null || !this._Handlers.ContainsKey(cmd))
+            if (cmd == null || !this._handlers.ContainsKey(cmd))
             {
                 //如果没有处理器，先刷掉一批
                 return false;
             }
 
-            var handler = this._Handlers[cmd];
+            var handler = this._handlers[cmd];
             var type = handler.RequestType;
             if (Filter(session, handler))
             {
@@ -643,6 +656,7 @@ namespace SKit
             var task = new GameRequestTask(handler.ProcessAction, session, request);
             if (handler.AllowAnonymous)
             {
+                //当遇到allowanonymous的任务时，即表示此任务不需要其他游戏逻辑线程同步，只要session同步即可，那么可以不放入逻辑线程而直接执行
                 task.DoAction();
             }
             else
@@ -710,9 +724,9 @@ namespace SKit
                             AllowAnonymous = allowanonymous
                         };
                         GameProtocolProcessHandler oldhandler = null;
-                        if (!_Handlers.TryGetValue(handler.CMD, out oldhandler))
+                        if (!_handlers.TryGetValue(handler.CMD, out oldhandler))
                         {
-                            _Handlers.Add(handler.CMD, handler);
+                            _handlers.Add(handler.CMD, handler);
                             _serializer.Register(requestType);
                         }
                         else

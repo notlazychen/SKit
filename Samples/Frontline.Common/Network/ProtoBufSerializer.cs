@@ -24,11 +24,19 @@ namespace Frontline.Common.Network
         private static byte[] _xorbytes;
         private Dictionary<Type, short> _types = new Dictionary<Type, short>();
         private Dictionary<short, string> _cmds = new Dictionary<short, string>();
-        private ILogger<ProtoBufSerializer> _logger;
-        private IOptions<GameConfig> _config;
-        public ProtoBufSerializer(IOptions<GameConfig> config, ILogger<ProtoBufSerializer> logger)
+        private ILogger _logger;
+        private GameConfig _config;
+
+        public ProtoBufSerializer(GameConfig config, ILogger logger)
         {
             _config = config;
+            _xorbytes = Encoding.UTF8.GetBytes(_config.Secret);
+            _logger = logger;
+        }
+
+        public ProtoBufSerializer(IOptions<GameConfig> config, ILogger<ProtoBufSerializer> logger)
+        {
+            _config = config.Value;
             _xorbytes = Encoding.UTF8.GetBytes(config.Value.Secret);
             _logger = logger;
         }
@@ -56,7 +64,7 @@ namespace Frontline.Common.Network
                 stream.SetLength(bodyLength);
                 var msg =  ProtoBuf.Serializer.Deserialize(type, stream);
 
-                if (_config.Value.LogIO)
+                if (_config.LogIO)
                 {
                     _logger.LogDebug("[RECV]{0}:{1}", msg.GetType().Name, JsonConvert.SerializeObject(msg));
                 }
@@ -92,7 +100,7 @@ namespace Frontline.Common.Network
             buffer[offset++] = (byte)(cmd & 0xff);
 
             Buffer.BlockCopy(bytes, 0, buffer, offset, bytes.Length);
-            if (_config.Value.LogIO)
+            if (_config.LogIO)
             {
                 _logger.LogDebug("[SEND]{0}:{1}", entity.GetType().Name, JsonConvert.SerializeObject(entity));
             }

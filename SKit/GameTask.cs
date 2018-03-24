@@ -45,18 +45,18 @@ namespace SKit
 
     public class GamePlayerLeaveTask : GameTask
     {
-        private IEnumerable<GameController> Controllers;
+        private readonly IEnumerable<GameController> _controllers;
         public ClientCloseReason Reason { get; private set; }
         public GamePlayerLeaveTask(GameSession session, ClientCloseReason reason, IEnumerable<GameController> controllers) 
             : base(session)
         {
             Reason = reason;
-            Controllers = controllers;
+            _controllers = controllers;
         }
 
         protected override void OnDoAction()
         {
-            foreach(var c in this.Controllers)
+            foreach(var c in this._controllers)
             {
                 c.OnLeave(Reason);
             }
