@@ -60,7 +60,7 @@ namespace Frontline.GameControllers
             //在创建玩家的时候进行副本的初始化操作
             Section section = new Section()
             {
-                Id = Guid.NewGuid().ToString("N"),
+                Id = Guid.NewGuid().ToString("D"),
                 PlayerId = e.Id,
                 Index = 1,
                 Type = 1,
@@ -103,7 +103,7 @@ namespace Frontline.GameControllers
         {
             Dungeon dungeon = new Dungeon()
             {
-                Id = Guid.NewGuid().ToString("N"),
+                Id = Guid.NewGuid().ToString("D"),
                 PlayerId = p.Id,
                 Tid = dd.id,
                 Type = dd.type,
@@ -362,25 +362,30 @@ namespace Frontline.GameControllers
         new int []{1, 1, 2, 2, 3}};
         public int Call_FightEnd(FBFightResultRequest request)
         {
-            FBFightResultResponse response = new FBFightResultResponse();
-            response.success = true;
-            response.win = false;
-            response.id = request.id;
-            Battle battle;
             if(request.token == null)
             {
-                return (int)GameErrorCode.副本战斗令牌错误或战斗已经失效;
+                UnitListResponse er = new UnitListResponse();
+                er.success = false;
+                er.info = GameErrorCode.副本战斗令牌错误或战斗已经失效.ToString();
+                CurrentSession.SendAsync(er);
+                //return (int)GameErrorCode.副本战斗令牌错误或战斗已经失效;
             }
-            if (!this._battles.TryGetValue(request.token, out battle) || battle.PlayerId != CurrentSession.UserId || battle.Dungeon.Id != request.id)
-            {
-                return (int)GameErrorCode.副本战斗令牌错误或战斗已经失效;
-            }
-            _battles.Remove(battle.Id);
-            
-            if (request.token != battle.Id && request.win)
+            //Battle battle;
+            //if (!this._battles.TryGetValue(request.token, out battle) || battle.PlayerId != CurrentSession.UserId || battle.Dungeon.Id != request.id)
+            //{
+            //    return (int)GameErrorCode.副本战斗令牌错误或战斗已经失效;
+            //}
+            //_battles.Remove(battle.Id);
+
+            FBFightResultResponse response = new FBFightResultResponse();
+            response.win = request.win;
+            response.id = request.id;
+            response.success = true;
+            if (request.win)
             {
                 var player = this.CurrentSession.GetBindPlayer();
-                Dungeon dungeon = battle.Dungeon;
+                //Dungeon dungeon = battle.Dungeon;
+                Dungeon dungeon = player.Sections.Select(x=>x.Dungeons.FirstOrDefault(d=>d.Id == request.id)).First(x=>x != null);
                 DDungeon ddungeon = DDungeons[dungeon.Type][dungeon.Section][dungeon.Mission];
 
                 string reason = $"副本{ddungeon.id}:{ddungeon.name}战斗胜利";
@@ -426,7 +431,7 @@ namespace Frontline.GameControllers
                         {
                             Section secionNext = new Section()
                             {
-                                Id = Guid.NewGuid().ToString("N"),
+                                Id = Guid.NewGuid().ToString("D"),
                                 PlayerId = player.Id,
                                 Index = dungeon.Section + 1,
                                 Type = dungeon.Type,
@@ -443,7 +448,7 @@ namespace Frontline.GameControllers
                             {
                                 Section secionEx = new Section()
                                 {
-                                    Id = Guid.NewGuid().ToString("N"),
+                                    Id = Guid.NewGuid().ToString("D"),
                                     PlayerId = player.Id,
                                     Index = dungeon.Section,
                                     Type = 2,
@@ -462,7 +467,7 @@ namespace Frontline.GameControllers
                             {
                                 Section secionEx = new Section()
                                 {
-                                    Id = Guid.NewGuid().ToString("N"),
+                                    Id = Guid.NewGuid().ToString("D"),
                                     PlayerId = player.Id,
                                     Index = dungeon.Section + 1,
                                     Type = 2,

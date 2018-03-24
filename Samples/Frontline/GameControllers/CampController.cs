@@ -71,7 +71,7 @@ namespace Frontline.GameControllers
 
                 Unit unit = new Unit()
                 {
-                    Id = Guid.NewGuid().ToString("N"),
+                    Id = Guid.NewGuid().ToString("D"),
                     PlayerId = e.Id,
                     Tid = uid,
                     Number = 81,
@@ -85,7 +85,7 @@ namespace Frontline.GameControllers
                     DEquip de = DEquips[deid];
                     Equip eq = new Equip()
                     {
-                        Id = Guid.NewGuid().ToString("N"),
+                        Id = Guid.NewGuid().ToString("D"),
                         Level = 1,
                         GradeId = de.gradeid,
                         PlayerId = e.Id,
@@ -426,7 +426,7 @@ namespace Frontline.GameControllers
             //{
             unit = new Unit()
             {
-                Id = Guid.NewGuid().ToString("N"),
+                Id = Guid.NewGuid().ToString("D"),
                 Level = 1,
                 Number = du.max_energy,
                 Tid = uid,
@@ -437,7 +437,7 @@ namespace Frontline.GameControllers
                 DEquip de = DEquips[deid];
                 Equip eq = new Equip()
                 {
-                    Id = Guid.NewGuid().ToString("N"),
+                    Id = Guid.NewGuid().ToString("D"),
                     Level = 1,
                     GradeId = de.gradeid,
                     PlayerId = player.Id,

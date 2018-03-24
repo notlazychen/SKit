@@ -160,7 +160,7 @@ namespace Frontline.GameControllers
                     Tid = itemId,
                     PlayerId = player.Id,
                     Count = count,
-                    Id = Guid.NewGuid().ToString("N")
+                    Id = Guid.NewGuid().ToString("D")
                 };
                 player.Items.Add(item);
             }
