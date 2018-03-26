@@ -9,8 +9,8 @@ namespace Frontline.GameDesign
 {
     class Program
     {
-        const string rootPath = @"E:\COF_WORKSPACE\指挥前线开发版\配置表\";
-        //const string rootPath = @"F:\SwordsMan\指挥前线开发版\配置表";
+        //const string rootPath = @"E:\COF_WORKSPACE\指挥前线开发版\配置表\";
+        const string rootPath = @"F:\SwordsMan\指挥前线开发版\配置表";
         const string connection = "Server=101.132.118.172;database=frontline_design;uid=chenrong;pwd=abcd1234;SslMode=None;charset=utf8;pooling=false";
         private static GameDesignContext db;
         static void Main(string[] args)
@@ -32,6 +32,11 @@ namespace Frontline.GameDesign
             ReadConfigAndWriteToDB("兵种装备升级消耗.xlsx", db.DEquipLevelCosts);
             ReadConfigAndWriteToDB("兵种装备升阶表.xlsx", db.DEquipGrades);
             ReadConfigAndWriteToDB("随机库表.xlsx", db.DRandoms);
+            db.SaveChanges();
+
+            ReadConfigAndWriteToDB("十连抽-抽奖配置.xlsx", db.DLotteries);
+            ReadConfigAndWriteToDB("十连抽-抽奖ID.xlsx", db.DLotteryGroups);
+            ReadConfigAndWriteToDB("十连抽-奖励库.xlsx", db.DLotteryRands);
             db.SaveChanges();
         }
 

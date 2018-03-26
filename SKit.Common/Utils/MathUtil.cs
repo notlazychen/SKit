@@ -8,6 +8,11 @@ namespace SKit.Common.Utils
     {
         private static readonly Random Random = new Random();
 
+        public static int RandomNumber(int min, int max)
+        {
+            return Random.Next(min, max);
+        }
+
         public static int RandomIndex(int[] weight)
         {
             int sum = 0;
@@ -27,6 +32,30 @@ namespace SKit.Common.Utils
                 }
             }
             return -1;
+        }
+
+        public static T RandomElement<T>(IEnumerable<T> elements, Func<T, int> weightFunc)
+            where T : class
+        {
+            int sum = 0;
+            int length = 0;
+            foreach (T element in elements)
+            {
+                sum += weightFunc(element);
+                length++;
+            }
+
+            int rand = Random.Next(0, sum);
+            int cur = 0;
+            foreach (T element in elements)
+            {
+                cur += weightFunc(element);
+                if (rand < cur)
+                {
+                    return element;
+                }
+            }
+            return null;
         }
     }
 }

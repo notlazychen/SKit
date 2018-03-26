@@ -178,10 +178,12 @@ namespace SKit
                     _logger.LogInformation($"Game Server [{Id}] Closing...");
                     //_listenerTokenSource.Cancel();
                     //_sendingTaskTokenSource.Cancel();
-
-                    _acceptEventArg.Completed -= acceptEventArg_Completed;
-                    _acceptEventArg.Dispose();
-                    _acceptEventArg = null;
+                    if(_acceptEventArg != null)
+                    {
+                        _acceptEventArg.Completed -= acceptEventArg_Completed;
+                        _acceptEventArg.Dispose();
+                        _acceptEventArg = null;
+                    }
 
                     try
                     {
@@ -236,8 +238,8 @@ namespace SKit
             _users.AddOrUpdate(session.UserId, session, (username, oldSession) =>
             {
                 //把原来的玩家踢下线
-                oldSession.Logout();
                 CloseClientSocket(oldSession.SocketAsyncEventArgs, ClientCloseReason.Displacement);
+                oldSession.Logout();
                 return session;
             });
         }
@@ -378,29 +380,36 @@ namespace SKit
                 willRaiseEvent = true;
             }
 
-            if (socket != null)
+            try
             {
-                var args = _socketRecvArgsPool.Pop();
-                var session = new GameSession
+                if (socket != null)
                 {
-                    Server = this,
-                    Socket = socket,
-                    SocketAsyncEventArgs = args
-                };
-                args.UserToken = session;
-                _sessions.TryAdd(session.Id, session);
-                this.OnNewSessionConnected(session);
+                    var args = _socketRecvArgsPool.Pop();
+                    var session = new GameSession
+                    {
+                        Server = this,
+                        Socket = socket,
+                        SocketAsyncEventArgs = args
+                    };
+                    args.UserToken = session;
+                    _sessions.TryAdd(session.Id, session);
+                    this.OnNewSessionConnected(session);
 
-                _logger.LogDebug($"{session.Id}: Enter");
-                bool willRaiseEventRecv = socket.ReceiveAsync(args);
-                if (!willRaiseEventRecv)
-                {
-                    ProcessReceive(args);
+                    _logger.LogDebug($"{session.Id}: Enter");
+                    bool willRaiseEventRecv = socket.ReceiveAsync(args);
+                    if (!willRaiseEventRecv)
+                    {
+                        ProcessReceive(args);
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, ex.Message);
             }
 
             if (!willRaiseEvent)
-                ProcessAccept(e);
+                    ProcessAccept(e);
         }
 
         /// <summary>
@@ -500,33 +509,33 @@ namespace SKit
                 // ignored
             }
 
-            var task = new GamePlayerLeaveTask(token, reason, _controllers.Values);
-            if (reason == ClientCloseReason.Displacement)
+            if(_sessions.TryRemove(token.Id, out _))
             {
-                try
+                if (_users.TryRemove(token.UserId, out _))
                 {
-                    task.DoAction();
+                    var task = new GamePlayerLeaveTask(token, reason, _controllers.Values);
+                    if (reason == ClientCloseReason.Displacement)
+                    {
+                        try
+                        {
+                            task.DoAction();
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, ex.Message);
+                        }
+                    }
+                    else
+                    {
+                        //任务队列加入玩家离线
+                        _workingQueue.Enqueue(task);
+                    }
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, ex.Message);
-                }
+                token?.Dispose();
+                // Free the SocketAsyncEventArg so they can be reused by another client
+                _socketRecvArgsPool.Push(e);
+                _logger.LogDebug($"{token.Id}: LEAVE, reason: {reason}");
             }
-            else
-            {
-                //任务队列加入玩家离线
-                _workingQueue.Enqueue(task);
-                if (token.IsAuthorized)
-                {
-                    _users.TryRemove(token.UserId, out _);
-                }
-            }
-
-            _sessions.TryRemove(token.Id, out _);
-            token?.Dispose();
-            // Free the SocketAsyncEventArg so they can be reused by another client
-            _socketRecvArgsPool.Push(e);
-            _logger.LogDebug($"{token.Id}: LEAVE, reason: {reason}");
         }
 
         private void ProcessSend(SocketAsyncEventArgs e)

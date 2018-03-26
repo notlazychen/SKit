@@ -22,6 +22,10 @@ namespace protocol
         /// </summary>
 		[ProtoMember(3, IsRequired = false)]
 		public int count;
-
-	}
+        /// <summary>
+        ///  道具的唯一ID
+        /// </summary>
+		[ProtoMember(4, IsRequired = false)]
+        public string sid;
+    }
 }

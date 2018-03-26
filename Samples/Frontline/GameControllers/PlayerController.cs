@@ -64,6 +64,7 @@ namespace Frontline.GameControllers
 
         private void Server_GameTaskDone(object sender, GameTaskDoneEventArgs e)
         {
+            //错误码统一管理
             if(e.ResultCode != 0)
             {
                 var code = (GameErrorCode)e.ResultCode;
@@ -103,7 +104,10 @@ namespace Frontline.GameControllers
         {
             base.OnLeave(reason);
 
-            //_db.SaveChanges();
+            var player = CurrentSession.GetBindPlayer();
+            //player.OnlineTime += (DateTime.Now - player.LastLoginTime);
+
+            _db.SaveChanges();
         }
 
         #region 事件
@@ -112,7 +116,7 @@ namespace Frontline.GameControllers
         /// </summary>
         /// <remarks>与读取角色事件互斥</remarks>
         internal event EventHandler<Player> PlayerCreating;
-        private void RaisePlayerCreating(Player player)
+        private void OnPlayerCreating(Player player)
         {
             PlayerCreating?.Invoke(this, player);
         }
@@ -121,16 +125,28 @@ namespace Frontline.GameControllers
         /// </summary>
         /// <remarks>与创建角色事件互斥</remarks>
         internal event EventHandler<PlayerLoader> PlayerLoading;
-        private void RaisePlayerLoading(PlayerLoader loader)
+        private void OnPlayerLoading(PlayerLoader loader)
         {
             loader.Loader = loader.Loader.Include(p => p.Wallet);
             PlayerLoading?.Invoke(this, loader);
         }
 
+        internal event EventHandler<Player> PlayerLoaded;
+        private void OnPlayerLoaded(Player player)
+        {
+            PlayerLoaded?.Invoke(this, player);
+        }
+
         internal event EventHandler<Player> PlayerEntered;
-        private void RaisePlayerEntered(Player player)
+        private void OnPlayerEntered(Player player)
         {
             PlayerEntered?.Invoke(this, player);
+        }
+
+        internal event EventHandler<Player> PlayerEverydayRefresh;
+        private void OnPlayerEverydayRefresh(Player player)
+        {
+            PlayerEverydayRefresh?.Invoke(this, player);
         }
         #endregion
 
@@ -270,7 +286,7 @@ namespace Frontline.GameControllers
                 player.Wallet.AddCurrency(CurrencyType.OIL, 300);
          
                 _db.Players.Add(player);
-                this.RaisePlayerCreating(player);
+                this.OnPlayerCreating(player);
                 player.MaxPower = player.Units.Sum(x => x.Power);
                 _db.SaveChanges();
             }
@@ -282,13 +298,19 @@ namespace Frontline.GameControllers
                 {
                     Loader = queryPlayer
                 };
-                this.RaisePlayerLoading(loader);
+                this.OnPlayerLoading(loader);
                 player = loader.Loader.First();
+
+                player.LastLoginTime = DateTime.Now;
+                _db.SaveChanges();
+
+                OnPlayerLoaded(player);
+                _db.SaveChanges();
             }
             session.Login(player.Id);
             session.SetBind(player);
 
-            this.RaisePlayerEntered(player);
+            this.OnPlayerEntered(player);
             AuthResponse response = new AuthResponse()
             {
                 success = true,
@@ -329,9 +351,18 @@ namespace Frontline.GameControllers
             response.exp = player.Exp;
             response.renameCnt = player.RenameNumb;
             response.vip = player.VIP;
-            
+
+            //检查每日刷新
+            if (player.LastDayRefreshTime.Date != DateTime.Today)
+            {
+                //需要刷新
+                OnPlayerEverydayRefresh(player);
+
+                player.LastDayRefreshTime = DateTime.Today;
+                _db.SaveChanges();
+            }
+
             response.resInfos = new List<ResInfo>();
-            bool checkout = false;
             for (int ct = 1; ct <= CurrencyType.MAX_TYPE; ct++)
             {
                 response.resInfos.Add(new ResInfo()
@@ -340,11 +371,7 @@ namespace Frontline.GameControllers
                     count = player.Wallet.GetCurrency(ct)
                 });
             }
-
-            if (checkout)
-            {
-                _db.SaveChanges();
-            }
+            
             //一些配置表的内容
             response.nextExp = _dlevels[player.Level].exp;
             response.resistMaxWave = 1;

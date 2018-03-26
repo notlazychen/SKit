@@ -38,6 +38,10 @@ namespace Frontline.GameDesign
                     foreach (var cell in row.Cells)
                     {
                         string cellName = cell.StringCellValue;
+                        if (string.IsNullOrEmpty(cellName))
+                        {
+                            continue;
+                        }
                         string propName = cellName.Substring(0, cellName.IndexOf(":", StringComparison.Ordinal));
                         var prop = cellNumbs.Keys.FirstOrDefault(p => p.Name == propName);
                         

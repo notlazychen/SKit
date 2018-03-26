@@ -98,13 +98,6 @@ namespace Frontline.GameControllers
             return 0;
         }
 
-        public int Call_CMD_905(GetLotteryInfoRequest request)
-        {
-            GetLotteryInfoResponse response = JsonConvert.DeserializeObject<GetLotteryInfoResponse>("{\"diamondFreeNextTime\":1520988264222,\"goldUsedNumb\":0,\"diamondBaseNumb\":10,\"diamondUsedNumb\":0,\"goldFreeNextTime\":1520988264222,\"success\":true,\"goldBaseNumb\":10,\"goldFreeNumb\":5,\"diamondFreeNumb\":1}");
-            CurrentSession.SendAsync(response);
-            return 0;
-        }
-
         public int Call_CMD_901(RebateInfoRequest request)
         {
             //RebateInfoResponse response = new RebateInfoResponse()

@@ -136,7 +136,8 @@ namespace Frontline.GameControllers
                             {
                                 type = 2,
                                 id = itemId,
-                                count = item.Count
+                                count = item.Count,
+                                sid = item.Id
                             }
                         }
                     };
@@ -178,7 +179,8 @@ namespace Frontline.GameControllers
                     {
                         type = 2,
                         id = itemId,
-                        count = item.Count
+                        count = item.Count,
+                        sid = item.Id
                     }
                 }
             };

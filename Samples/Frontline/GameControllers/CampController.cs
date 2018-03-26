@@ -366,23 +366,24 @@ namespace Frontline.GameControllers
                     ei.equipId = eq.Tid;
                     ei.level = eq.Level;
                     info.equips.Add(ei);
+
+                    int v = de.base_attr_value + de.level_grow * (eq.Level - 1);
+                    //升阶增加的属性 =（基础属性 +（100 - 1）*成长属性）*（升阶增加属性万分比）
+                    v += (int)((de.base_attr_value + (100 - 1) * de.level_grow) * deg.grade_grow / 10000d);
                     switch (de.base_attr_type)
                     {
                         case 1:
                             {
-                                int v = de.base_attr_value + de.level_grow * (eq.Level - 1) + deg.grade_grow;
                                 info.att += v;
                             }
                             break;
                         case 2:
                             {
-                                int v = de.base_attr_value + de.level_grow * (eq.Level - 1) + deg.grade_grow;
                                 info.defence += v;
                             }
                             break;
                         case 3:
                             {
-                                int v = de.base_attr_value + de.level_grow * (eq.Level - 1) + deg.grade_grow;
                                 info.hp += v;
                             }
                             break;

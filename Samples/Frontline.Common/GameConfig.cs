@@ -15,5 +15,10 @@ namespace Frontline.Common
         public static readonly int TYPE_UNIT_UNLOCK = 2;
         public static readonly int TYPE_INDUSTRY = 3;
         public static readonly int TYPE_UNITREST = 4;//兵种休整
+
+
+        public const int lottery_base_cnt = 10;
+        public const int lottery_first_item_id = 41070307;//国内海外307T-26
+        public const int lottery_first_item_cnt = 15;
     }
 }

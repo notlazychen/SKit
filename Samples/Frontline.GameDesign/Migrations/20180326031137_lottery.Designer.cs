@@ -12,9 +12,10 @@ using System.Collections.Generic;
 namespace Frontline.GameDesign.Migrations
 {
     [DbContext(typeof(GameDesignContext))]
-    partial class GameDesignContextModelSnapshot : ModelSnapshot
+    [Migration("20180326031137_lottery")]
+    partial class lottery
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -227,8 +228,7 @@ namespace Frontline.GameDesign.Migrations
 
                     b.Property<int>("free_cnt");
 
-                    b.Property<string>("name")
-                        .HasMaxLength(32);
+                    b.Property<string>("name");
 
                     b.Property<int>("rand");
 

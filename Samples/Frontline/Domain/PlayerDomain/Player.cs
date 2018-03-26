@@ -120,7 +120,12 @@ namespace Frontline.Domain
         /// </summary>
         public float Guide { get; set; }
 
+        public DateTime LastDayRefreshTime { get; set; }
+        public TimeSpan OnlineTime { get; set; }
+
+        public FriendList FriendList { get; set; }
         public Wallet Wallet { get; set; }
+        public Lottery Lottery { get; set; }
         public List<Section> Sections { get; set; } = new List<Section>();
         public List<PlayerItem> Items { get; set; } = new List<PlayerItem>();
         public List<Unit> Units { get; set; } = new List<Unit>();

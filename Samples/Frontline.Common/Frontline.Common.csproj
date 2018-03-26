@@ -5,9 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Protocols\**" />
-    <EmbeddedResource Remove="Protocols\**" />
-    <None Remove="Protocols\**" />
+    <Compile Remove="Protocols.cs" />
   </ItemGroup>
 
   <ItemGroup>

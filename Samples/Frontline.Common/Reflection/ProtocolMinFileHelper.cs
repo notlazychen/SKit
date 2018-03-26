@@ -47,7 +47,7 @@ namespace Frontline.Common.Reflection
             {
                 Type = type,
                 Proto = type.GetCustomAttribute<ProtoAttribute>()
-            }).Where(t => t.Proto != null).OrderBy(t => t.Proto.value).ToList();
+            }).Where(t => t.Proto != null).OrderBy(t => Math.Abs(t.Proto.value)).ToList();
 
             foreach (var info in msgs)
             {

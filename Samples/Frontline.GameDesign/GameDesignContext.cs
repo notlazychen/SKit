@@ -13,6 +13,7 @@ namespace Frontline.GameDesign
         public GameDesignContext(DbContextOptions<GameDesignContext> options)
             : base(options)
         {
+            ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -48,7 +49,10 @@ namespace Frontline.GameDesign
         public DbSet<DEquipLevelCost> DEquipLevelCosts { get; set; }
         public DbSet<DEquipGrade> DEquipGrades { get; set; }
         public DbSet<DRandom> DRandoms { get; set; }
-        
+
+        public DbSet<DLottery> DLotteries { get; set; }
+        public DbSet<DLotteryGroup> DLotteryGroups { get; set; }
+        public DbSet<DLotteryRand> DLotteryRands { get; set; }
     }
 }
 
