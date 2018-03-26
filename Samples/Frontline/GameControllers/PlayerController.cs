@@ -335,7 +335,7 @@ namespace Frontline.GameControllers
         [AllowAnonymous]
         public int Call_Ping(GameSession session, Ping ping)
         {
-            session.SendAsync(new Pong() { success = true, time = ping.time });
+            session.SendAsync(new Pong() { success = true, time = DateTime.Now.ToUnixTime() });
             return 0;
         }
 
