@@ -24,10 +24,15 @@ namespace Frontline.Data
             modelBuilder.Entity<Player>().HasIndex(p => p.UserCenterId);
             modelBuilder.Entity<Player>().HasIndex(p => p.UserCode);
             modelBuilder.Entity<Player>().HasAlternateKey(p => p.NickName);
+            //modelBuilder.Entity<Player>().HasBaseType<PlayerBaseInfo>();
             //modelBuilder.Entity<Player>().HasMany(p => p.Items);
             //modelBuilder.Entity<Player>().HasMany(p => p.Sections);
             //modelBuilder.Entity<Player>().HasMany(p => p.Currencies);
+
             modelBuilder.Entity<Wallet>().HasOne<Player>().WithOne(p=>p.Wallet).IsRequired();
+            modelBuilder.Entity<ArenaCert>().HasOne<Player>().WithOne(p => p.ArenaCert).IsRequired();
+            modelBuilder.Entity<ArenaCert>().HasIndex(p => new { p.CurrentRank });
+
             modelBuilder.Entity<Dungeon>().HasIndex(d => d.SectionId);
             modelBuilder.Entity<Dungeon>().HasIndex(d => new { d.Tid, d.PlayerId });
             modelBuilder.Entity<Section>().HasIndex(s => s.PlayerId);
@@ -43,19 +48,22 @@ namespace Frontline.Data
             modelBuilder.Entity<Friendship>().HasKey(p => new { p.FriendListId , p.PlayerId });
             modelBuilder.Entity<Friendship>().HasIndex(p => p.FriendListId);
             modelBuilder.Entity<FriendApplication>().HasKey(p => new { p.FriendListId, p.PlayerId });
+
         }
 
         public DbSet<Player> Players { get; set; }
-        public DbSet<Wallet> Wallets { get; set; } 
+        public DbSet<Wallet> Wallets { get; set; }
+        public DbSet<ArenaCert> ArenaCerts { get; set; }
+
         public DbSet<Section> Sections { get; set; } 
         public DbSet<PlayerItem> Items { get; set; } 
         public DbSet<Unit> Units { get; set; }
         public DbSet<Team> Teams { get; set; }
         public DbSet<PVPFormation> Formations { get; set; } 
-        //public DbSet<PlayerCurrency> Currencies { get; set; }
+
         //public DbSet<PlayerDungeon> Dungeons { get; set; }
         public DbSet<Friendship> Friendships { get; set; }
         public DbSet<FriendApplication> FriendApplications { get; set; }
-        
+
     }
 }

@@ -335,9 +335,9 @@ namespace Frontline.GameControllers
                 //info.def_ex = ;
 
                 //todo: 计算兵种属性和战力
-                info.hp = du.prop_val.Object[2];
-                info.att = du.prop_val.Object[0];
-                info.defence = du.prop_val.Object[1];
+                info.hp = (int)du.prop_val.Object[2];
+                info.att = (int)du.prop_val.Object[0];
+                info.defence = (int)du.prop_val.Object[1];
 
                 info.hp_growth = du.prop_grow_val.Object[2];
                 info.att_growth = du.prop_grow_val.Object[0];
@@ -464,6 +464,14 @@ namespace Frontline.GameControllers
             return unitInfo;
             //}
             //return null;
+        }
+
+        public List<UnitInfo> GetCurrentTeamUnitInfos(Player player)
+        {
+            var team = player.Teams.First(x => x.IsSelected);
+            var uids = team.Units.Object.Where(uid => !string.IsNullOrEmpty(uid)).ToList();
+            var us = player.Units.Where(u => uids.Contains(u.Id)).Select(u => ToUnitInfo(u)).ToList();
+            return us;
         }
         #endregion
 

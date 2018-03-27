@@ -27,5 +27,10 @@ namespace Frontline.Common
         public static int FriendApplicationsMax = 50;//最大申请长度
         public static int FriendMaxOilTimes = 10;//可领取原油次数
         public static int FriendOil = 6;//领取单位原油
+
+        public static int ArenaChallengeNumber = 5;
+        public static int ArenaBattleCDMinutes = 5;
+        public static int ArenaBattleCDCostDiamond = 10;//竞技场CD扣除钻石
+        public static int ArenaBattleWinAddGold = 200;
     }
 }

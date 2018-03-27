@@ -55,7 +55,9 @@ namespace Frontline.GameDesign
         public DbSet<DLotteryRand> DLotteryRands { get; set; }
 
         public DbSet<DOlReward> DOlRewards { get; set; }
-        
+
+        public DbSet<DArenaRankReward> DArenaRankRewards { get; set; }
+        public DbSet<DArenaChallengeReward> DArenaChallengeRewards { get; set; }
     }
 }
 

@@ -7,14 +7,14 @@ using System.Threading.Tasks;
 
 namespace Frontline.Domain
 {
-    public class Player
+    public class Player: PlayerBaseInfo
     {
         public const int STATE_NORMAL = 0;
         public const int STATE_SILENT = 1;//禁言
         public const int STATE_BAN = 2;//封号
 
 
-        public String Id { get; set; }
+        //public String Id { get; set; }
 
         /// <summary>
         /// 用户中心ID(索引)
@@ -25,20 +25,20 @@ namespace Frontline.Domain
         /// </summary>
         [MaxLength(20)]
         public String UserCode { get; set; }
-        /// <summary>
-        /// 头像
-        /// </summary>
-        [MaxLength(20)]
-        public String Icon { get; set; }
-        /// <summary>
-        /// 昵称(唯一)
-        /// </summary>
-        [MaxLength(20)]
-        public String NickName { get; set; }
-        /// <summary>
-        /// VIP等级
-        /// </summary>
-        public int VIP { get; set; }
+        ///// <summary>
+        ///// 头像
+        ///// </summary>
+        //[MaxLength(20)]
+        //public String Icon { get; set; }
+        ///// <summary>
+        ///// 昵称(唯一)
+        ///// </summary>
+        //[MaxLength(20)]
+        //public String NickName { get; set; }
+        ///// <summary>
+        ///// VIP等级
+        ///// </summary>
+        //public int VIP { get; set; }
         /// <summary>
         /// VIP经验
         /// </summary>
@@ -47,10 +47,10 @@ namespace Frontline.Domain
         /// 是否已经废弃
         /// </summary>
         public bool IsDeleted { get; set; }
-        /// <summary>
-        /// 等级
-        /// </summary>
-        public int Level { get; set; }
+        ///// <summary>
+        ///// 等级
+        ///// </summary>
+        //public int Level { get; set; }
         /// <summary>
         /// 经验值
         /// </summary>
@@ -78,7 +78,7 @@ namespace Frontline.Domain
         /// <summary>
         /// 历史最高战力
         /// </summary>
-        public int MaxPower { get; set; }
+        //public int MaxPower { get; set; }
         /// <summary>
         /// 阵营
         /// </summary>
@@ -126,7 +126,7 @@ namespace Frontline.Domain
         public FriendList FriendList { get; set; }
         public Wallet Wallet { get; set; }
         public Lottery Lottery { get; set; }
-
+        public ArenaCert ArenaCert { get; set; }
         public PlayerOlReward OlReward { get; set; }
         
         public List<Section> Sections { get; set; } = new List<Section>();

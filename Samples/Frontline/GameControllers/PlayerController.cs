@@ -31,6 +31,7 @@ namespace Frontline.GameControllers
 
         Dictionary<int, DLevel> _dlevels;
         Dictionary<string, Player> _players = new Dictionary<string, Player>();
+        Dictionary<string, PlayerBaseInfo> _simplePlayers = new Dictionary<string, PlayerBaseInfo>();
 
         public PlayerController(DataContext db, GameDesignContext design, IOptions<GameConfig> config, ILogger<PlayerController> logger)
         {
@@ -145,6 +146,24 @@ namespace Frontline.GameControllers
             }
             return player;
         }
+
+        public PlayerBaseInfo QueryPlayerBaseInfo(string pid)
+        {
+            if (_players.TryGetValue(pid, out var player))
+            {
+                return player;
+            }
+            if (!_simplePlayers.TryGetValue(pid, out var simple))
+            {
+                simple = _db.Players
+                     .Where(p => p.Id == pid).AsNoTracking().FirstOrDefault();
+                if(simple != null)
+                {
+                    _simplePlayers.Add(pid, simple);
+                }
+            }
+            return simple;
+        }
         #endregion
 
         #region 事件
@@ -246,6 +265,10 @@ namespace Frontline.GameControllers
                 int old = player.Level;
                 while (true)
                 {
+                    if(player.Level == _dlevels.Count)
+                    {
+                        break;
+                    }
                     DLevel dl;
                     if (_dlevels.TryGetValue(player.Level, out dl))
                     {

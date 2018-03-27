@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Xml;
 
 namespace Frontline.Common.Reflection
 {
@@ -12,6 +13,14 @@ namespace Frontline.Common.Reflection
     {
         public static string ToFileContent()
         {
+            XmlDocument xd = new XmlDocument();
+            xd.Load("Frontline.Common.xml");
+            XmlNodeList members = xd.DocumentElement.SelectNodes("/doc/members/member");
+            Dictionary<string, string> xml = new Dictionary<string, string>();
+            foreach (XmlNode member in members)
+            {
+                xml[member.Attributes["name"].InnerText] = member.FirstChild.InnerText.Trim(new[] { '\r', '\n', ' ', '\t'});
+            }
 
             var types = Assembly.Load("Frontline.Common")
                 .GetTypes();
@@ -35,8 +44,16 @@ namespace Frontline.Common.Reflection
                 sb.AppendLine("    {");
 
                 var props = info.GetFields().Select(p => new PropField(p)).Where(p => p.ProtoMember != null).ToList();
+                
+                //XElement documentation = DocsByReflection.XMLFromMember(typeof(SomeExampleClass).GetProperty("ExampleProperty"));
+                //Console.WriteLine(documentation["summary"].InnerText.Trim());
                 foreach (var prop in props)
                 {
+                    string key = $"F:{info.FullName}.{prop.FieldInfo.Name}";
+                    if(xml.TryGetValue(key, out var desc))
+                    {
+                        sb.AppendLine($"        //{desc}");
+                    }
                     sb.AppendLine($"        [ProtoMember({prop.ProtoMember.Tag})]");
                     sb.AppendLine($"        public {prop.FieldTypeName} {prop.FieldInfo.Name};");
                 }
@@ -59,6 +76,11 @@ namespace Frontline.Common.Reflection
                 var props = info.Type.GetFields().Select(p => new PropField(p)).Where(p => p.ProtoMember != null).ToList();
                 foreach (var prop in props)
                 {
+                    string key = $"F:{info.Type.FullName}.{prop.FieldInfo.Name}";
+                    if (xml.TryGetValue(key, out var desc))
+                    {
+                        sb.AppendLine($"        //{desc}");
+                    }
                     sb.AppendLine($"        [ProtoMember({prop.ProtoMember.Tag})]");
                     sb.AppendLine($"        public {prop.FieldTypeName} {prop.FieldInfo.Name};");
                 }

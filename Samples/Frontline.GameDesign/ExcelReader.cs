@@ -147,6 +147,15 @@ namespace Frontline.GameDesign
                                     cellPair.Key.SetValue(ladderConfig, new JsonObject<int[]>(ts));
                                 }
                             }
+                            else if (cellPair.Key.PropertyType == typeof(JsonObject<float[]>))
+                            {
+                                if (!string.IsNullOrEmpty(cell.StringCellValue))
+                                {
+                                    var arr = cell.StringCellValue.Trim(new[] { '[', ']' }).Split(',');
+                                    var ts = arr.Where(x => !string.IsNullOrEmpty(x)).Select(float.Parse).ToArray();
+                                    cellPair.Key.SetValue(ladderConfig, new JsonObject<float[]>(ts));
+                                }
+                            }
                             else if (cellPair.Key.PropertyType == typeof(JsonObject<List<int>>))
                             {
                                 if (!string.IsNullOrEmpty(cell.StringCellValue))

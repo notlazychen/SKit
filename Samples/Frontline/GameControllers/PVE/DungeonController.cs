@@ -19,7 +19,7 @@ namespace Frontline.GameControllers
         private readonly GameDesignContext _designDb;
         private readonly DataContext _db;
 
-        public Dictionary<int, Dictionary<int, Dictionary<int, DDungeon>>> DDungeons { get; private set; }//type:{section:{mission:x}}
+        public Dictionary<int, Dictionary<int, List<DDungeon>>> DDungeons { get; private set; }//type:{section:{mission:x}}
         public Dictionary<int, DMonster> DMonsters { get; private set; }//tid:x
         public Dictionary<int, DMonsterAbility> DMonsterAbilities { get; private set; }//level:x
         public Dictionary<int, Dictionary<int, DMonsterInDungeon>> DMonsterInDungeons { get; private set; }//dungeonid:{monsterid:x}
@@ -34,7 +34,7 @@ namespace Frontline.GameControllers
 
         protected override void OnReadGameDesignTables()
         {
-            DDungeons = _designDb.DDungeons.GroupBy(x => x.type).AsNoTracking().ToDictionary(x => x.Key, x => x.GroupBy(y => y.section).ToDictionary(y => y.Key, y => y.ToDictionary(z => z.mission, z => z)));
+            DDungeons = _designDb.DDungeons.GroupBy(x => x.type).AsNoTracking().ToDictionary(x => x.Key, x => x.GroupBy(y => y.section).ToDictionary(y => y.Key, y => y.OrderBy(z=>z.id).ToList()));
             DMonsters = _designDb.DMonsters.AsNoTracking().ToDictionary(x => x.id, x => x);
             DMonsterAbilities = _designDb.DMonsterAbilities.AsNoTracking().ToDictionary(x => x.level, x => x);
             DMonsterInDungeons = _designDb.DMonsterInDungeons.GroupBy(x => x.dungeon_id).AsNoTracking().ToDictionary(x => x.Key, x => x.ToDictionary(y => y.mid, y => y));
@@ -239,7 +239,7 @@ namespace Frontline.GameControllers
             response.receiveds = new List<int>();
             response.id = section.PlayerId;
 
-            var dds = DDungeons[section.Type][section.Index].Values;
+            var dds = DDungeons[section.Type][section.Index];
             foreach (var dd in dds)
             {
                 FBInfo fi = new FBInfo();
@@ -380,18 +380,18 @@ namespace Frontline.GameControllers
         {
             if(request.token == null)
             {
-                UnitListResponse er = new UnitListResponse();
-                er.success = false;
-                er.info = GameErrorCode.副本战斗令牌错误或战斗已经失效.ToString();
-                CurrentSession.SendAsync(er);
-                //return (int)GameErrorCode.副本战斗令牌错误或战斗已经失效;
+                //FBFightResultResponse er = new FBFightResultResponse();
+                //er.success = false;
+                //er.info = GameErrorCode.战斗令牌错误或战斗已经失效.ToString();
+                //CurrentSession.SendAsync(er);
+                return (int)GameErrorCode.战斗令牌错误或战斗已经失效;
             }
-            //Battle battle;
-            //if (!this._battles.TryGetValue(request.token, out battle) || battle.PlayerId != CurrentSession.UserId || battle.Dungeon.Id != request.id)
-            //{
-            //    return (int)GameErrorCode.副本战斗令牌错误或战斗已经失效;
-            //}
-            //_battles.Remove(battle.Id);
+            Battle battle;
+            if (!this._battles.TryGetValue(request.token, out battle) || battle.PlayerId != CurrentSession.UserId || battle.Dungeon.Id != request.id)
+            {
+                return (int)GameErrorCode.战斗令牌错误或战斗已经失效;
+            }
+            _battles.Remove(battle.Id);
 
             FBFightResultResponse response = new FBFightResultResponse();
             response.win = request.win;
@@ -400,8 +400,8 @@ namespace Frontline.GameControllers
             if (request.win)
             {
                 var player = this.CurrentSession.GetBindPlayer();
-                //Dungeon dungeon = battle.Dungeon;
-                Dungeon dungeon = player.Sections.Select(x=>x.Dungeons.FirstOrDefault(d=>d.Id == request.id)).First(x=>x != null);
+                Dungeon dungeon = battle.Dungeon;
+                //Dungeon dungeon = player.Sections.Select(x=>x.Dungeons.FirstOrDefault(d=>d.Id == request.id)).First(x=>x != null);
                 DDungeon ddungeon = DDungeons[dungeon.Type][dungeon.Section][dungeon.Mission];
 
                 string reason = $"副本{ddungeon.id}:{ddungeon.name}战斗胜利";
@@ -414,7 +414,7 @@ namespace Frontline.GameControllers
                 {
                     foreach (FightUnitInfo u in request.units)
                     {
-                        if (string.IsNullOrEmpty(u.unitId))
+                        if (u != null && !string.IsNullOrEmpty(u.unitId))
                         {
                             uscnt += 1;
                             if (!u.dead)

@@ -88,18 +88,40 @@ namespace SKit.AOP
     {
         static void Main(string[] args)
         {
-            dynamic person = new EntityNotifier<Person>();
-            person.ObjectChanged += new EventHandler<EntityNotifier<Person>.ObjectChangedEventArgs>((x, y) =>
+            //dynamic person = new EntityNotifier<Person>();
+            //person.ObjectChanged += new EventHandler<EntityNotifier<Person>.ObjectChangedEventArgs>((x, y) =>
+            //{
+            //    Console.WriteLine("obj.{0} changed.", y.PropertyName);
+            //});
+            //person.Name = "张三";
+            //person.Name = "李四";
+            //person.ID = 1;
+            //Person p = person;
+            //Console.WriteLine(p.Name);
+            Random random = new Random();
+            while (true)
             {
-                Console.WriteLine("obj.{0} changed.", y.PropertyName);
-            });
-            person.Name = "张三";
-            person.Name = "李四";
-            person.ID = 1;
-            Person p = person;
-            Console.WriteLine(p.Name);
-
-            Console.ReadLine();
+                int cur = int.Parse(   Console.ReadLine());
+                int step = (int)Math.Ceiling(cur / 3d);
+                int from = cur - step;
+                if(from > cur - 5)
+                {
+                    from = cur - 5;
+                }
+                int to = cur;
+                int wei = (int)Math.Ceiling(step / 5d);
+                
+                Console.WriteLine($"{from} - {to} / {wei}");
+                Console.WriteLine($"-------------------");
+                for (int i = 0; i < 5; i++)
+                {
+                    int a = @from + i * wei;
+                    int b = @from + i * wei + wei;
+                    int r = random.Next(a, b);
+                    Console.WriteLine($"{a} - {b} / {r}");
+                }
+                Console.WriteLine($"-------------------");
+            }
         }
     }
 

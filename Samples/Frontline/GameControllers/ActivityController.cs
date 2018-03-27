@@ -77,12 +77,12 @@ namespace Frontline.GameControllers
             return 0;
         }
 
-        public int Call_CMD_103(GetIndustryInfoRequest request)
-        {
-            GetIndustryInfoResponse response = JsonConvert.DeserializeObject<GetIndustryInfoResponse>("{\"idleWorkers\":3,\"nextTime\":0,\"success\":true,\"curNumb\":5,\"factories\":[{\"res_type\":1,\"workerCnt\":0,\"lv\":0,\"res_cnt\":100,\"buildEndTime\":0,\"type\":1,\"building\":false},{\"res_type\":2,\"workerCnt\":0,\"lv\":0,\"res_cnt\":100,\"buildEndTime\":0,\"type\":2,\"building\":false}],\"totalWorkers\":3,\"maxNumb\":5}");
-            CurrentSession.SendAsync(response);
-            return 0;
-        }
+        //public int Call_CMD_103(GetIndustryInfoRequest request)
+        //{
+        //    GetIndustryInfoResponse response = JsonConvert.DeserializeObject<GetIndustryInfoResponse>("{\"idleWorkers\":3,\"nextTime\":0,\"success\":true,\"curNumb\":5,\"factories\":[{\"res_type\":1,\"workerCnt\":0,\"lv\":0,\"res_cnt\":100,\"buildEndTime\":0,\"type\":1,\"building\":false},{\"res_type\":2,\"workerCnt\":0,\"lv\":0,\"res_cnt\":100,\"buildEndTime\":0,\"type\":2,\"building\":false}],\"totalWorkers\":3,\"maxNumb\":5}");
+        //    CurrentSession.SendAsync(response);
+        //    return 0;
+        //}
 
         public int Call_CMD_1202(RechargeAllRequest request)
         {

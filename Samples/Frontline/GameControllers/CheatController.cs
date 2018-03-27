@@ -31,6 +31,7 @@ namespace Frontline.GameControllers
 
         protected override void OnRegisterEvents()
         {
+            _actions.Add("addexp", AddExp);
             _actions.Add("addres", AddResource);
             _actions.Add("additem", AddItem);
             _actions.Add("addunit", AddUnit);
@@ -42,6 +43,16 @@ namespace Frontline.GameControllers
         #region 辅助方法
         private const string reason = "GM命令";
         private readonly Dictionary<string, Action<string[]>> _actions = new Dictionary<string, Action<string[]>>();
+
+        private void AddExp(string[] args)
+        {
+            int exp = int.Parse(args[0]);
+
+            var player = this.CurrentSession.GetBindPlayer();
+            var playerController = this.Server.GetController<PlayerController>();
+            playerController.AddExp(player, exp, reason);
+            _db.SaveChanges();
+        }
 
         private void AddResource(string[] args)
         {
@@ -116,7 +127,7 @@ namespace Frontline.GameControllers
 
         public int Call_Cheat(CheatRequest request)
         {
-            String[] strs = request.action.Split(new[] { ',', ' ', '.', '。', '，'});
+            String[] strs = request.action.ToLower().Split(new[] { ',', ' ', '.', '。', '，'});
             string cmd = strs[0];
             string[] args = new string[strs.Length - 1];
             Array.Copy(strs, 1, args, 0, args.Length);
@@ -124,12 +135,9 @@ namespace Frontline.GameControllers
             if(_actions.TryGetValue(cmd, out var action)){
                 response.success = true;
                 response.type = 1;
-
                 action(args);
-
                 CurrentSession.SendAsync(response);
             }
-            response.success = false;
             return 0;
         }
         #endregion

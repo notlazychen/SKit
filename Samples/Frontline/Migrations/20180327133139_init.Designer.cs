@@ -12,9 +12,10 @@ using System.Collections.Generic;
 namespace Frontline.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20180327133139_init")]
+    partial class init
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -43,7 +44,7 @@ namespace Frontline.Migrations
                     b.Property<string>("PlayerId")
                         .IsRequired();
 
-                    b.Property<string>("ReceivedRewards");
+                    b.Property<JsonObject<List<int>>>("ReceivedRewards");
 
                     b.Property<int>("Score");
 

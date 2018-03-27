@@ -12,9 +12,10 @@ using System.Collections.Generic;
 namespace Frontline.GameDesign.Migrations
 {
     [DbContext(typeof(GameDesignContext))]
-    partial class GameDesignContextModelSnapshot : ModelSnapshot
+    [Migration("20180327074522_jjc")]
+    partial class jjc
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -46,7 +47,7 @@ namespace Frontline.GameDesign.Migrations
 
                     b.Property<int>("random_id");
 
-                    b.Property<JsonObject<Int32[]>>("rank_area");
+                    b.Property<int>("rank_area");
 
                     b.HasKey("id");
 
@@ -539,11 +540,11 @@ namespace Frontline.GameDesign.Migrations
 
                     b.Property<JsonObject<Int32[]>>("prop_grow_type");
 
-                    b.Property<JsonObject<Single[]>>("prop_grow_val");
+                    b.Property<JsonObject<Int32[]>>("prop_grow_val");
 
                     b.Property<JsonObject<Int32[]>>("prop_type");
 
-                    b.Property<JsonObject<Single[]>>("prop_val");
+                    b.Property<JsonObject<Int32[]>>("prop_val");
 
                     b.Property<int>("pvp_dec_score");
 
