@@ -30,6 +30,7 @@ namespace Frontline.GameControllers
         private ILogger<PlayerController> _logger;
 
         Dictionary<int, DLevel> _dlevels;
+        Dictionary<string, Player> _players = new Dictionary<string, Player>();
 
         public PlayerController(DataContext db, GameDesignContext design, IOptions<GameConfig> config, ILogger<PlayerController> logger)
         {
@@ -110,6 +111,42 @@ namespace Frontline.GameControllers
             _db.SaveChanges();
         }
 
+        #region API
+        public Player QueryPlayer(string pid)
+        {
+            if(!_players.TryGetValue(pid, out var player))
+            {
+                var queryPlayer = _db.Players
+                     .Where(p => p.Id == pid);
+                PlayerLoader loader = new PlayerLoader()
+                {
+                    Loader = queryPlayer
+                };
+                this.OnPlayerLoading(loader);
+                player = loader.Loader.FirstOrDefault();
+                if(player != null)
+                {
+                    OnPlayerLoaded(player);
+                    //check new day refresh
+                    _db.SaveChanges();
+
+                    _players.Add(pid, player);
+                }
+            }
+
+            //检查每日刷新
+            if (player.LastDayRefreshTime.Date != DateTime.Today)
+            {
+                //需要刷新
+                OnPlayerEverydayRefresh(player);
+
+                player.LastDayRefreshTime = DateTime.Today;
+                _db.SaveChanges();
+            }
+            return player;
+        }
+        #endregion
+
         #region 事件
         /// <summary>
         /// 创建角色的时候
@@ -128,7 +165,7 @@ namespace Frontline.GameControllers
         private void OnPlayerLoading(PlayerLoader loader)
         {
             loader.Loader = loader.Loader.Include(p => p.Wallet);
-            PlayerLoading?.Invoke(this, loader);
+            PlayerLoading?.Invoke(this, loader);            
         }
 
         internal event EventHandler<Player> PlayerLoaded;
@@ -300,16 +337,17 @@ namespace Frontline.GameControllers
                 };
                 this.OnPlayerLoading(loader);
                 player = loader.Loader.First();
-
-                player.LastLoginTime = DateTime.Now;
-                _db.SaveChanges();
-
+                //_db.SaveChanges();
                 OnPlayerLoaded(player);
+                player.LastLoginTime = DateTime.Now;
                 _db.SaveChanges();
             }
             session.Login(player.Id);
             session.SetBind(player);
-
+            if (!_players.ContainsKey(player.Id))
+            {
+                _players.Add(player.Id, player);
+            }
             this.OnPlayerEntered(player);
             AuthResponse response = new AuthResponse()
             {
@@ -333,6 +371,7 @@ namespace Frontline.GameControllers
         //}
 
         [AllowAnonymous]
+        [Asynchronous]
         public int Call_Ping(GameSession session, Ping ping)
         {
             session.SendAsync(new Pong() { success = true, time = DateTime.Now.ToUnixTime() });
@@ -361,7 +400,6 @@ namespace Frontline.GameControllers
                 player.LastDayRefreshTime = DateTime.Today;
                 _db.SaveChanges();
             }
-
             response.resInfos = new List<ResInfo>();
             for (int ct = 1; ct <= CurrencyType.MAX_TYPE; ct++)
             {
@@ -416,7 +454,30 @@ namespace Frontline.GameControllers
             CurrentSession.SendAsync(response);
             return 0;
         }
+        
 
+        public int Call_ShowPlayer(GameSession session, ShowPlayerRequest request)
+        {
+            string pid = request.pid;
+            var player = session.GetBindPlayer();
+            Player other = this.QueryPlayer(pid);
+            if (other == null)
+            {
+                return (int)GameErrorCode.查无此人;
+            }
+            ShowPlayerResponse response = new ShowPlayerResponse();
+            response.success = true;
+            response.pid = pid;
+            response.power = other.MaxPower;
+            response.vip = other.VIP;
+            response.isfriend = player.FriendList.Friends.Any(f => f.PlayerId == other.Id);
+            response.icon = other.Icon;
+            response.name = other.NickName;
+            response.level = other.Level;
+
+            session.SendAsync(response);
+            return 0;
+    }
         #endregion
     }
 }

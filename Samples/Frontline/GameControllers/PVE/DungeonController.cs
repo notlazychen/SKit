@@ -46,6 +46,22 @@ namespace Frontline.GameControllers
             var playerController = this.Server.GetController<PlayerController>();
             playerController.PlayerCreating += _PlayerController_PlayerCreating;
             playerController.PlayerLoading += PlayerController_PlayerLoading;
+            playerController.PlayerEverydayRefresh += PlayerController_PlayerEverydayRefresh;
+        }
+
+        private void PlayerController_PlayerEverydayRefresh(object sender, Player e)
+        {
+            foreach(var s in e.Sections)
+            {
+                foreach(var d in s.Dungeons)
+                {
+                    if (d.IsOpen)
+                    {
+                        d.FightTimes = 0;
+                        d.ResetNumb = 0;
+                    }
+                }
+            }
         }
 
         private void PlayerController_PlayerLoading(object sender, PlayerLoader e)

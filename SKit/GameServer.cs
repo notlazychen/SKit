@@ -54,8 +54,11 @@ namespace SKit
         private Thread _sendingTask;
 
 
-        private readonly ElasticPool<SocketAsyncEventArgs> _socketRecvArgsPool;//输入缓冲池
-        private readonly ElasticPool<SocketAsyncEventArgs> _socketSendArgsPool;//输出缓冲池
+        //private readonly ElasticPool<SocketAsyncEventArgs> _socketRecvArgsPool;//输入缓冲池
+        //private readonly ElasticPool<SocketAsyncEventArgs> _socketSendArgsPool;//输出缓冲池
+
+        private readonly ElasticPool<byte[]> _socketRecvBufferPool;//输入缓冲池
+        private readonly ElasticPool<byte[]> _socketSendBufferPool;//输出缓冲池
         private readonly Packager _packager;//拆包打包器
         private readonly Serializer _serializer;//正反序列化工具
         private SKitConfig Config { get; }//配置
@@ -83,7 +86,7 @@ namespace SKit
 
         #region 事件
         public event EventHandler<GameTaskDoneEventArgs> GameTaskDone;
-        private void OnGameTaskDone(GameTaskDoneEventArgs args)
+        private void OnGamePlayerTaskDone(GameTaskDoneEventArgs args)
         {
             GameTaskDone?.Invoke(this, args);
         }
@@ -104,21 +107,15 @@ namespace SKit
             Debug.Assert(_packager != null, "ISPackager Can't be NULL!");
             this.Id = Config.Id;
 
-            _socketRecvArgsPool = new ElasticPool<SocketAsyncEventArgs>(() =>
+            _socketRecvBufferPool = new ElasticPool<byte[]>(() =>
             {
-                var args = new SocketAsyncEventArgs();
                 var buff = new byte[Config.RecvBufferSize];
-                args.SetBuffer(buff, 0, buff.Length);
-                args.Completed += IO_Completed;
-                return args;
+                return buff;
             }, Config.PresetUserCount);
-            _socketSendArgsPool = new ElasticPool<SocketAsyncEventArgs>(() =>
+            _socketSendBufferPool = new ElasticPool<byte[]>(() =>
             {
-                var args = new SocketAsyncEventArgs();
                 var buff = new byte[Config.SendBufferSize];
-                args.SetBuffer(buff, 0, buff.Length);
-                args.Completed += IO_Completed;
-                return args;
+                return buff;
             }, Config.PresetUserCount);
             //_listener.AllowNatTraversal(true);
         }
@@ -133,7 +130,7 @@ namespace SKit
 
             if (!IsRunning)
             {
-                _logger.LogInformation($"Game Server [{Id}] Starting...");
+                _logger.LogInformation($"启动工作线程...");
                 IsRunning = true;
 
                 //启动任务工作线程
@@ -142,6 +139,7 @@ namespace SKit
                 _workingTask.Name = MainWorldThreadName;
                 _workingTask.Start();
 
+                _logger.LogInformation($"启动序列化线程...");
                 //启动发送线程
                 //_sendingTaskTokenSource = new CancellationTokenSource();
                 _sendingTask = new Thread(LoopSending);
@@ -150,21 +148,23 @@ namespace SKit
                 IPEndPoint endPoint = new IPEndPoint(IPAddress.Any, Config.Port);
                 _listener = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
+                _logger.LogInformation($"绑定端口{Config.Port}");
                 _listener.Bind(endPoint);
                 _listener.Listen(Config.Backlog);
 
                 _listener.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
-                _listener.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+                //_listener.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
                 //_listener.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.DontLinger, true);
 
                 SocketAsyncEventArgs acceptEventArg = new SocketAsyncEventArgs();
                 _acceptEventArg = acceptEventArg;
                 acceptEventArg.Completed += acceptEventArg_Completed;
 
+                _logger.LogInformation($"开启监听");
                 if (!_listener.AcceptAsync(acceptEventArg))
                     ProcessAccept(acceptEventArg);
 
-                _logger.LogInformation($"Game Server [{Id}] Started");
+                _logger.LogInformation($"服务器[{Id}]已启动");
 
             }
         }
@@ -384,7 +384,11 @@ namespace SKit
             {
                 if (socket != null)
                 {
-                    var args = _socketRecvArgsPool.Pop();
+                    var args = new SocketAsyncEventArgs();
+                    var buff = _socketRecvBufferPool.Pop();
+                    args.SetBuffer(buff, 0, buff.Length);
+                    args.Completed += IO_Completed;
+
                     var session = new GameSession
                     {
                         Server = this,
@@ -511,7 +515,7 @@ namespace SKit
 
             if(_sessions.TryRemove(token.Id, out _))
             {
-                if (_users.TryRemove(token.UserId, out _))
+                if (token.UserId != null && _users.TryRemove(token.UserId, out _))
                 {
                     var task = new GamePlayerLeaveTask(token, reason, _controllers.Values);
                     if (reason == ClientCloseReason.Displacement)
@@ -531,16 +535,16 @@ namespace SKit
                         _workingQueue.Enqueue(task);
                     }
                 }
+                _socketRecvBufferPool.Push(e.Buffer);
                 token?.Dispose();
                 // Free the SocketAsyncEventArg so they can be reused by another client
-                _socketRecvArgsPool.Push(e);
                 _logger.LogDebug($"{token.Id}: LEAVE, reason: {reason}");
             }
         }
 
         private void ProcessSend(SocketAsyncEventArgs e)
         {
-            _socketSendArgsPool.Push(e);
+            _socketSendBufferPool.Push(e.Buffer);
         }
 
         private void IO_Completed(object sender, SocketAsyncEventArgs e)
@@ -570,7 +574,11 @@ namespace SKit
                     {
                         while (_sendingQueue.TryDequeue(out var message))
                         {
-                            var args = _socketSendArgsPool.Pop();
+                            var args = new SocketAsyncEventArgs();
+                            var buff = _socketSendBufferPool.Pop();
+                            args.SetBuffer(buff, 0, buff.Length);
+                            args.Completed += IO_Completed;
+
                             byte[] data = _serializer.Serialize(message.Msg);
                             ArraySegment<byte> encodedMessage = _packager.Pack(data, args.Buffer, 0, args.Buffer.Length);
                             args.SetBuffer(0, encodedMessage.Count);
@@ -639,14 +647,18 @@ namespace SKit
                     {
                         while (_workingQueue.TryDequeue(out var task))
                         {
-                            CurrentWorkingSession = task.Session;
-                            int result = task.DoAction();
-
-                            this.OnGameTaskDone(new GameTaskDoneEventArgs()
+                            var t = task as GamePlayerTask;
+                            if(t != null)
                             {
-                                GameSession = task.Session,
-                                ResultCode = result,
-                            });
+                                CurrentWorkingSession = t.Session;
+                                int result = task.DoAction();
+
+                                this.OnGamePlayerTaskDone(new GameTaskDoneEventArgs()
+                                {
+                                    GameSession = t.Session,
+                                    ResultCode = result,
+                                });
+                            }
                         }
                     }
                 }
@@ -686,7 +698,7 @@ namespace SKit
 
             var request = _serializer.Deserialize(type, data.Array, data.Offset, data.Count);
             var task = new GameRequestTask(handler, session, request);
-            if (handler.AllowAnonymous)
+            if (handler.IsAsynchronous)
             {
                 //当遇到allowanonymous的任务时，即表示此任务不需要其他游戏逻辑线程同步，只要session同步即可，那么可以不放入逻辑线程而直接执行
                 task.DoAction();
@@ -713,6 +725,7 @@ namespace SKit
         /// </summary>
         private void ReflectProtocols()
         {
+            _logger.LogInformation($"开始读取模块");
             foreach (var type in Assembly.GetEntryAssembly().ExportedTypes)
             {
                 if (type.GetTypeInfo().BaseType == typeof(GameController))
@@ -742,8 +755,9 @@ namespace SKit
                         continue;
                     }
                     ParameterInfo[] parameterInfos = methodInfo.GetParameters();
-                    bool allowanonymous = methodInfo.GetCustomAttribute<AllowAnonymousAttribute>() != null;                    
-                    if(parameterInfos.Length > 2 || parameterInfos.Length < 1)
+                    bool allowanonymous = methodInfo.GetCustomAttribute<AllowAnonymousAttribute>() != null;
+                    bool isAsynchronous = methodInfo.GetCustomAttribute<AsynchronousAttribute>() != null;
+                    if (parameterInfos.Length > 2 || parameterInfos.Length < 1)
                     {
                         _logger.LogWarning($"Protocol Handler {controller.GetType().Name }.{methodInfo.Name} parameters count wrong!");
                     }
@@ -791,6 +805,7 @@ namespace SKit
                             RequestType = requestType,
                             Controller = controller,
                             AllowAnonymous = allowanonymous,
+                            IsAsynchronous = isAsynchronous,
                             ParameterTypes = paramSeq
                         };
                         GameProtoHandlerInfo oldhandler = null;
@@ -809,6 +824,7 @@ namespace SKit
 
             foreach (var controller in controllers)
             {
+                _logger.LogInformation($"加载模块:{controller.GetType().Name}");
                 controller.RegisterEvents();
             }
         }

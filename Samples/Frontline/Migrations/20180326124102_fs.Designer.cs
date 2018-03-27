@@ -12,9 +12,10 @@ using System.Collections.Generic;
 namespace Frontline.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20180326124102_fs")]
+    partial class fs
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -89,14 +90,18 @@ namespace Frontline.Migrations
 
             modelBuilder.Entity("Frontline.Domain.FriendApplication", b =>
                 {
-                    b.Property<string>("FriendListId");
-
-                    b.Property<string>("PlayerId")
-                        .HasMaxLength(64);
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd();
 
                     b.Property<DateTime>("CreateTime");
 
-                    b.HasKey("FriendListId", "PlayerId");
+                    b.Property<string>("FriendListId");
+
+                    b.Property<string>("PlayerId");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FriendListId");
 
                     b.ToTable("FriendApplications");
                 });
@@ -104,8 +109,6 @@ namespace Frontline.Migrations
             modelBuilder.Entity("Frontline.Domain.FriendList", b =>
                 {
                     b.Property<string>("PlayerId");
-
-                    b.Property<DateTime>("LastRefreshTime");
 
                     b.Property<int>("RecvTimes");
 
@@ -116,18 +119,20 @@ namespace Frontline.Migrations
 
             modelBuilder.Entity("Frontline.Domain.Friendship", b =>
                 {
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd();
+
                     b.Property<string>("FriendListId");
-
-                    b.Property<string>("PlayerId")
-                        .HasMaxLength(64);
-
-                    b.Property<bool>("CanRecvOil");
-
-                    b.Property<bool>("CanSendOil");
 
                     b.Property<DateTime>("FromTime");
 
-                    b.HasKey("FriendListId", "PlayerId");
+                    b.Property<bool>("IsRecvOil");
+
+                    b.Property<bool>("IsSendOil");
+
+                    b.Property<string>("PlayerId");
+
+                    b.HasKey("Id");
 
                     b.HasIndex("FriendListId");
 
@@ -418,8 +423,7 @@ namespace Frontline.Migrations
                 {
                     b.HasOne("Frontline.Domain.FriendList")
                         .WithMany("FriendApplications")
-                        .HasForeignKey("FriendListId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .HasForeignKey("FriendListId");
                 });
 
             modelBuilder.Entity("Frontline.Domain.FriendList", b =>
@@ -434,8 +438,7 @@ namespace Frontline.Migrations
                 {
                     b.HasOne("Frontline.Domain.FriendList")
                         .WithMany("Friends")
-                        .HasForeignKey("FriendListId")
-                        .OnDelete(DeleteBehavior.Cascade);
+                        .HasForeignKey("FriendListId");
                 });
 
             modelBuilder.Entity("Frontline.Domain.Lottery", b =>

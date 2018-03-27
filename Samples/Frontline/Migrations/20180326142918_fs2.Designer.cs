@@ -12,9 +12,10 @@ using System.Collections.Generic;
 namespace Frontline.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20180326142918_fs2")]
+    partial class fs2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -104,8 +105,6 @@ namespace Frontline.Migrations
             modelBuilder.Entity("Frontline.Domain.FriendList", b =>
                 {
                     b.Property<string>("PlayerId");
-
-                    b.Property<DateTime>("LastRefreshTime");
 
                     b.Property<int>("RecvTimes");
 

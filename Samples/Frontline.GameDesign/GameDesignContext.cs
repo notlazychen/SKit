@@ -53,6 +53,9 @@ namespace Frontline.GameDesign
         public DbSet<DLottery> DLotteries { get; set; }
         public DbSet<DLotteryGroup> DLotteryGroups { get; set; }
         public DbSet<DLotteryRand> DLotteryRands { get; set; }
+
+        public DbSet<DOlReward> DOlRewards { get; set; }
+        
     }
 }
 

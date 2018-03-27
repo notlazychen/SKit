@@ -558,14 +558,27 @@ namespace Frontline.GameControllers
             response.success = true;
             response.pid = request.pid;
             response.team = new List<TeamPlaceInfo>();
-            var player = this.CurrentSession.GetBindPlayer();
-            var team = player.Teams.First(t => t.IsSelected);
+            string pid = request.pid;
+            var playerController = Server.GetController<PlayerController>();
+            var other = playerController.QueryPlayer(pid);
+            if(other == null)
+            {
+                return (int)GameErrorCode.查无此人;
+            }
+            var team = other.Teams.First(t => t.IsSelected);
             for (int i = 0; i < team.Units.Object.Count; i++)
             {
                 TeamPlaceInfo info = new TeamPlaceInfo();
                 info.place = i;
-                var unit = player.Units.First(u => u.Id == team.Units.Object[i]);
-                info.unitInfo = this.ToUnitInfo(unit);
+                string uid = team.Units.Object[i];
+                if (!string.IsNullOrEmpty(uid))
+                {
+                    var unit = other.Units.FirstOrDefault(u => u.Id == uid);
+                    if (unit != null)
+                    {
+                        info.unitInfo = this.ToUnitInfo(unit);
+                    }
+                }
                 response.team.Add(info);
             }
 

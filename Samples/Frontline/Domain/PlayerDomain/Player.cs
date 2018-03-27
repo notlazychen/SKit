@@ -78,7 +78,7 @@ namespace Frontline.Domain
         /// <summary>
         /// 历史最高战力
         /// </summary>
-        public long MaxPower { get; set; }
+        public int MaxPower { get; set; }
         /// <summary>
         /// 阵营
         /// </summary>
@@ -126,6 +126,9 @@ namespace Frontline.Domain
         public FriendList FriendList { get; set; }
         public Wallet Wallet { get; set; }
         public Lottery Lottery { get; set; }
+
+        public PlayerOlReward OlReward { get; set; }
+        
         public List<Section> Sections { get; set; } = new List<Section>();
         public List<PlayerItem> Items { get; set; } = new List<PlayerItem>();
         public List<Unit> Units { get; set; } = new List<Unit>();

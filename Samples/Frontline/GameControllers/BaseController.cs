@@ -11,6 +11,7 @@ using Microsoft.EntityFrameworkCore;
 using Frontline.Domain;
 using SKit.Common.Utils;
 using Frontline.Common;
+using Microsoft.Extensions.Logging;
 
 namespace Frontline.GameControllers
 {
@@ -18,11 +19,13 @@ namespace Frontline.GameControllers
     {
         private GameDesignContext _designDb;
         private DataContext _db;
-        
-        public BaseController(DataContext db, GameDesignContext design)
+        private ILogger _logger;
+
+        public BaseController(DataContext db, GameDesignContext design, ILogger<BaseController> logger)
         {
             _db = db;
             _designDb = design;
+            _logger = logger;
         }
 
         protected override void OnReadGameDesignTables()

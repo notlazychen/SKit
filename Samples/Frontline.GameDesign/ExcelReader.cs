@@ -101,6 +101,19 @@ namespace Frontline.GameDesign
                             {
                                 cellPair.Key.SetValue(ladderConfig, cell.StringCellValue);
                             }
+                            else if (cellPair.Key.PropertyType == typeof(TimeSpan))
+                            {
+                                TimeSpan ts = TimeSpan.Parse(cell.StringCellValue);
+                                cellPair.Key.SetValue(ladderConfig, ts);
+                                string[] hms = cell.StringCellValue.Substring(cell.StringCellValue.IndexOf(".") + 1).Split(":");
+                                int h = int.Parse(hms[0]);
+                                int m = int.Parse(hms[1]);
+                                int s = int.Parse(hms[2]);
+                                if (h >= 24 || m >= 60 || s >= 60)
+                                {
+                                    throw new Exception($"表格{filename} 第{cell.RowIndex}行 第{cellPair.Key.Name}:{cellPair.Value}列 [{ cell.StringCellValue }]时间格式不对");
+                                }
+                            }
                             else if (cellPair.Key.PropertyType == typeof(TimeSpan?))
                             {
                                 if (!string.IsNullOrEmpty(cell.StringCellValue))

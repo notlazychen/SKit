@@ -46,7 +46,7 @@ namespace Frontline
                     5,
                     TimeSpan.FromSeconds(10),
                     new int[] { 2 });
-            }));//游戏逻辑并不会多线程处理
+            }));
 
             services.Configure<GameConfig>(Configuration.GetSection("game"));
             services.AddSKit<VerintHeadPackager, ProtoBufSerializer>();

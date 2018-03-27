@@ -20,5 +20,12 @@ namespace Frontline.Common
         public const int lottery_base_cnt = 10;
         public const int lottery_first_item_id = 41070307;//国内海外307T-26
         public const int lottery_first_item_cnt = 15;
+
+        public static int FriendOpenLevel = 10;//等级限制（开启等级）
+        public static int FriendMaxCount = 100;//好友上限
+        public static int FriendBlacklistMax = 50;//黑名单最大长度
+        public static int FriendApplicationsMax = 50;//最大申请长度
+        public static int FriendMaxOilTimes = 10;//可领取原油次数
+        public static int FriendOil = 6;//领取单位原油
     }
 }

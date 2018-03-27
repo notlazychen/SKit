@@ -434,6 +434,9 @@ namespace Frontline.GameControllers
                     pkgController.AddItem(p, itemid, itemcnt, reason);
                 }
             }
+
+            _db.SaveChanges();
+
             response.diamond = p.Wallet.DIAMOND;
             response.diamondBaseNumb = l.DmdBaseNumb;
             response.diamondFreeNextTime = l.DmdFreeNextTime.ToUnixTime();

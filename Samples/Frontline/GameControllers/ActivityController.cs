@@ -91,12 +91,12 @@ namespace Frontline.GameControllers
             return 0;
         }
 
-        public int Call_CMD_711(GetOnlineRewardInfoRequest request)
-        {
-            GetOnlineRewardInfoResponse response = JsonConvert.DeserializeObject<GetOnlineRewardInfoResponse>("{\"reward\":{\"exp\":0,\"items\":[{\"count\":5,\"icon\":14240,\"name\":\"曲柄轴\",\"id\":41152101,\"type\":15,\"quality\":1}],\"worth\":0},\"recvTime\":1520990062709,\"success\":true}");
-            CurrentSession.SendAsync(response);
-            return 0;
-        }
+        //public int Call_CMD_711(GetOnlineRewardInfoRequest request)
+        //{
+        //    GetOnlineRewardInfoResponse response = JsonConvert.DeserializeObject<GetOnlineRewardInfoResponse>("{\"reward\":{\"exp\":0,\"items\":[{\"count\":5,\"icon\":14240,\"name\":\"曲柄轴\",\"id\":41152101,\"type\":15,\"quality\":1}],\"worth\":0},\"recvTime\":1520990062709,\"success\":true}");
+        //    CurrentSession.SendAsync(response);
+        //    return 0;
+        //}
 
         public int Call_CMD_901(RebateInfoRequest request)
         {

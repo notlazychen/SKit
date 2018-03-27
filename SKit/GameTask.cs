@@ -6,13 +6,6 @@ namespace SKit
 {
     public abstract class GameTask
     {
-        public GameSession Session { get; private set; }
-
-        public GameTask(GameSession session)
-        {
-            Session = session;
-        }
-
         public int DoAction()
         {
             return OnDoAction();
@@ -21,10 +14,20 @@ namespace SKit
         protected abstract int OnDoAction();
     }
 
+    public abstract class GamePlayerTask : GameTask
+    {
+        public GameSession Session { get; private set; }
+
+        public GamePlayerTask(GameSession session)
+        {
+            Session = session;
+        }        
+    }
+
     /// <summary>
     /// 每收到一个消息包，创建一个任务
     /// </summary>
-    public class GameRequestTask : GameTask
+    public class GameRequestTask : GamePlayerTask
     {
         public GameRequestTask(GameProtoHandlerInfo handler, GameSession session, Object entity) 
             : base(session)
@@ -53,7 +56,7 @@ namespace SKit
         }
     }
 
-    public class GamePlayerLeaveTask : GameTask
+    public class GamePlayerLeaveTask : GamePlayerTask
     {
         private readonly IEnumerable<GameController> _controllers;
         public ClientCloseReason Reason { get; private set; }

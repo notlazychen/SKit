@@ -40,6 +40,9 @@ namespace Frontline.Data
 
             modelBuilder.Entity<Equip>().HasIndex(p => p.UnitId);
 
+            modelBuilder.Entity<Friendship>().HasKey(p => new { p.FriendListId , p.PlayerId });
+            modelBuilder.Entity<Friendship>().HasIndex(p => p.FriendListId);
+            modelBuilder.Entity<FriendApplication>().HasKey(p => new { p.FriendListId, p.PlayerId });
         }
 
         public DbSet<Player> Players { get; set; }
@@ -51,5 +54,8 @@ namespace Frontline.Data
         public DbSet<PVPFormation> Formations { get; set; } 
         //public DbSet<PlayerCurrency> Currencies { get; set; }
         //public DbSet<PlayerDungeon> Dungeons { get; set; }
+        public DbSet<Friendship> Friendships { get; set; }
+        public DbSet<FriendApplication> FriendApplications { get; set; }
+        
     }
 }

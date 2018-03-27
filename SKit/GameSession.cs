@@ -101,6 +101,7 @@ namespace SKit
         public void Dispose()
         {
             _cacheStore.Clear();
+            SocketAsyncEventArgs.Dispose();
         }
     }
 }

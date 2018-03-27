@@ -14,7 +14,8 @@ namespace SKit
         public MethodInfo MethodInfo { get; set; }
 
         public GameController Controller { get; set; }
-        public bool AllowAnonymous { get; set;}
+        public bool AllowAnonymous { get; set; }
+        public bool IsAsynchronous { get; set; }
     }
 
     public enum GameProtoHandlerParameters

@@ -13,6 +13,7 @@ namespace Frontline.Domain
         public string PlayerId { get; set; }
         
         public int RecvTimes { get; set; }
+        public DateTime LastRefreshTime { get; set; }
 
         public List<Friendship> Friends { get; set; }
         public List<FriendApplication> FriendApplications { get; set; }
@@ -23,14 +24,12 @@ namespace Frontline.Domain
     /// </summary>
     public class Friendship
     {
-        public string Id { get; set; }
-
         public string FriendListId { get; set; }
-
+        [MaxLength(64)]
         public string PlayerId { get; set; }
         public DateTime FromTime { get; set; }
-        public bool IsSendOil { get; set; }
-        public bool IsRecvOil { get; set; }
+        public bool CanSendOil { get; set; }
+        public bool CanRecvOil { get; set; }
     }
 
     /// <summary>
@@ -38,10 +37,8 @@ namespace Frontline.Domain
     /// </summary>
     public class FriendApplication
     {
-        public string Id { get; set; }
-
         public string FriendListId { get; set; }
-
+        [MaxLength(64)]
         public string PlayerId { get; set; }
         public DateTime CreateTime { get; set; }
     }

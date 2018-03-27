@@ -12,9 +12,10 @@ using System.Collections.Generic;
 namespace Frontline.GameDesign.Migrations
 {
     [DbContext(typeof(GameDesignContext))]
-    partial class GameDesignContextModelSnapshot : ModelSnapshot
+    [Migration("20180326061340_olreward")]
+    partial class olreward
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -407,7 +408,7 @@ namespace Frontline.GameDesign.Migrations
 
                     b.Property<int>("t");
 
-                    b.Property<TimeSpan>("time");
+                    b.Property<string>("time");
 
                     b.HasKey("id");
 
