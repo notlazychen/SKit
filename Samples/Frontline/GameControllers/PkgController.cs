@@ -188,85 +188,90 @@ namespace Frontline.GameControllers
             return item;
         }
 
-        public RewardInfo RandomReward(Player player, int randomId, string reason)
+        public RewardInfo RandomReward(Player player, int randomId, int times, string reason)
         {
             DRandom di = _drandoms[randomId];
             RewardInfo ri = new RewardInfo();
             ri.items = new List<RewardItem>();
             ri.res = new List<ResInfo>();
-            if (di.weight.Object.Length <= 0)//必掉
+            for (int t = 0; t < times; t++)
             {
-                if (di.gid.Object.Length > 0)
+                if (di.weight.Object.Length <= 0)//必掉
                 {
-                    for (int i = 0; i < di.gid.Object.Length; i++)
+                    if (di.gid.Object.Length > 0)
                     {
-                        PlayerItem item = this.AddItem(player, di.gid.Object[i], di.count.Object[i], reason);
-                        DItem d = _ditems[di.gid.Object[i]];
-                        RewardItem rii = new RewardItem();
-                        rii.count = di.count.Object[i];
-                        rii.icon = d.icon;
-                        rii.id = di.gid.Object[i];
-                        rii.name = d.name;
-                        rii.quality = d.quality;
-                        rii.type = d.type;
-                        ri.items.Add(rii);
+                        for (int i = 0; i < di.gid.Object.Length; i++)
+                        {
+                            DItem d = _ditems[di.gid.Object[i]];
+                            RewardItem rii = new RewardItem();
+                            rii.count = di.count.Object[i];
+                            rii.icon = d.icon;
+                            rii.id = di.gid.Object[i];
+                            rii.name = d.name;
+                            rii.quality = d.quality;
+                            rii.type = d.type;
+                            ri.items.Add(rii);
+                        }
+                    }
+                    if (di.res_type.Object.Length > 0)
+                    {
+                        for (int i = 0; i < di.res_type.Object.Length; i++)
+                        {
+                            ResInfo res = new ResInfo()
+                            {
+                                type = di.res_type.Object[i],
+                                count = di.res_count.Object[i]
+                            };
+                            ri.res.Add(res);
+                        }
                     }
                 }
-                if (di.res_type.Object.Length > 0)
+                else//随机一个
                 {
-                    for (int i = 0; i < di.res_type.Object.Length; i++)
+                    int index = MathUtil.RandomIndex(di.weight.Object);
+                    if (di.gid.Object.Length > 0)
                     {
-                        //Support su = Spring.bean(PlayerService.class).getSupport(pid);
-                        var playerController = Server.GetController<PlayerController>();
-                        playerController.AddCurrency(player, di.res_type.Object[i], di.res_count.Object[i], reason);
-                        ResInfo res = new ResInfo()
+                        //约定，如果随机的话，随机到小于等于0的id就是没随到东西
+                        int itemId = di.gid.Object[index];
+                        if (itemId > 0)
                         {
-                            type = di.res_type.Object[i],
-                            count = di.res_count.Object[i]
-                        };
-                        ri.res.Add(res);
+                            DItem d = _ditems[di.gid.Object[index]];
+                            RewardItem rii = new RewardItem();
+                            rii.count = di.count.Object[index];
+                            rii.icon = d.icon;
+                            rii.id = di.gid.Object[index];
+                            rii.name = d.name;
+                            rii.quality = d.quality;
+                            rii.type = d.type;
+                            ri.items.Add(rii);
+                        }
+                    }
+                    else if (di.res_type.Object.Length > 0)
+                    {
+                        //约定，如果随机的话，随机到小于等于0的id就是没随到东西
+                        int resType = di.res_type.Object[index];
+                        if (resType > 0)
+                        {
+                            ResInfo res = new ResInfo()
+                            {
+                                type = di.res_type.Object[index],
+                                count = di.res_count.Object[index]
+                            };
+                            ri.res.Add(res);
+                        }
                     }
                 }
             }
-            else//随机一个
-            {
-                int index = MathUtil.RandomIndex(di.weight.Object);
-                if (di.gid.Object.Length > 0)
-                {
-                    //约定，如果随机的话，随机到小于等于0的id就是没随到东西
-                    int itemId = di.gid.Object[index];
-                    if (itemId > 0)
-                    {
-                        PlayerItem item = this.AddItem(player, di.gid.Object[index], di.count.Object[index], reason);
-                        DItem d = _ditems[di.gid.Object[index]];
-                        RewardItem rii = new RewardItem();
-                        rii.count = di.count.Object[index];
-                        rii.icon = d.icon;
-                        rii.id = di.gid.Object[index];
-                        rii.name = d.name;
-                        rii.quality = d.quality;
-                        rii.type = d.type;
-                        ri.items.Add(rii);
-                    }
-                }
-                else if (di.res_type.Object.Length > 0)
-                {
-                    //约定，如果随机的话，随机到小于等于0的id就是没随到东西
-                    int resType = di.res_type.Object[index];
-                    if (resType > 0)
-                    {
-                        var playerController = Server.GetController<PlayerController>();
-                        playerController.AddCurrency(player, di.res_type.Object[index], di.res_count.Object[index], reason);
 
-                        ResInfo res = new ResInfo()
-                        {
-                            type = di.res_type.Object[index],
-                            count = di.res_count.Object[index]
-                        };
-                        ri.res.Add(res);
-                    }
-                }
+            foreach(var element in ri.items.GroupBy(itm => itm.id)){
+                PlayerItem item = this.AddItem(player, element.Key, element.Sum(x=>x.count), reason);
             }
+            var playerController = Server.GetController<PlayerController>();
+            foreach (var element in ri.res.GroupBy(itm => itm.type))
+            {
+                playerController.AddCurrency(player, element.Key, element.Sum(x=>x.count), reason);
+            }
+
             return ri;
         }
 
@@ -357,7 +362,7 @@ namespace Frontline.GameControllers
             }
             else if (di.breakRandomId > 0)//使用后可以获得随机库
             {
-                RewardInfo reward = this.RandomReward(player, di.breakRandomId, reason);
+                RewardInfo reward = this.RandomReward(player, di.breakRandomId, 1, reason);
                 response.rewardInfo = reward;
             }
             else if (di.breakCount > 0)//资源

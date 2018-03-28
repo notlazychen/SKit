@@ -5,7 +5,7 @@ using SKit;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
+using SKit.Common;
 using Microsoft.EntityFrameworkCore;
 using Frontline.Domain;
 using Frontline.GameDesign;
@@ -19,11 +19,11 @@ namespace Frontline.GameControllers
         private readonly GameDesignContext _designDb;
         private readonly DataContext _db;
 
-        public Dictionary<int, Dictionary<int, List<DDungeon>>> DDungeons { get; private set; }//type:{section:{mission:x}}
+        public Dictionary<int, Dictionary<int, SortedDictionary<int, DDungeon>>> DDungeons { get; private set; }//type:{section:{mission:x}}
         public Dictionary<int, DMonster> DMonsters { get; private set; }//tid:x
         public Dictionary<int, DMonsterAbility> DMonsterAbilities { get; private set; }//level:x
         public Dictionary<int, Dictionary<int, DMonsterInDungeon>> DMonsterInDungeons { get; private set; }//dungeonid:{monsterid:x}
-
+        public Dictionary<int, Dictionary<int, Dictionary<int, DDungeonStar>>> DDStars { get; private set; }//type:{section : {index : x}}
         private readonly Dictionary<string, Battle> _battles = new Dictionary<string, Battle>();
 
         public DungeonController(DataContext db, GameDesignContext design)
@@ -34,10 +34,11 @@ namespace Frontline.GameControllers
 
         protected override void OnReadGameDesignTables()
         {
-            DDungeons = _designDb.DDungeons.GroupBy(x => x.type).AsNoTracking().ToDictionary(x => x.Key, x => x.GroupBy(y => y.section).ToDictionary(y => y.Key, y => y.OrderBy(z=>z.id).ToList()));
+            DDungeons = _designDb.DDungeons.GroupBy(x => x.type).AsNoTracking().ToDictionary(x => x.Key, x => x.GroupBy(y => y.section).ToDictionary(y => y.Key, y => new SortedDictionary<int, DDungeon>(y.ToDictionary(z => z.mission, z => z))));
             DMonsters = _designDb.DMonsters.AsNoTracking().ToDictionary(x => x.id, x => x);
             DMonsterAbilities = _designDb.DMonsterAbilities.AsNoTracking().ToDictionary(x => x.level, x => x);
             DMonsterInDungeons = _designDb.DMonsterInDungeons.GroupBy(x => x.dungeon_id).AsNoTracking().ToDictionary(x => x.Key, x => x.ToDictionary(y => y.mid, y => y));
+            DDStars = _designDb.DDungeonStars.AsNoTracking().GroupBy(x => x.type).ToDictionary(x => x.Key, x => x.GroupBy(y => y.section).ToDictionary(z => z.Key, z => z.ToDictionary(a => a.index, a => a)));
         }
 
         protected override void OnRegisterEvents()
@@ -51,9 +52,9 @@ namespace Frontline.GameControllers
 
         private void PlayerController_PlayerEverydayRefresh(object sender, Player e)
         {
-            foreach(var s in e.Sections)
+            foreach (var s in e.Sections)
             {
-                foreach(var d in s.Dungeons)
+                foreach (var d in s.Dungeons)
                 {
                     if (d.IsOpen)
                     {
@@ -192,6 +193,7 @@ namespace Frontline.GameControllers
             }
             return mi;
         }
+
         #endregion
 
         #region 通讯接口
@@ -215,7 +217,6 @@ namespace Frontline.GameControllers
                 response.sections.Add(si);
             }
 
-            //var response = JsonConvert.DeserializeObject<SectionInfoResponse>("{\"id\":\"10000f3\",\"sections\":[{\"name\":\"初临战场\",\"id\":1,\"type\":1,\"open\":true},{\"name\":\"初临战场\",\"id\":1,\"type\":2,\"open\":false},{\"name\":\"激烈交战\",\"id\":2,\"type\":1,\"open\":false},{\"name\":\"激烈交战\",\"id\":2,\"type\":2,\"open\":false},{\"name\":\"白色方案\",\"id\":3,\"type\":1,\"open\":false},{\"name\":\"白色方案\",\"id\":3,\"type\":2,\"open\":false},{\"name\":\"闪电战\",\"id\":4,\"type\":1,\"open\":false},{\"name\":\"闪电战\",\"id\":4,\"type\":2,\"open\":false},{\"name\":\"西线战场\",\"id\":5,\"type\":1,\"open\":false},{\"name\":\"西线战场\",\"id\":5,\"type\":2,\"open\":false},{\"name\":\"北非战场\",\"id\":6,\"type\":1,\"open\":false},{\"name\":\"北非战场\",\"id\":6,\"type\":2,\"open\":false},{\"name\":\"巴巴罗萨计划\",\"id\":7,\"type\":1,\"open\":false},{\"name\":\"巴巴罗萨计划\",\"id\":7,\"type\":2,\"open\":false},{\"name\":\"霸王行动\",\"id\":8,\"type\":1,\"open\":false},{\"name\":\"霸王行动\",\"id\":8,\"type\":2,\"open\":false},{\"name\":\"突破包围网\",\"id\":9,\"type\":1,\"open\":false},{\"name\":\"突破包围网\",\"id\":9,\"type\":2,\"open\":false},{\"name\":\"帝国的毁灭\",\"id\":10,\"type\":1,\"open\":false},{\"name\":\"帝国的毁灭\",\"id\":10,\"type\":2,\"open\":false},{\"name\":\"斩首行动\",\"id\":11,\"type\":1,\"open\":false},{\"name\":\"斩首行动\",\"id\":11,\"type\":2,\"open\":false},{\"name\":\"殊死一战\",\"id\":12,\"type\":1,\"open\":false},{\"name\":\"殊死一战\",\"id\":12,\"type\":2,\"open\":false}],\"success\":true}");
             this.CurrentSession.SendAsync(response);
             return 0;
         }
@@ -236,10 +237,10 @@ namespace Frontline.GameControllers
             response.section = request.section;
             response.type = request.type;
             response.fbs = new List<FBInfo>();
-            response.receiveds = new List<int>();
+            response.receiveds = section.RecvdStarReward.StringToListInt();
             response.id = section.PlayerId;
 
-            var dds = DDungeons[section.Type][section.Index];
+            var dds = DDungeons[section.Type][section.Index].Values;
             foreach (var dd in dds)
             {
                 FBInfo fi = new FBInfo();
@@ -350,6 +351,12 @@ namespace Frontline.GameControllers
             {
                 return (int)GameErrorCode.关卡尚未开启;
             }
+            DDungeon ddungeon = DDungeons[dungeon.Type][dungeon.Section][dungeon.Mission];
+            int remain = ddungeon.fight_times - dungeon.FightTimes - 1;
+            if (remain < 0)
+            {
+                return (int)GameErrorCode.副本挑战次数不足;
+            }
 
             var battle = new Battle()
             {
@@ -378,12 +385,8 @@ namespace Frontline.GameControllers
         new int []{1, 1, 2, 2, 3}};
         public int Call_FightEnd(FBFightResultRequest request)
         {
-            if(request.token == null)
+            if (request.token == null)
             {
-                //FBFightResultResponse er = new FBFightResultResponse();
-                //er.success = false;
-                //er.info = GameErrorCode.战斗令牌错误或战斗已经失效.ToString();
-                //CurrentSession.SendAsync(er);
                 return (int)GameErrorCode.战斗令牌错误或战斗已经失效;
             }
             Battle battle;
@@ -433,7 +436,7 @@ namespace Frontline.GameControllers
 
                 if (dungeon.Star == 0)//第一次通关
                 {
-                    
+
                     if (dungeon.Next != 0)//开启下一关
                     {
                         var ddnext = DDungeons[dungeon.Type][dungeon.Section][dungeon.Mission + 1];
@@ -443,7 +446,7 @@ namespace Frontline.GameControllers
                     }
                     else//开启下一章
                     {
-                        if(dungeon.Type == 1)//普通副本直接开启下一章，尝试打开精英副本当前章
+                        if (dungeon.Type == 1)//普通副本直接开启下一章，尝试打开精英副本当前章
                         {
                             Section secionNext = new Section()
                             {
@@ -505,32 +508,26 @@ namespace Frontline.GameControllers
 
                 //派发奖励
                 var playerController = this.Server.GetController<PlayerController>();
+
+                int costoil = ddungeon.oil_cost;
+                int addexp = ddungeon.exp;
+                int addunitexp = ddungeon.exp_element;
                 //扣体力
-                playerController.AddCurrency(player, CurrencyType.OIL, -ddungeon.oil_cost, reason);
-                playerController.AddExp(player, ddungeon.exp, reason);                
-
+                playerController.AddCurrency(player, CurrencyType.OIL, -costoil, reason);
+                playerController.AddExp(player, addexp, reason);
                 //发放兵种经验
-                response.units = new List<UnitInfo>();
                 var campController = this.Server.GetController<CampController>();
-                var team = player.Teams.FirstOrDefault(t => t.IsSelected);
-                if (team != null)
-                {
-                    foreach (var unit in player.Units.Where(u => team.Units.Object.Contains(u.Id)))
-                    {
-                        UnitInfo ui = campController.AddUnitExp(player, unit, ddungeon.exp_element, false, true, reason);
-                        response.units.Add(ui);
-                    }
-                }
+                response.units = campController.GrantUnitExp(player, addunitexp, reason);
                 var pkgController = this.Server.GetController<PkgController>();
-                RewardInfo reward = pkgController.RandomReward(player, ddungeon.random_id, reason);
 
-                _db.SaveChanges();
-
-                reward.exp = ddungeon.exp;
-                response.reward = reward;
+                response.reward = pkgController.RandomReward(player, ddungeon.random_id, 1, reason);
+                response.reward.exp = ddungeon.exp;
                 response.lv = player.Level;
                 response.exp = player.Exp;
                 response.star = dungeon.Star;
+
+                _db.SaveChanges();
+
             }
             else
             {
@@ -542,6 +539,165 @@ namespace Frontline.GameControllers
             return 0;
         }
 
+        public int Call_RecvStarReward(FBGetStarRewardRequest request)
+        {
+            DDungeonStar dreward = DDStars[request.type][request.section][request.reward];
+            var player = CurrentSession.GetBindPlayer();
+            var section = player.Sections.First(s => s.Type == request.type && s.Index == request.section);
+            //判断是否已领取
+            var recved = section.RecvdStarReward.StringToListInt();
+            if (recved.Contains(request.reward))
+            {
+                return (int)GameErrorCode.已领取过此评星奖励;
+            }
+
+            int allStar = section.Dungeons.Sum(x => x.Star);
+            if (allStar < dreward.star)
+            {
+                return (int)GameErrorCode.未满足评星需求;
+            }
+
+            string reason = $"领取副本评星奖励";
+            var playercon = Server.GetController<PlayerController>();
+            playercon.AddCurrency(player, dreward.res_type, dreward.res_count, reason);
+            recved.Add(dreward.index);
+            section.RecvdStarReward = recved.ListIntToString();
+            _db.SaveChanges();
+            FBGetStarRewardResponse response = new FBGetStarRewardResponse();
+            response.success = true;
+            response.diamond = dreward.res_count;
+            response.section = section.Index;
+            response.type = request.type;
+            response.receiveds = recved;
+            CurrentSession.SendAsync(response);
+
+            return 0;
+        }
+
+        public int Call_Wipe(FBWipeRequest request)
+        {
+            if (request.count <= 0)
+                return -1;
+            FBWipeResponse response = new FBWipeResponse();
+            response.rewards = new List<RewardInfo>();
+            var player = this.CurrentSession.GetBindPlayer();
+            Dungeon dungeon = null;
+            foreach (var section in player.Sections)
+            {
+                foreach (var d in section.Dungeons)
+                {
+                    if (d.Id == request.id)
+                    {
+                        dungeon = d;
+                        break;
+                    }
+                }
+            }
+            if (dungeon == null)
+            {
+                return (int)GameErrorCode.副本章节还未开启;
+            }
+
+            if (dungeon.Star < 3)//必须是曾经战胜过的
+            {
+                return (int)GameErrorCode.副本三星才能扫荡;
+            }
+            DDungeon df = DDungeons[dungeon.Type][dungeon.Section][dungeon.Mission];
+            int remain = df.fight_times - dungeon.FightTimes - request.count;
+            if (remain < 0)
+            {
+                return (int)GameErrorCode.副本挑战次数不足;
+            }
+            var playercon = Server.GetController<PlayerController>();
+            if (!playercon.IsCurrencyEnough(player, CurrencyType.OIL, df.oil_cost))
+            {
+                return (int)GameErrorCode.体力不足;
+            }
+
+            string reason = $"副本{df.id}:{df.name}扫荡";
+
+            //派发奖励
+            var playerController = this.Server.GetController<PlayerController>();
+
+            int costoil = df.oil_cost * request.count;
+            int addexp = df.exp * request.count;
+            int addunitexp = df.exp_element * request.count;
+            //扣体力
+            playerController.AddCurrency(player, CurrencyType.OIL, -costoil, reason);
+            playerController.AddExp(player, addexp, reason);
+            //发放兵种经验
+            var campController = this.Server.GetController<CampController>();
+            response.units = campController.GrantUnitExp(player, addunitexp, reason);
+            var pkgController = this.Server.GetController<PkgController>();
+
+            for (int i = 0; i < request.count; i++)
+            {
+                RewardInfo reward = pkgController.RandomReward(player, df.random_id, 1, reason);
+                reward.exp = df.exp;
+                response.rewards.Add(reward);
+            }
+            dungeon.FightTimes += request.count;
+            _db.SaveChanges();
+
+            response.success = true;
+            response.id = request.id;
+            response.count = request.count;
+            CurrentSession.SendAsync(response);
+
+            return 0;
+        }
+
+        public int Call_Reset(FBResetRequest request)
+        {
+            FBResetResponse response = new FBResetResponse();
+            var player = this.CurrentSession.GetBindPlayer();
+            Dungeon dungeon = null;
+            foreach (var section in player.Sections)
+            {
+                foreach (var d in section.Dungeons)
+                {
+                    if (d.Id == request.fid)
+                    {
+                        dungeon = d;
+                        break;
+                    }
+                }
+            }
+            if (dungeon == null)
+            {
+                return (int)GameErrorCode.副本章节还未开启;
+            }
+
+
+            int remain = GameConfig.DungeonResetCount - dungeon.ResetNumb;
+            if (remain <= 0)
+            {
+                return (int)GameErrorCode.副本重置次数不足;
+            }
+
+            var playercon = Server.GetController<PlayerController>();
+
+            int[] prices = GameConfig.DungeonResetCostDiamond;
+
+            int price = prices.Length > dungeon.ResetNumb ? prices[dungeon.ResetNumb] : prices[prices.Length - 1];
+            if (!playercon.IsCurrencyEnough(player, CurrencyType.DIAMOND, price))
+            {
+                return (int)GameErrorCode.资源不足;
+            }
+            dungeon.FightTimes = 0;
+            dungeon.ResetNumb++;
+
+            _db.SaveChanges();
+
+            response.success = true;
+            response.diamond = player.Wallet.DIAMOND;
+            response.fid = dungeon.Id;
+            response.fight_times = DDungeons[dungeon.Type][dungeon.Section][dungeon.Mission].fight_times;
+            response.remainNumb = remain - 1;
+
+            CurrentSession.SendAsync(response);
+            return 0;
+        }
         #endregion
     }
 }

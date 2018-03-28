@@ -12,8 +12,8 @@ using System.Collections.Generic;
 namespace Frontline.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20180327133139_init")]
-    partial class init
+    [Migration("20180328025616_fb.star")]
+    partial class fbstar
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -21,6 +21,38 @@ namespace Frontline.Migrations
             modelBuilder
                 .HasAnnotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn)
                 .HasAnnotation("ProductVersion", "2.0.1-rtm-125");
+
+            modelBuilder.Entity("Frontline.Domain.ArenaBattleHistory", b =>
+                {
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<string>("AdversaryName");
+
+                    b.Property<string>("AdversaryPid");
+
+                    b.Property<string>("ArenaCertId");
+
+                    b.Property<int>("BattleResult");
+
+                    b.Property<long>("BattleTime");
+
+                    b.Property<string>("Icon");
+
+                    b.Property<string>("PlayerId");
+
+                    b.Property<int>("Power");
+
+                    b.Property<int>("RankChange");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ArenaCertId");
+
+                    b.HasIndex("PlayerId");
+
+                    b.ToTable("ArenaBattleHistories");
+                });
 
             modelBuilder.Entity("Frontline.Domain.ArenaCert", b =>
                 {
@@ -44,7 +76,7 @@ namespace Frontline.Migrations
                     b.Property<string>("PlayerId")
                         .IsRequired();
 
-                    b.Property<JsonObject<List<int>>>("ReceivedRewards");
+                    b.Property<string>("ReceivedRewards");
 
                     b.Property<int>("Score");
 
@@ -345,7 +377,9 @@ namespace Frontline.Migrations
 
                     b.Property<string>("PlayerId");
 
-                    b.Property<int>("RecvdStarReward");
+                    b.Property<string>("RecvdStarReward")
+                        .IsRequired()
+                        .HasMaxLength(64);
 
                     b.Property<int>("Type");
 
@@ -435,6 +469,13 @@ namespace Frontline.Migrations
                     b.HasKey("PlayerId");
 
                     b.ToTable("Wallets");
+                });
+
+            modelBuilder.Entity("Frontline.Domain.ArenaBattleHistory", b =>
+                {
+                    b.HasOne("Frontline.Domain.ArenaCert")
+                        .WithMany("ArenaBattleHistories")
+                        .HasForeignKey("ArenaCertId");
                 });
 
             modelBuilder.Entity("Frontline.Domain.ArenaCert", b =>

@@ -61,7 +61,7 @@ namespace Frontline.Migrations
                     MaxRank = table.Column<int>(nullable: false),
                     NextRecvRank = table.Column<int>(nullable: false),
                     PlayerId = table.Column<string>(nullable: false),
-                    ReceivedRewards = table.Column<JsonObject<List<int>>>(nullable: true),
+                    ReceivedRewards = table.Column<string>(nullable: true),
                     Score = table.Column<int>(nullable: false),
                     TotalBattleNumb = table.Column<int>(nullable: false)
                 },
@@ -282,6 +282,31 @@ namespace Frontline.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "ArenaBattleHistories",
+                columns: table => new
+                {
+                    Id = table.Column<string>(nullable: false),
+                    AdversaryName = table.Column<string>(nullable: true),
+                    AdversaryPid = table.Column<string>(nullable: true),
+                    BattleResult = table.Column<int>(nullable: false),
+                    BattleTime = table.Column<long>(nullable: false),
+                    Icon = table.Column<string>(nullable: true),
+                    PlayerId = table.Column<string>(nullable: true),
+                    Power = table.Column<int>(nullable: false),
+                    RankChange = table.Column<int>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_ArenaBattleHistories", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_ArenaBattleHistories_ArenaCerts_PlayerId",
+                        column: x => x.PlayerId,
+                        principalTable: "ArenaCerts",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "FriendApplications",
                 columns: table => new
                 {
@@ -375,6 +400,11 @@ namespace Frontline.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_ArenaBattleHistories_PlayerId",
+                table: "ArenaBattleHistories",
+                column: "PlayerId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ArenaCerts_CurrentRank",
                 table: "ArenaCerts",
                 column: "CurrentRank");
@@ -444,7 +474,7 @@ namespace Frontline.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "ArenaCerts");
+                name: "ArenaBattleHistories");
 
             migrationBuilder.DropTable(
                 name: "Dungeon");
@@ -475,6 +505,9 @@ namespace Frontline.Migrations
 
             migrationBuilder.DropTable(
                 name: "Wallets");
+
+            migrationBuilder.DropTable(
+                name: "ArenaCerts");
 
             migrationBuilder.DropTable(
                 name: "Sections");

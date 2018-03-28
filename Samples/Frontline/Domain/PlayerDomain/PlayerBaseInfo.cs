@@ -10,7 +10,9 @@ namespace Frontline.Domain
     {
         [Key]
         public string Id { get; set; }
+        [MaxLength(32)]
         public string NickName { get; set; }
+        [MaxLength(32)]
         public string Icon { get; set; }
         public int VIP { get; set; }
         public int Level { get; set; }
@@ -18,5 +20,7 @@ namespace Frontline.Domain
         /// 历史最高战力
         /// </summary>
         public int MaxPower { get; set; }
+        [MaxLength(32)]
+        public string KorpsName { get; set; }
     }
 }

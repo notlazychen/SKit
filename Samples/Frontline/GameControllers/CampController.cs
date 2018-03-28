@@ -154,7 +154,7 @@ namespace Frontline.GameControllers
 
 
         #region 辅助方法
-        public UnitInfo AddUnitExp(Player player, Unit unit, int exp, bool usecurrency, bool once, string reason)
+        private UnitInfo AddUnitExp(Player player, Unit unit, int exp, bool usecurrency, bool once, string reason)
         {
             DUnit du;
             if (!DUnits.TryGetValue(unit.Tid, out du))
@@ -472,6 +472,21 @@ namespace Frontline.GameControllers
             var uids = team.Units.Object.Where(uid => !string.IsNullOrEmpty(uid)).ToList();
             var us = player.Units.Where(u => uids.Contains(u.Id)).Select(u => ToUnitInfo(u)).ToList();
             return us;
+        }
+
+        public List<UnitInfo> GrantUnitExp(Player player, int addunitexp, string reason)
+        {
+            List<UnitInfo> units = new List<UnitInfo>();
+            var team = player.Teams.FirstOrDefault(t => t.IsSelected);
+            if (team != null)
+            {
+                foreach (var unit in player.Units.Where(u => team.Units.Object.Contains(u.Id)))
+                {
+                    UnitInfo ui = this.AddUnitExp(player, unit, addunitexp, false, true, reason);
+                    units.Add(ui);
+                }
+            }
+            return units;
         }
         #endregion
 

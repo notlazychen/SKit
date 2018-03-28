@@ -18,7 +18,9 @@ namespace Frontline.Domain
         public int Type { get; set; }//类型
 
         public List<Dungeon> Dungeons { get; set; }
-        public int RecvdStarReward { get; set; }
+        [Required]
+        [MaxLength(64)]
+        public string RecvdStarReward { get; set; } = string.Empty;
     }
 
     [Flags]

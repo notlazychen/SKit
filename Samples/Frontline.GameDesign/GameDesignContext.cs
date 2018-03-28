@@ -32,6 +32,7 @@ namespace Frontline.GameDesign
             modelBuilder.Entity<DMonsterInDungeon>().HasKey(d => new { d.dungeon_id, d.mid });
             modelBuilder.Entity<DDungeon>().HasIndex(d => new { d.section, d.type });
             modelBuilder.Entity<DUnitGradeUp>().HasKey(d => new { d.star, d.grade });
+            modelBuilder.Entity<DDungeonStar>().HasKey(d => new { d.type, d.section, d.index });
         }
 
         public DbSet<DItem> DItems { get; set; }
@@ -40,6 +41,8 @@ namespace Frontline.GameDesign
         public DbSet<DMonsterAbility> DMonsterAbilities { get; set; }
         public DbSet<DMonsterInDungeon> DMonsterInDungeons { get; set; }
         public DbSet<DDungeon> DDungeons { get; set; }
+        public DbSet<DDungeonStar> DDungeonStars { get; set; }
+
         public DbSet<DUnit> DUnits { get; set; }
         public DbSet<DUnitLevelUp> DUnitLevelUps { get; set; }
         public DbSet<DUnitGradeUp> DUnitGradeUps { get; set; }

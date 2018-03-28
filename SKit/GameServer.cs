@@ -310,7 +310,6 @@ namespace SKit
         /// </summary>
         protected virtual void OnSessionClosed(GameSession session)
         {
-            _logger.LogDebug($"当前连接数: {ClientCount}");
         }
 
         /// <summary>
@@ -538,7 +537,7 @@ namespace SKit
                 _socketRecvBufferPool.Push(e.Buffer);
                 token?.Dispose();
                 // Free the SocketAsyncEventArg so they can be reused by another client
-                _logger.LogDebug($"{token.Id}: LEAVE, reason: {reason}");
+                _logger.LogDebug($"{token.Id}: LEAVE, reason: {reason}|当前连接数: {ClientCount}");
             }
         }
 

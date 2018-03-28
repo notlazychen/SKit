@@ -12,9 +12,10 @@ using System.Collections.Generic;
 namespace Frontline.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20180328014804_init")]
+    partial class init
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -30,8 +31,6 @@ namespace Frontline.Migrations
 
                     b.Property<string>("AdversaryPid");
 
-                    b.Property<string>("ArenaCertId");
-
                     b.Property<int>("BattleResult");
 
                     b.Property<long>("BattleTime");
@@ -45,8 +44,6 @@ namespace Frontline.Migrations
                     b.Property<int>("RankChange");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ArenaCertId");
 
                     b.HasIndex("PlayerId");
 
@@ -75,8 +72,7 @@ namespace Frontline.Migrations
                     b.Property<string>("PlayerId")
                         .IsRequired();
 
-                    b.Property<string>("ReceivedRewards")
-                        .HasMaxLength(64);
+                    b.Property<string>("ReceivedRewards");
 
                     b.Property<int>("Score");
 
@@ -256,15 +252,11 @@ namespace Frontline.Migrations
                     b.Property<string>("IP")
                         .HasMaxLength(32);
 
-                    b.Property<string>("Icon")
-                        .HasMaxLength(32);
+                    b.Property<string>("Icon");
 
                     b.Property<bool>("IsBind");
 
                     b.Property<bool>("IsDeleted");
-
-                    b.Property<string>("KorpsName")
-                        .HasMaxLength(32);
 
                     b.Property<string>("Language")
                         .HasMaxLength(32);
@@ -282,8 +274,7 @@ namespace Frontline.Migrations
                     b.Property<int>("MaxPower");
 
                     b.Property<string>("NickName")
-                        .IsRequired()
-                        .HasMaxLength(32);
+                        .IsRequired();
 
                     b.Property<bool>("OldPlayer");
 
@@ -382,9 +373,7 @@ namespace Frontline.Migrations
 
                     b.Property<string>("PlayerId");
 
-                    b.Property<string>("RecvdStarReward")
-                        .IsRequired()
-                        .HasMaxLength(64);
+                    b.Property<int>("RecvdStarReward");
 
                     b.Property<int>("Type");
 
@@ -480,7 +469,7 @@ namespace Frontline.Migrations
                 {
                     b.HasOne("Frontline.Domain.ArenaCert")
                         .WithMany("ArenaBattleHistories")
-                        .HasForeignKey("ArenaCertId");
+                        .HasForeignKey("PlayerId");
                 });
 
             modelBuilder.Entity("Frontline.Domain.ArenaCert", b =>

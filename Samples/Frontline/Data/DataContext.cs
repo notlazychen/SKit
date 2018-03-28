@@ -30,8 +30,6 @@ namespace Frontline.Data
             //modelBuilder.Entity<Player>().HasMany(p => p.Currencies);
 
             modelBuilder.Entity<Wallet>().HasOne<Player>().WithOne(p=>p.Wallet).IsRequired();
-            modelBuilder.Entity<ArenaCert>().HasOne<Player>().WithOne(p => p.ArenaCert).IsRequired();
-            modelBuilder.Entity<ArenaCert>().HasIndex(p => new { p.CurrentRank });
 
             modelBuilder.Entity<Dungeon>().HasIndex(d => d.SectionId);
             modelBuilder.Entity<Dungeon>().HasIndex(d => new { d.Tid, d.PlayerId });
@@ -49,11 +47,17 @@ namespace Frontline.Data
             modelBuilder.Entity<Friendship>().HasIndex(p => p.FriendListId);
             modelBuilder.Entity<FriendApplication>().HasKey(p => new { p.FriendListId, p.PlayerId });
 
+            modelBuilder.Entity<ArenaCert>().HasIndex(p => new { p.CurrentRank });
+            modelBuilder.Entity<ArenaCert>().HasOne<Player>().WithOne(p => p.ArenaCert).IsRequired();
+            modelBuilder.Entity<ArenaBattleHistory>().HasIndex(h=>h.PlayerId);
+            modelBuilder.Entity<ArenaBattleHistory>().HasOne<ArenaCert>().WithMany(a => a.ArenaBattleHistories).HasForeignKey(h => h.ArenaCertId);
         }
 
         public DbSet<Player> Players { get; set; }
         public DbSet<Wallet> Wallets { get; set; }
+
         public DbSet<ArenaCert> ArenaCerts { get; set; }
+        public DbSet<ArenaBattleHistory> ArenaBattleHistories { get; set; }
 
         public DbSet<Section> Sections { get; set; } 
         public DbSet<PlayerItem> Items { get; set; } 
@@ -64,6 +68,5 @@ namespace Frontline.Data
         //public DbSet<PlayerDungeon> Dungeons { get; set; }
         public DbSet<Friendship> Friendships { get; set; }
         public DbSet<FriendApplication> FriendApplications { get; set; }
-
     }
 }

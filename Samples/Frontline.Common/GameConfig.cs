@@ -16,10 +16,12 @@ namespace Frontline.Common
         public static readonly int TYPE_INDUSTRY = 3;
         public static readonly int TYPE_UNITREST = 4;//兵种休整
 
+        public static int DungeonResetCount = 3;//副本重置次数
+        public static int[] DungeonResetCostDiamond = { 50, 50, 100 };//精英副本重置次数花费钻石
 
-        public const int lottery_base_cnt = 10;
-        public const int lottery_first_item_id = 41070307;//国内海外307T-26
-        public const int lottery_first_item_cnt = 15;
+        public static int lottery_base_cnt = 10;
+        public static int lottery_first_item_id = 41070307;//国内海外307T-26
+        public static int lottery_first_item_cnt = 15;
 
         public static int FriendOpenLevel = 10;//等级限制（开启等级）
         public static int FriendMaxCount = 100;//好友上限

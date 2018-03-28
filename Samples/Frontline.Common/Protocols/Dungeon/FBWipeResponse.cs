@@ -36,6 +36,10 @@ namespace protocol
         /// </summary>
 		[ProtoMember(2, IsRequired = false)]
 		public string info;
-
-	}
+        /// <summary>
+        /// 兵种获得经验之后
+        /// </summary>
+        [ProtoMember(6, IsRequired = false)]
+        public List<UnitInfo> units;
+    }
 }

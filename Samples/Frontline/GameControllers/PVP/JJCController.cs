@@ -41,17 +41,29 @@ namespace Frontline.GameControllers
         {
             var playercon = Server.GetController<PlayerController>();
             playercon.PlayerLoading += Playercon_PlayerLoading;
+            playercon.PlayerEverydayRefresh += Playercon_PlayerEverydayRefresh;
+        }
+
+        private void Playercon_PlayerEverydayRefresh(object sender, Player e)
+        {
+            if(e.ArenaCert != null)
+            {
+                e.ArenaCert.BoughtChallengeTimes = 0;
+                e.ArenaCert.ChallengeTimes = 0;
+                e.ArenaCert.ReceivedRewards = string.Empty;
+                e.ArenaCert.Score = 0;
+            }
         }
 
         private void Playercon_PlayerLoading(object sender, PlayerLoader e)
         {
-            e.Loader = e.Loader.Include(p=>p.ArenaCert);
+            e.Loader = e.Loader.Include(p=>p.ArenaCert).ThenInclude(c=>c.ArenaBattleHistories);
         }
         #region 事件
         #endregion
 
         #region 辅助函数
-        public IEnumerable<GrabFlagAdversaryInfo> ToAdvInfo(IEnumerable<ArenaCert> ps)
+        private IEnumerable<GrabFlagAdversaryInfo> ToAdvInfo(IEnumerable<ArenaCert> ps)
         {
             foreach (var p in ps)
             {
@@ -67,6 +79,27 @@ namespace Frontline.GameControllers
                 adv.rank = p.CurrentRank;
 
                 yield return adv;
+            }
+        }
+
+        private void AddHistory(ArenaCert playercert, String otherId, String otherName, String otherIcon, int otherPower, int rankChange, String battleId, int result)
+        {
+            ArenaBattleHistory his = new ArenaBattleHistory();
+            his.AdversaryPid = otherId;
+            his.AdversaryName = otherName;
+            his.PlayerId = playercert.PlayerId;
+            his.Power = otherPower;
+            his.RankChange = rankChange;
+            his.Id = battleId;
+            his.BattleResult = result;
+            his.BattleTime = DateTime.Now.ToUnixTime();
+            his.Icon = otherIcon;
+
+            playercert.ArenaBattleHistories.Add(his);
+            if (playercert.ArenaBattleHistories.Count > 20)
+            {
+                var first = playercert.ArenaBattleHistories.First();
+                _db.ArenaBattleHistories.Remove(first);
             }
         }
         #endregion
@@ -96,7 +129,7 @@ namespace Frontline.GameControllers
                 GrabFlagScoreInfo srinfo = new GrabFlagScoreInfo();
                 srinfo.id = dr.id;
                 srinfo.score = dr.times;
-                srinfo.received = war != null && recvRewards.Contains(dr.times);
+                srinfo.received = war != null && recvRewards.Contains(dr.id);
                 response.scoreInfos.Add(srinfo);
             }
 
@@ -127,7 +160,7 @@ namespace Frontline.GameControllers
             string reason = "领取竞技场次数奖励";
             //发放奖励
             var pkg = Server.GetController<PkgController>();
-            RewardInfo rewardInfo = pkg.RandomReward(player, reward.random_id, reason);
+            RewardInfo rewardInfo = pkg.RandomReward(player, reward.random_id, 1, reason);
             receRewards.Add(reward.id);
             war.ReceivedRewards = string.Join(",", receRewards);
             _db.SaveChanges();
@@ -168,7 +201,6 @@ namespace Frontline.GameControllers
             response.buyTimes = war.BoughtChallengeTimes;
 
             //随机出5个人来
-            //int rank = war.getCurrentRank() - 1;
             if (war.CurrentRank > 5 && war.CurrentRank < 9)
             {
                 var avs = _db.ArenaCerts.Where(x => x.CurrentRank >= war.CurrentRank - 5 && x.CurrentRank < war.CurrentRank).Take(5).ToList();
@@ -267,17 +299,18 @@ namespace Frontline.GameControllers
             resp.success = true;
             resp.adversaryPid = war.BattleEnemyPid;
 
+            var playerController = Server.GetController<PlayerController>();
+            int delta = 0;
             string reason = "竞技场挑战胜利";
+            var enemy = playerController.QueryPlayer(war.BattleEnemyPid);
             if (request.win)
             {
-                var playerController = Server.GetController<PlayerController>();
                 RewardInfo reward = new RewardInfo() { items = new List<RewardItem>(), res = new List<ResInfo>()};
                 playerController.AddCurrency(player, CurrencyType.GOLD, GameConfig.ArenaBattleWinAddGold, reason);
                 reward.res.Add(new ResInfo { type = CurrencyType.GOLD, count = GameConfig.ArenaBattleWinAddGold });
 
                 var warEnemy = _db.ArenaCerts.First(x => x.PlayerId == war.BattleEnemyPid);
                 int eRank = warEnemy.CurrentRank;
-                int delta = 0;
                 if (war.CurrentRank > eRank)
                 {
                     warEnemy.CurrentRank = war.CurrentRank;
@@ -294,7 +327,9 @@ namespace Frontline.GameControllers
             {
                 resp.win = false;
             }
-            //todo:记录战斗日志
+            //给对方记录挨打日志
+            AddHistory(enemy.ArenaCert, player.Id, player.NickName, player.Icon, player.MaxPower, delta, battleId, resp.win ? -1 : 1);
+
             _db.SaveChanges();
 
             resp.currentRank = war.CurrentRank;
@@ -345,6 +380,28 @@ namespace Frontline.GameControllers
             CurrentSession.SendAsync(response);
 
             return 0;
-    }
+        }
+
+        public int Call_RequestHistories(GrabFlagBattleHistoryRequest request)
+        {
+            GrabFlagBattleHistoryResponse resp = new GrabFlagBattleHistoryResponse();
+            resp.histories = new List<GrabFlagBattleHistoryInfo>();
+            var player = Server.GetController<PlayerController>().QueryPlayer(CurrentSession.UserId);
+            foreach (ArenaBattleHistory history in player.ArenaCert.ArenaBattleHistories)
+            {
+                GrabFlagBattleHistoryInfo h = new GrabFlagBattleHistoryInfo();
+                h.icon=history.Icon;
+                h.adversaryName=history.AdversaryName;
+                h.adversaryPid=history.AdversaryPid;
+                h.battleResult=history.BattleResult;
+                h.battleTime=history.BattleTime;
+                h.power=history.Power;
+                h.rankChange=history.RankChange;
+                resp.histories.Add(h);
+            }
+            resp.success = true;
+            CurrentSession.SendAsync(resp);
+            return 0;
+        }
     }
 }
