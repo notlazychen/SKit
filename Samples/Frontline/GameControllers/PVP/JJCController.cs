@@ -226,7 +226,7 @@ namespace Frontline.GameControllers
                 {
                     int a = @from + i * wei;
                     int b = @from + i * wei + wei;
-                    int r = MathUtil.RandomNumber(a, b);
+                    int r = MathUtils.RandomNumber(a, b);
                     vsid[i] = r;
                 }
                 var vs = _db.ArenaCerts.Where(c => vsid.Contains(c.CurrentRank)).Take(5).ToList();

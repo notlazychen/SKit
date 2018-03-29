@@ -12,9 +12,10 @@ using System.Collections.Generic;
 namespace Frontline.GameDesign.Migrations
 {
     [DbContext(typeof(GameDesignContext))]
-    partial class GameDesignContextModelSnapshot : ModelSnapshot
+    [Migration("20180329095745_vip3")]
+    partial class vip3
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -762,7 +763,7 @@ namespace Frontline.GameDesign.Migrations
 
             modelBuilder.Entity("Frontline.GameDesign.VIPPrivilege", b =>
                 {
-                    b.Property<string>("id")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd();
 
                     b.Property<int>("lv");
@@ -777,7 +778,7 @@ namespace Frontline.GameDesign.Migrations
 
                     b.Property<float>("work_worker4_prob");
 
-                    b.HasKey("id");
+                    b.HasKey("Id");
 
                     b.ToTable("VIPPrivileges");
                 });

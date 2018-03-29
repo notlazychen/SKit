@@ -26,12 +26,18 @@ namespace Frontline.GameControllers
         private GameDesignContext _designDb;
         private DataContext _db;
         private ILogger _logger;
-
+        private LegionController _legionController;
         public RankListController(DataContext db, GameDesignContext design, ILogger<RankListController> logger)
         {
             _db = db;
             _designDb = design;
             _logger = logger;
+        }
+
+        protected override void OnRegisterEvents()
+        {
+            base.OnRegisterEvents();
+            _legionController = Server.GetController<LegionController>();
         }
 
         #region 客户端接口
@@ -88,7 +94,7 @@ namespace Frontline.GameControllers
                 ri.legionName = null;
                 ri.score = w.CurrentRank;
                 ri.power = p.MaxPower;
-                ri.legionName = p.KorpsName;
+                ri.legionName = _legionController.QueryLegion(p.LegionId)?.Name;
                 resp.rankInfos.Add(ri);
             }
             CurrentSession.SendAsync(resp);
@@ -121,17 +127,19 @@ namespace Frontline.GameControllers
                     .Take(MAX_RANKING_COUNT)
                     .Select(p=> new RankInfo()
                     {
+                        legionName = p.LegionId,
                         icon = p.Icon,
-                        legionName = p.KorpsName,
                         level = p.Level,
                         name = p.NickName,
-                        pid = p.Id,         
+                        pid = p.Id,
                         power = p.MaxPower,
                         score = p.MaxPower
                     }).ToList();
                 for(int i = 1; i<= _powerRankInfo.Count; i++)
                 {
-                    _powerRankInfo[i - 1].rank = i;
+                    var ri = _powerRankInfo[i - 1];
+                    ri.legionName = _legionController.QueryLegion(ri.legionName)?.Name;
+                    ri.rank = i;
                 }
                 _powerRankOverdueTime = DateTime.Now.AddMinutes(10);
             }

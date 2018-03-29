@@ -405,12 +405,12 @@ namespace Frontline.GameControllers
             return info;
         }
 
-        const int ATK = 7152;
-        const int DEF = 7152;
-        const int HP = 14304;
         public int CalcPower(UnitInfo info)
         {
-            return info.power = (int)((info.hp / (1 - DEF / (info.att + DEF)) / (1 - 0)) * (info.att * (1 - DEF / (info.att + DEF)) * (1 - info.crit) + info.att * (1 - DEF / (info.att + DEF)) * info.crit * (1 + info.crit_hurt)));
+            //B的最终战斗力 = B的生命 /（1 - B的防御 /（B的防御 + A的攻击））+B的攻击 *（B的攻击 /（B的攻击 + A的防御））*战斗回合数N + B的防御 * 防御系数M，战斗回合数N和防御系数M最好从表里读取，方便调整。
+            //B为需要计算战斗力的单位，A为标准模型，标准模型A只有两个属性：攻击和防御，需要从表里读取（方便调整）
+            //如果不能读表：   战斗回合数 = 5，防御系数M = 0.3，    标准单位的攻击 = 276，防御 = 276
+            return info.power = (int)(info.hp / (1d - info.defence / (info.defence + GameConfig.BASE_ATK)) + info.att * (info.att / (info.att + GameConfig.BASE_DEF)) * GameConfig.BASE_ROUND + info.defence * GameConfig.BASE_DEF_K);
         }
 
         public UnitInfo UnlockUnit(Player player, int uid)

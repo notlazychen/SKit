@@ -60,10 +60,6 @@ namespace Frontline.Domain
         /// </summary>
         public DateTime LastLvUpTime { get; set; }
         /// <summary>
-        /// 最后一次登录时间
-        /// </summary>
-        public DateTime LastLoginTime { get; set; }
-        /// <summary>
         /// 角色创建时间
         /// </summary>
         public DateTime CreateTime { get; set; }

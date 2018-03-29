@@ -9,6 +9,41 @@ namespace Frontline.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "Legions",
+                columns: table => new
+                {
+                    Id = table.Column<string>(nullable: false),
+                    CreateTime = table.Column<DateTime>(nullable: false),
+                    Creater = table.Column<string>(nullable: true),
+                    EnrollTime = table.Column<DateTime>(nullable: false),
+                    Exp = table.Column<int>(nullable: false),
+                    Glory = table.Column<int>(nullable: false),
+                    GvgClientPort = table.Column<int>(nullable: false),
+                    GvgLAN = table.Column<string>(nullable: true),
+                    GvgMap = table.Column<int>(nullable: false),
+                    GvgMaxRank = table.Column<int>(nullable: false),
+                    GvgPort = table.Column<int>(nullable: false),
+                    GvgRank = table.Column<int>(nullable: false),
+                    GvgState = table.Column<int>(nullable: false),
+                    GvgWAN = table.Column<string>(nullable: true),
+                    Icon = table.Column<string>(nullable: true),
+                    LeaderId = table.Column<string>(nullable: true),
+                    LeaderName = table.Column<string>(nullable: true),
+                    Level = table.Column<int>(nullable: false),
+                    MaxGlory = table.Column<int>(nullable: false),
+                    Name = table.Column<string>(nullable: false),
+                    NeedCheck = table.Column<bool>(nullable: false),
+                    Note = table.Column<string>(nullable: true),
+                    ShortName = table.Column<string>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Legions", x => x.Id);
+                    table.UniqueConstraint("AK_Legions_Name", x => x.Name);
+                    table.UniqueConstraint("AK_Legions_ShortName", x => x.ShortName);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Players",
                 columns: table => new
                 {
@@ -19,7 +54,7 @@ namespace Frontline.Migrations
                     Exp = table.Column<int>(nullable: false),
                     Guide = table.Column<float>(nullable: false),
                     IP = table.Column<string>(maxLength: 32, nullable: true),
-                    Icon = table.Column<string>(nullable: true),
+                    Icon = table.Column<string>(maxLength: 32, nullable: true),
                     IsBind = table.Column<bool>(nullable: false),
                     IsDeleted = table.Column<bool>(nullable: false),
                     Language = table.Column<string>(maxLength: 32, nullable: true),
@@ -27,9 +62,10 @@ namespace Frontline.Migrations
                     LastLoginTime = table.Column<DateTime>(nullable: false),
                     LastLvUpTime = table.Column<DateTime>(nullable: false),
                     LastVipUpTime = table.Column<DateTime>(nullable: false),
+                    LegionId = table.Column<string>(maxLength: 64, nullable: true),
                     Level = table.Column<int>(nullable: false),
                     MaxPower = table.Column<int>(nullable: false),
-                    NickName = table.Column<string>(nullable: false),
+                    NickName = table.Column<string>(maxLength: 32, nullable: false),
                     OldPlayer = table.Column<bool>(nullable: false),
                     OnlineTime = table.Column<TimeSpan>(nullable: false),
                     RenameNumb = table.Column<int>(nullable: false),
@@ -49,6 +85,30 @@ namespace Frontline.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "LegionMembers",
+                columns: table => new
+                {
+                    PlayerId = table.Column<string>(nullable: false),
+                    Career = table.Column<int>(nullable: false),
+                    ContriTimes = table.Column<int>(nullable: false),
+                    Contribution = table.Column<long>(nullable: false),
+                    LastContriTime = table.Column<DateTime>(nullable: false),
+                    LastLeftTime = table.Column<DateTime>(nullable: false),
+                    LastRefreshTime = table.Column<DateTime>(nullable: false),
+                    LegionId = table.Column<string>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LegionMembers", x => x.PlayerId);
+                    table.ForeignKey(
+                        name: "FK_LegionMembers_Legions_LegionId",
+                        column: x => x.LegionId,
+                        principalTable: "Legions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "ArenaCerts",
                 columns: table => new
                 {
@@ -61,7 +121,7 @@ namespace Frontline.Migrations
                     MaxRank = table.Column<int>(nullable: false),
                     NextRecvRank = table.Column<int>(nullable: false),
                     PlayerId = table.Column<string>(nullable: false),
-                    ReceivedRewards = table.Column<string>(nullable: true),
+                    ReceivedRewards = table.Column<string>(maxLength: 64, nullable: true),
                     Score = table.Column<int>(nullable: false),
                     TotalBattleNumb = table.Column<int>(nullable: false)
                 },
@@ -192,7 +252,7 @@ namespace Frontline.Migrations
                     Id = table.Column<string>(nullable: false),
                     Index = table.Column<int>(nullable: false),
                     PlayerId = table.Column<string>(nullable: true),
-                    RecvdStarReward = table.Column<int>(nullable: false),
+                    RecvdStarReward = table.Column<string>(maxLength: 64, nullable: false),
                     Type = table.Column<int>(nullable: false)
                 },
                 constraints: table =>
@@ -288,6 +348,7 @@ namespace Frontline.Migrations
                     Id = table.Column<string>(nullable: false),
                     AdversaryName = table.Column<string>(nullable: true),
                     AdversaryPid = table.Column<string>(nullable: true),
+                    ArenaCertId = table.Column<string>(nullable: true),
                     BattleResult = table.Column<int>(nullable: false),
                     BattleTime = table.Column<long>(nullable: false),
                     Icon = table.Column<string>(nullable: true),
@@ -299,8 +360,8 @@ namespace Frontline.Migrations
                 {
                     table.PrimaryKey("PK_ArenaBattleHistories", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_ArenaBattleHistories_ArenaCerts_PlayerId",
-                        column: x => x.PlayerId,
+                        name: "FK_ArenaBattleHistories_ArenaCerts_ArenaCertId",
+                        column: x => x.ArenaCertId,
                         principalTable: "ArenaCerts",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
@@ -400,6 +461,11 @@ namespace Frontline.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_ArenaBattleHistories_ArenaCertId",
+                table: "ArenaBattleHistories",
+                column: "ArenaCertId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ArenaBattleHistories_PlayerId",
                 table: "ArenaBattleHistories",
                 column: "PlayerId");
@@ -444,6 +510,16 @@ namespace Frontline.Migrations
                 name: "IX_Items_PlayerId",
                 table: "Items",
                 column: "PlayerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LegionMembers_LegionId",
+                table: "LegionMembers",
+                column: "LegionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Legions_Level",
+                table: "Legions",
+                column: "Level");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Players_UserCenterId",
@@ -495,6 +571,9 @@ namespace Frontline.Migrations
                 name: "Items");
 
             migrationBuilder.DropTable(
+                name: "LegionMembers");
+
+            migrationBuilder.DropTable(
                 name: "Lottery");
 
             migrationBuilder.DropTable(
@@ -517,6 +596,9 @@ namespace Frontline.Migrations
 
             migrationBuilder.DropTable(
                 name: "FriendList");
+
+            migrationBuilder.DropTable(
+                name: "Legions");
 
             migrationBuilder.DropTable(
                 name: "Players");

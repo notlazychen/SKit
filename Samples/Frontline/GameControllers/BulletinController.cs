@@ -18,6 +18,7 @@ namespace Frontline.GameControllers
         {
             BulletinResponse response = new BulletinResponse();
 
+
             response.success = true;
             CurrentSession.SendAsync(response);
             return 0;

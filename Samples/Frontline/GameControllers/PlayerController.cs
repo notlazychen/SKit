@@ -33,6 +33,8 @@ namespace Frontline.GameControllers
         Dictionary<string, Player> _players = new Dictionary<string, Player>();
         Dictionary<string, PlayerBaseInfo> _simplePlayers = new Dictionary<string, PlayerBaseInfo>();
 
+        public Dictionary<int, VIPPrivilege> VIP { get; private set; }
+
         public PlayerController(DataContext db, GameDesignContext design, IOptions<GameConfig> config, ILogger<PlayerController> logger)
         {
             _db = db;
@@ -49,6 +51,7 @@ namespace Frontline.GameControllers
         protected override void OnReadGameDesignTables()
         {
             _dlevels = _designDb.DLevels.AsNoTracking().ToDictionary(x => x.level, x => x);
+            VIP = _designDb.VIPPrivileges.AsNoTracking().ToDictionary(x=>x.lv, x=>x);
         }
 
         protected override void OnRegisterEvents()
@@ -62,6 +65,17 @@ namespace Frontline.GameControllers
             camp.TeamSettingChanged += (o, e) => UpdateMaxPower();
 
             Server.GameTaskDone += Server_GameTaskDone;
+            Server.SessionClosed += Server_SessionClosed;
+        }
+
+        private void Server_SessionClosed(object sender, SessionCloseEventArgs e)
+        {
+            if(e.Reason == ClientCloseReason.Displacement)
+            {
+                KickOutNotify notify = new KickOutNotify();
+                notify.success = true;
+                Server.SendToSession(e.GameSession, notify);
+            }
         }
 
         private void Server_GameTaskDone(object sender, GameTaskDoneEventArgs e)
@@ -222,14 +236,38 @@ namespace Frontline.GameControllers
             return currency >= value;
         }
 
+        public void AddCurrencies(Player player, int[] types, int[] values, string reason, double addex = 0)
+        {
+            ResourceAmountChangedNotify notify = new ResourceAmountChangedNotify();
+            notify.success = true;
+            notify.items = new List<ResourceInfo>();
+            for (int i = 0; i < types.Length; i++)
+            {
+                int type = types[i];
+                int value = (int)(values[i] * (1 + addex));
+                if (value == 0)
+                {
+                    continue;
+                }
+                var currency = player.Wallet.AddCurrency(type, value);
+                notify.items.Add(new ResourceInfo()
+                {
+                    type = 1,
+                    id = type,
+                    count = currency
+                });
+            }
+            Server.SendByUserNameAsync(player.Id, notify);
+        }
+
         /// <summary>
         /// 添加资源
         /// </summary>
-        public void AddCurrency(Player player, int type, int value, string reason)
+        public int AddCurrency(Player player, int type, int value, string reason)
         {
             if (value == 0)
             {
-                return;
+                return player.Wallet.GetCurrency(type);
             }
             var currency = player.Wallet.AddCurrency(type, value);
 
@@ -245,6 +283,7 @@ namespace Frontline.GameControllers
                 }
             };
             Server.SendByUserNameAsync(player.Id, notify);
+            return currency;
         }
         /// <summary>
         /// 添加经验
@@ -352,16 +391,17 @@ namespace Frontline.GameControllers
             }
             else
             {
-                var queryPlayer = _db.Players
-                    .Where(p => p.UserCode == usercode);
-                PlayerLoader loader = new PlayerLoader()
-                {
-                    Loader = queryPlayer
-                };
-                this.OnPlayerLoading(loader);
-                player = loader.Loader.First();
+                //var queryPlayer = _db.Players
+                //    .Where(p => p.UserCode == usercode);
+                //PlayerLoader loader = new PlayerLoader()
+                //{
+                //    Loader = queryPlayer
+                //};
+                //this.OnPlayerLoading(loader);
+                //player = loader.Loader.First();
                 //_db.SaveChanges();
-                OnPlayerLoaded(player);
+                //OnPlayerLoaded(player);
+                player = this.QueryPlayer(_db.Players.Where(p=>p.UserCode == usercode).Select(p=>p.Id).First());
                 player.LastLoginTime = DateTime.Now;
                 _db.SaveChanges();
             }
@@ -500,7 +540,55 @@ namespace Frontline.GameControllers
 
             session.SendAsync(response);
             return 0;
-    }
+        }
+
+        public int Call_RenameAndIcon(RenameAndIconRequest request)
+        {
+            RenameAndIconResponse r = new RenameAndIconResponse();
+            r.success = true;
+            r.nickyName = request.nickyName;
+            r.icon = request.icon;
+            //todo: 判断和谐字
+            if(request.nickyName == null || request.nickyName.Length <= 2 || request.nickyName.Length >= 20)
+            {
+                return (int)GameErrorCode.名字长度不符合规则;
+            }
+            bool dup = _db.Players.Any(p => p.NickName == request.nickyName);
+            if (dup)
+            {
+                return (int)GameErrorCode.名字已被使用;
+            }
+            var player = this.CurrentSession.GetBindPlayer();
+
+            bool change = false;
+            if (request.nickyName != player.NickName)
+            {
+                int[] costs = GameConfig.RenameCostDiamond;
+                int cost = costs[costs.Length - 1];
+                if (player.RenameNumb < costs.Length)
+                {
+                    cost = costs[player.RenameNumb];
+                }
+
+                if(player.Wallet.DIAMOND < cost)
+                {
+                    return (int)GameErrorCode.资源不足;
+                }
+                player.NickName = request.nickyName;
+                player.RenameNumb++;
+                change = true;
+            }
+            if(request.icon != player.Icon)
+            {
+                player.Icon = request.icon;
+            }
+            if (change)
+            {
+                _db.SaveChanges();
+            }
+            CurrentSession.SendAsync(r);
+            return 0;
+        }
         #endregion
     }
 }

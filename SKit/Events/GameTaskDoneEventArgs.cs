@@ -9,4 +9,14 @@ namespace SKit
         public int ResultCode { get; set; }
         public GameSession GameSession { get; set; }
     }
+
+    public class SessionCloseEventArgs : EventArgs
+    {
+        public ClientCloseReason Reason { get; set; }
+        public GameSession GameSession { get; set; }
+    }
+    public class SessionEnterEventArgs : EventArgs
+    {
+        public GameSession GameSession { get; set; }
+    }
 }

@@ -20,7 +20,11 @@ namespace Frontline.Domain
         /// 历史最高战力
         /// </summary>
         public int MaxPower { get; set; }
-        [MaxLength(32)]
-        public string KorpsName { get; set; }
+        [MaxLength(64)]
+        public string LegionId { get; set; }
+        /// <summary>
+        /// 最后一次登录时间
+        /// </summary>
+        public DateTime LastLoginTime { get; set; }
     }
 }

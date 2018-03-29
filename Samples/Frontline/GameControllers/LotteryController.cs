@@ -113,10 +113,10 @@ namespace Frontline.GameControllers
         {
             DLotteryGroup group = DLotteryGroups[lotteryId];
 
-            int index = MathUtil.RandomIndex(group.group_w.Object);
+            int index = MathUtils.RandomIndex(group.group_w.Object);
             int groupId = group.group.Object[index];
             var rands = DLotteryRands[groupId].Where(r => r.lv_min <= lv && r.lv_max >= lv).ToList();
-            var rand = MathUtil.RandomElement(rands, e => e.w);
+            var rand = MathUtils.RandomElement(rands, e => e.w);
             return rand;
         }
 

@@ -90,6 +90,25 @@ namespace SKit
         {
             GameTaskDone?.Invoke(this, args);
         }
+        /// <summary>
+        /// 连接断开
+        /// </summary>
+        public event EventHandler<SessionCloseEventArgs> SessionClosed;
+        private void OnSessionClosed(GameSession session, ClientCloseReason reason)
+        {
+            SessionClosed?.Invoke(this, new SessionCloseEventArgs() { GameSession = session, Reason = reason});
+        }
+        /// <summary>
+        /// 有新的连接建立
+        /// </summary>
+        /// <param name="session"></param>
+        /// <remarks>这里是网络通信部分，与游戏逻辑处理不是同一线程</remarks>
+        public event EventHandler<SessionEnterEventArgs> NewSessionEnter;
+        private void OnNewSessionConnected(GameSession session)
+        {
+            _logger.LogDebug($"当前连接数: {ClientCount}");
+            NewSessionEnter?.Invoke(this, new SessionEnterEventArgs() { GameSession = session });
+        }
         #endregion
 
         #region 开放方法
@@ -244,6 +263,13 @@ namespace SKit
             });
         }
 
+        public bool IsOnline(string username)
+        {
+            if (string.IsNullOrEmpty(username))
+                return false;
+            return _users.ContainsKey(username);
+        }
+
         /// <summary>
         /// 群发给所有连接
         /// </summary>
@@ -267,6 +293,36 @@ namespace SKit
                 Msg = msg,
             };
             _sendingQueue.Enqueue(gmsg);
+        }
+
+        public void MultiSendByUserNameAsync(IEnumerable<string> usernames, Object msg)
+        {
+            GameMessage gmsg = new GameMessage()
+            {
+                MessageType = MessageType.ToMultiUsers,
+                Msg = msg,
+                DestIds = usernames
+            };
+            _sendingQueue.Enqueue(gmsg);
+        }
+
+        public void SendToSession(GameSession session, Object msg)
+        {
+            var buff = _socketSendBufferPool.Pop();
+            try
+            {
+                byte[] data = _serializer.Serialize(msg);
+                ArraySegment<byte> encodedMessage = _packager.Pack(data, buff, 0, buff.Length);
+                session.Socket.Send(encodedMessage.Array, encodedMessage.Offset, encodedMessage.Count, SocketFlags.None);
+            }
+            catch (Exception)
+            {
+                //
+            }
+            finally
+            {
+                _socketSendBufferPool.Push(buff);
+            }
         }
         /// <summary>
         /// 发送给指定登录用户
@@ -295,23 +351,7 @@ namespace SKit
             _sendingQueue.Enqueue(gmsg);
         }
         #endregion
-
-        /// <summary>
-        /// 有新的连接建立
-        /// </summary>
-        /// <param name="session"></param>
-        /// <remarks>这里是网络通信部分，与游戏逻辑处理不是同一线程</remarks>
-        protected virtual void OnNewSessionConnected(GameSession session)
-        {
-            _logger.LogDebug($"当前连接数: {ClientCount}");
-        }
-        /// <summary>
-        /// 连接断开
-        /// </summary>
-        protected virtual void OnSessionClosed(GameSession session)
-        {
-        }
-
+        
         /// <summary>
         /// 接收消息前，可用于重写Filter
         /// </summary>
@@ -494,7 +534,7 @@ namespace SKit
 
             try
             {
-                this.OnSessionClosed(token);
+                this.OnSessionClosed(token, reason);
                 if (token.Socket.Connected)
                     token.Socket.Shutdown(SocketShutdown.Both);
             }
@@ -544,6 +584,8 @@ namespace SKit
         private void ProcessSend(SocketAsyncEventArgs e)
         {
             _socketSendBufferPool.Push(e.Buffer);
+            e.Completed -= IO_Completed;
+            e.Dispose();
         }
 
         private void IO_Completed(object sender, SocketAsyncEventArgs e)
@@ -573,56 +615,136 @@ namespace SKit
                     {
                         while (_sendingQueue.TryDequeue(out var message))
                         {
-                            var args = new SocketAsyncEventArgs();
-                            var buff = _socketSendBufferPool.Pop();
-                            args.SetBuffer(buff, 0, buff.Length);
-                            args.Completed += IO_Completed;
-
-                            byte[] data = _serializer.Serialize(message.Msg);
-                            ArraySegment<byte> encodedMessage = _packager.Pack(data, args.Buffer, 0, args.Buffer.Length);
-                            args.SetBuffer(0, encodedMessage.Count);
-                            switch (message.MessageType)
+                            try
                             {
-                                case MessageType.AllSession:
-                                    foreach (var session in _sessions.Values)
-                                    {
-                                        if (!session.Socket.SendAsync(args))
+                                switch (message.MessageType)
+                                {
+                                    case MessageType.AllSession:
                                         {
-                                            ProcessSend(args);
-                                        }
-                                    }
-                                    break;
-                                case MessageType.AllUser:
-                                    foreach (var session in _users.Values)
-                                    {
-                                        if (!session.Socket.SendAsync(args))
-                                        {
-                                            ProcessSend(args);
-                                        }
-                                    }
-                                    break;
-                                case MessageType.ToSession:
-                                    {
-                                        if (_sessions.TryGetValue(message.DestId, out var session))
-                                        {
-                                            if (!session.Socket.SendAsync(args))
+                                            foreach (var session in _sessions.Values)
                                             {
-                                                ProcessSend(args);
+                                                var args = new SocketAsyncEventArgs();
+                                                args.Completed += IO_Completed;
+                                                var buff = _socketSendBufferPool.Pop();
+                                                args.SetBuffer(buff, 0, buff.Length);
+                                                byte[] data = _serializer.Serialize(message.Msg);
+                                                ArraySegment<byte> encodedMessage = _packager.Pack(data, args.Buffer, 0, args.Buffer.Length);
+                                                args.SetBuffer(0, encodedMessage.Count);
+
+                                                if (!session.Socket.SendAsync(args))
+                                                {
+                                                    ProcessSend(args);
+                                                }
                                             }
                                         }
-                                    }
-                                    break;
-                                case MessageType.ToUser:
-                                    {
-                                        if (_users.TryGetValue(message.DestId, out var session))
+                                        break;
+                                    case MessageType.AllUser:
                                         {
-                                            if (!session.Socket.SendAsync(args))
+                                            foreach (var session in _users.Values)
                                             {
-                                                ProcessSend(args);
+                                                var args = new SocketAsyncEventArgs();
+                                                args.Completed += IO_Completed;
+                                                var buff = _socketSendBufferPool.Pop();
+                                                args.SetBuffer(buff, 0, buff.Length);
+                                                byte[] data = _serializer.Serialize(message.Msg);
+                                                ArraySegment<byte> encodedMessage = _packager.Pack(data, args.Buffer, 0, args.Buffer.Length);
+                                                args.SetBuffer(0, encodedMessage.Count);
+                                                if (!session.Socket.SendAsync(args))
+                                                {
+                                                    ProcessSend(args);
+                                                }
                                             }
                                         }
-                                    }
-                                    break;
+                                        break;
+                                    case MessageType.ToSession:
+                                        {
+                                            if (_sessions.TryGetValue(message.DestId, out var session))
+                                            {
+                                                var args = new SocketAsyncEventArgs();
+                                                args.Completed += IO_Completed;
+                                                var buff = _socketSendBufferPool.Pop();
+                                                args.SetBuffer(buff, 0, buff.Length);
+                                                byte[] data = _serializer.Serialize(message.Msg);
+                                                ArraySegment<byte> encodedMessage = _packager.Pack(data, args.Buffer, 0, args.Buffer.Length);
+                                                args.SetBuffer(0, encodedMessage.Count);
+                                                if (!session.Socket.SendAsync(args))
+                                                {
+                                                    ProcessSend(args);
+                                                }
+                                            }
+                                        }
+                                        break;
+                                    case MessageType.ToUser:
+                                        {
+                                            if (_users.TryGetValue(message.DestId, out var session))
+                                            {
+                                                var args = new SocketAsyncEventArgs();
+                                                args.Completed += IO_Completed;
+                                                var buff = _socketSendBufferPool.Pop();
+                                                args.SetBuffer(buff, 0, buff.Length);
+                                                byte[] data = _serializer.Serialize(message.Msg);
+                                                ArraySegment<byte> encodedMessage = _packager.Pack(data, args.Buffer, 0, args.Buffer.Length);
+                                                args.SetBuffer(0, encodedMessage.Count);
+                                                if (!session.Socket.SendAsync(args))
+                                                {
+                                                    ProcessSend(args);
+                                                }
+                                            }
+                                        }
+                                        break;
+                                    case MessageType.ToMultiUsers:
+                                        {
+                                            if(message.DestIds != null)
+                                            {
+                                                var args = new SocketAsyncEventArgs();
+                                                args.Completed += IO_Completed;
+                                                var buff = _socketSendBufferPool.Pop();
+                                                args.SetBuffer(buff, 0, buff.Length);
+                                                byte[] data = _serializer.Serialize(message.Msg);
+                                                ArraySegment<byte> encodedMessage = _packager.Pack(data, args.Buffer, 0, args.Buffer.Length);
+                                                args.SetBuffer(0, encodedMessage.Count);
+                                                foreach (var username in message.DestIds)
+                                                {
+                                                    if (_users.TryGetValue(username, out var session))
+                                                    {
+                                                        if (!session.Socket.SendAsync(args))
+                                                        {
+                                                            ProcessSend(args);
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        break;
+                                    case MessageType.ToMultiSessions:
+                                        {
+                                            if (message.DestIds != null)
+                                            {
+                                                var args = new SocketAsyncEventArgs();
+                                                args.Completed += IO_Completed;
+                                                var buff = _socketSendBufferPool.Pop();
+                                                args.SetBuffer(buff, 0, buff.Length);
+                                                byte[] data = _serializer.Serialize(message.Msg);
+                                                ArraySegment<byte> encodedMessage = _packager.Pack(data, args.Buffer, 0, args.Buffer.Length);
+                                                args.SetBuffer(0, encodedMessage.Count);
+                                                foreach (var id in message.DestIds)
+                                                {
+                                                    if (_sessions.TryGetValue(id, out var session))
+                                                    {
+                                                        if (!session.Socket.SendAsync(args))
+                                                        {
+                                                            ProcessSend(args);
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        break;
+                                }
+                            }
+                            catch (Exception)
+                            {
+                                //ignore
                             }
                         }
                     }

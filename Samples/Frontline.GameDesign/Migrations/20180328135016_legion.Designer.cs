@@ -12,9 +12,10 @@ using System.Collections.Generic;
 namespace Frontline.GameDesign.Migrations
 {
     [DbContext(typeof(GameDesignContext))]
-    partial class GameDesignContextModelSnapshot : ModelSnapshot
+    [Migration("20180328135016_legion")]
+    partial class legion
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -205,90 +206,6 @@ namespace Frontline.GameDesign.Migrations
                     b.HasKey("level");
 
                     b.ToTable("DEquipLevelCosts");
-                });
-
-            modelBuilder.Entity("Frontline.GameDesign.DFacTask", b =>
-                {
-                    b.Property<int>("id")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<int>("cost_oil");
-
-                    b.Property<TimeSpan>("cost_time");
-
-                    b.Property<int>("done_item_cnt");
-
-                    b.Property<int>("done_item_id");
-
-                    b.Property<int>("group");
-
-                    b.Property<JsonObject<Int32[]>>("item_cnt");
-
-                    b.Property<JsonObject<Int32[]>>("item_cnt_ex");
-
-                    b.Property<JsonObject<Int32[]>>("item_id_ex");
-
-                    b.Property<JsonObject<Int32[]>>("item_type");
-
-                    b.Property<JsonObject<Int32[]>>("res_cnt");
-
-                    b.Property<JsonObject<Int32[]>>("res_type");
-
-                    b.Property<float>("reward_ex_prob");
-
-                    b.Property<int>("star");
-
-                    b.Property<int>("type");
-
-                    b.Property<int>("w");
-
-                    b.Property<int>("worker_q");
-
-                    b.HasKey("id");
-
-                    b.ToTable("DFacTasks");
-                });
-
-            modelBuilder.Entity("Frontline.GameDesign.DFacTaskGroup", b =>
-                {
-                    b.Property<int>("id")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<int>("gourp_supply");
-
-                    b.Property<int>("group_iron");
-
-                    b.Property<int>("max_level");
-
-                    b.Property<int>("min_level");
-
-                    b.HasKey("id");
-
-                    b.ToTable("DFacTaskGroup");
-                });
-
-            modelBuilder.Entity("Frontline.GameDesign.DFacWorker", b =>
-                {
-                    b.Property<int>("id")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<int>("itemes_p");
-
-                    b.Property<int>("output_p");
-
-                    b.Property<int>("res_cnt");
-
-                    b.Property<int>("res_type");
-
-                    b.Property<int>("star");
-
-                    b.Property<int>("type");
-
-                    b.Property<int>("weight");
-
-                    b.HasKey("id");
-
-                    b.ToTable("DFacWorkers");
                 });
 
             modelBuilder.Entity("Frontline.GameDesign.DItem", b =>
@@ -758,28 +675,6 @@ namespace Frontline.GameDesign.Migrations
                     b.HasKey("tid");
 
                     b.ToTable("DUnitUnlocks");
-                });
-
-            modelBuilder.Entity("Frontline.GameDesign.VIPPrivilege", b =>
-                {
-                    b.Property<string>("id")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<int>("lv");
-
-                    b.Property<int>("work_day_hire_n");
-
-                    b.Property<float>("work_reward_ex_prob");
-
-                    b.Property<int>("work_total_hire_n");
-
-                    b.Property<int>("work_worker4_hire_n");
-
-                    b.Property<float>("work_worker4_prob");
-
-                    b.HasKey("id");
-
-                    b.ToTable("VIPPrivileges");
                 });
 #pragma warning restore 612, 618
         }

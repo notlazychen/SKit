@@ -58,7 +58,7 @@ namespace Frontline.Common.Network
         {
             offset += 2;
             int bodyLength = count - 2;
-            MathEx.Xor(new ArraySegment<byte>(data, offset, bodyLength), _xorbytes);
+            MathUtils.Xor(new ArraySegment<byte>(data, offset, bodyLength), _xorbytes);
             using (MemoryStream stream = new MemoryStream(data, offset, bodyLength))
             {
                 stream.SetLength(bodyLength);
@@ -91,7 +91,7 @@ namespace Frontline.Common.Network
             MemoryStream stream = new MemoryStream();
             ProtoBuf.Serializer.Serialize(stream, entity);
             var bytes = stream.ToArray();
-            MathEx.Xor(bytes, _xorbytes);
+            MathUtils.Xor(bytes, _xorbytes);
 
             int offset = 0;
             var buffer = new byte[bytes.Length + 2];

@@ -9,6 +9,7 @@ namespace SKit
         public Object Msg { get; set; }
         public MessageType MessageType { get; set; }
         public string DestId { get; set; }
+        public IEnumerable<string> DestIds { get; set; }
     }
 
     enum MessageType
@@ -16,6 +17,8 @@ namespace SKit
         ToUser,
         AllUser,
         ToSession,
-        AllSession
+        AllSession,
+        ToMultiSessions,
+        ToMultiUsers,
     }
 }

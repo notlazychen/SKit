@@ -35,6 +35,7 @@ namespace Frontline.GameControllers
             _actions.Add("addres", AddResource);
             _actions.Add("additem", AddItem);
             _actions.Add("addunit", AddUnit);
+            _actions.Add("ul", UnlockAll);
             _actions.Add("invincible", Invincible);
             _actions.Add("win", Win);
         }
@@ -88,6 +89,17 @@ namespace Frontline.GameControllers
             _db.SaveChanges();
         }
 
+        private void UnlockAll(string[] args)
+        {
+            var player = this.CurrentSession.GetBindPlayer();
+            var camp = this.Server.GetController<CampController>();
+            foreach(var du in camp.DUnits.Values)
+            {
+                camp.UnlockUnit(player, du.tid);
+            }
+            _db.SaveChanges();
+        }
+
         private void Invincible(string[] args)
         {
 
@@ -97,9 +109,9 @@ namespace Frontline.GameControllers
             foreach (var unit in player.Units)
             {
                 var du = camp.DUnits[unit.Tid];
-                int maxLeve = camp.DUnitLevels.Count;
-                unit.Level = maxLeve;
                 unit.Grade = du.grade_max;
+                var dug = camp.DUnitGrades[du.star][du.grade_max];
+                unit.Level = dug.max_level;
                 //camp.OnUnitLevelUp(new UnitLevelUpEventArgs() { UnitInfo = camp.ToUnitInfo(unit), OldLevel = oldlevel });
                 //camp.OnUnitGradeUp(new UnitGradeUpEventArgs() { OldGrade = oldgrade, UnitInfo = camp.ToUnitInfo(unit) });
                 foreach (var equip in unit.Equips)
@@ -116,8 +128,10 @@ namespace Frontline.GameControllers
                             equip.GradeId = deg.id;
                             break;
                         }
+                        deg = camp.DEquipGrades[deg.next_id];
                     }
                 }
+                camp.ToUnitInfo(unit, du, true);
             }
 
             _db.SaveChanges();
@@ -138,7 +152,7 @@ namespace Frontline.GameControllers
             if (dungeon == null)
                 return;
 
-            while (section.Index <= sectionIndex && dungeon.Mission <= missionIndex)
+            while (section.Index < sectionIndex || (section.Index == sectionIndex && dungeon.Mission <= missionIndex))
             {
                 DDungeon ddungeon = dc.DDungeons[dungeon.Type][dungeon.Section][dungeon.Mission];
                 string reason = $"副本{ddungeon.id}:{ddungeon.name}战斗胜利";

@@ -51,6 +51,19 @@ namespace Frontline.Data
             modelBuilder.Entity<ArenaCert>().HasOne<Player>().WithOne(p => p.ArenaCert).IsRequired();
             modelBuilder.Entity<ArenaBattleHistory>().HasIndex(h=>h.PlayerId);
             modelBuilder.Entity<ArenaBattleHistory>().HasOne<ArenaCert>().WithMany(a => a.ArenaBattleHistories).HasForeignKey(h => h.ArenaCertId);
+
+            modelBuilder.Entity<Legion>().HasIndex(l => l.Level);
+            modelBuilder.Entity<Legion>().HasAlternateKey(l => l.Name);
+            modelBuilder.Entity<Legion>().HasAlternateKey(l => l.ShortName);
+            //modelBuilder.Entity<LegionMember>().HasAlternateKey(l => l.PlayerId);
+            modelBuilder.Entity<LegionMember>().HasOne<Legion>().WithMany(l=>l.Members).HasForeignKey(m=>m.LegionId);
+
+            modelBuilder.Entity<Factory>().HasAlternateKey(l => l.PlayerId);
+            modelBuilder.Entity<FacWorker>().HasIndex(l => l.PlayerId);
+            modelBuilder.Entity<FacTask>().HasIndex(l => l.PlayerId);
+            modelBuilder.Entity<FacTask>().HasOne<Factory>().WithMany(f => f.FacTasks).HasForeignKey(t => t.PlayerId);
+            modelBuilder.Entity<FacWorker>().HasOne<Factory>().WithMany(f=>f.FacWorkers).HasForeignKey(w=>w.PlayerId);
+            //modelBuilder.Entity<FacWorker>().HasOne<FacTask>().WithMany(f => f.FacWorkers).HasForeignKey(w => w.FacTaskId);
         }
 
         public DbSet<Player> Players { get; set; }
@@ -68,5 +81,12 @@ namespace Frontline.Data
         //public DbSet<PlayerDungeon> Dungeons { get; set; }
         public DbSet<Friendship> Friendships { get; set; }
         public DbSet<FriendApplication> FriendApplications { get; set; }
+
+        public DbSet<Legion> Legions { get; set; }
+        public DbSet<LegionMember> LegionMembers { get; set; }
+
+        public DbSet<Factory> Factories { get; set; }
+        public DbSet<FacWorker> FacWorkers { get; set; }
+        public DbSet<FacTask> FacTasks { get; set; }
     }
 }

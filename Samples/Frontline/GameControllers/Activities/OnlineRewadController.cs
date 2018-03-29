@@ -52,7 +52,7 @@ namespace Frontline.GameControllers
         {
             if (e.OlReward == null)
             {
-                int r = MathUtil.RandomNumber(0, DOlReward.low_id.Object.Length);
+                int r = MathUtils.RandomNumber(0, DOlReward.low_id.Object.Length);
                 e.OlReward = new PlayerOlReward()
                 {
                     PlayerId = e.Id,
@@ -65,7 +65,7 @@ namespace Frontline.GameControllers
 
         private void PlayerController_PlayerCreating(object sender, Player e)
         {
-            int r = MathUtil.RandomNumber(0, DOlReward.low_id.Object.Length);
+            int r = MathUtils.RandomNumber(0, DOlReward.low_id.Object.Length);
             e.OlReward = new PlayerOlReward()
             {
                 PlayerId = e.Id,
@@ -162,11 +162,11 @@ namespace Frontline.GameControllers
                 int r;
                 if (ol.Round + 1 == DOlReward.t)
                 {
-                    r = MathUtil.RandomNumber(0, DOlReward.adv_id.Object.Length);
+                    r = MathUtils.RandomNumber(0, DOlReward.adv_id.Object.Length);
                 }
                 else
                 {
-                    r = MathUtil.RandomNumber(0, DOlReward.low_id.Object.Length);
+                    r = MathUtils.RandomNumber(0, DOlReward.low_id.Object.Length);
                 }
                 ol.RewardIndex = r;
                 _db.SaveChanges();

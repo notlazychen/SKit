@@ -45,9 +45,15 @@ namespace Frontline.GameDesign
             //ReadConfigAndWriteToDB("夺旗战-次数奖励.xlsx", db.DArenaChallengeRewards);
             //ReadConfigAndWriteToDB("夺旗战-排行榜奖励.xlsx", db.DArenaRankRewards);
 
-            ReadConfigAndWriteToDB("副本评星奖励.xlsx", db.DDungeonStars);
-            db.SaveChanges();
+            //ReadConfigAndWriteToDB("副本评星奖励.xlsx", db.DDungeonStars);
+            //ReadConfigAndWriteToDB("军团配置表.xlsx", db.DLegions);            
 
+            //ReadConfigAndWriteToDB("后勤基地-工人表.xlsx", db.DFacWorkers);
+            //ReadConfigAndWriteToDB("后勤基地-派遣任务.xlsx", db.DFacTasks);
+            //ReadConfigAndWriteToDB("后勤基地-派遣任务分组.xlsx", db.DFacTaskGroup);
+            //db.SaveChanges();
+            ReadConfigAndWriteToDB("VIP特权.xlsx", db.VIPPrivileges);
+            db.SaveChanges();
         }
 
         public static void ReadConfigAndWriteToDB<T>(string path, DbSet<T> set, Func<T, bool> check = null) 

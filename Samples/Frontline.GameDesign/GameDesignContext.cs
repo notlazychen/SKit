@@ -61,6 +61,15 @@ namespace Frontline.GameDesign
 
         public DbSet<DArenaRankReward> DArenaRankRewards { get; set; }
         public DbSet<DArenaChallengeReward> DArenaChallengeRewards { get; set; }
+
+        public DbSet<DLegion> DLegions { get; set; }
+
+        public DbSet<DFacTask> DFacTasks { get; set; }
+        public DbSet<DFacTaskGroup> DFacTaskGroup { get; set; }
+        public DbSet<DFacWorker> DFacWorkers { get; set; }
+
+        public DbSet<VIPPrivilege> VIPPrivileges { get; set; }
+        
     }
 }
 

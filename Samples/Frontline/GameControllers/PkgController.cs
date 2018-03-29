@@ -151,6 +151,47 @@ namespace Frontline.GameControllers
             }
         }
 
+        public void AddItems(Player player, int[] itemIds, int[] counts, string reason)
+        {
+            ResourceAmountChangedNotify notify = new ResourceAmountChangedNotify
+            {
+                success = true,
+                items = new List<ResourceInfo>()
+            };
+            for (int i = 0; i < itemIds.Length; i++)
+            {
+                var itemId = itemIds[i];
+                var count = counts[i];
+                if (count == 0)
+                    continue;
+                var item = player.Items.FirstOrDefault(x => x.Tid == itemId);
+                if (item == null)
+                {
+                    item = new PlayerItem()
+                    {
+                        Tid = itemId,
+                        PlayerId = player.Id,
+                        Count = count,
+                        Id = Guid.NewGuid().ToString("D")
+                    };
+                    player.Items.Add(item);
+                }
+                else
+                {
+                    item.Count += count;
+                }
+
+                notify.items.Add(new ResourceInfo()
+                {
+                    type = 2,
+                    id = itemId,
+                    count = item.Count,
+                    sid = item.Id
+                });                
+            }
+            Server.SendByUserNameAsync(player.Id, notify);
+        }
+
         public PlayerItem AddItem(Player player, int itemId, int count, string reason)
         {
             var item = player.Items.FirstOrDefault(x => x.Tid == itemId);
@@ -228,7 +269,7 @@ namespace Frontline.GameControllers
                 }
                 else//随机一个
                 {
-                    int index = MathUtil.RandomIndex(di.weight.Object);
+                    int index = MathUtils.RandomIndex(di.weight.Object);
                     if (di.gid.Object.Length > 0)
                     {
                         //约定，如果随机的话，随机到小于等于0的id就是没随到东西

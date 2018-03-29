@@ -17,13 +17,17 @@ namespace Frontline.GameDesign
             IWorkbook workbook = new XSSFWorkbook(excelFileName);
             ISheet sheet = workbook.GetSheetAt(0);
             List<T> configInfos = new List<T>();
-            Dictionary<PropertyInfo, int> cellNumbs = new Dictionary<PropertyInfo, int>();
+            Dictionary<PropertyInfo, int> properties = new Dictionary<PropertyInfo, int>();
             var props = typeof(T).GetProperties();
             foreach (PropertyInfo prop in props)
             {
-                if (prop.GetCustomAttribute<NotMappedAttribute>() == null)
+                if (prop.GetCustomAttribute<IgnoreAttribute>() != null)
                 {
-                    cellNumbs[prop] = 0;
+                    properties[prop] = -1;
+                }
+                else
+                {
+                    properties[prop] = 0;
                 }
             }
             for (int i = sheet.FirstRowNum + 1; i <= sheet.LastRowNum; i++)
@@ -43,11 +47,11 @@ namespace Frontline.GameDesign
                             continue;
                         }
                         string propName = cellName.Substring(0, cellName.IndexOf(":", StringComparison.Ordinal));
-                        var prop = cellNumbs.Keys.FirstOrDefault(p => p.Name == propName);
+                        var prop = properties.Keys.FirstOrDefault(p => p.Name == propName);
                         
                         if (prop != null)
                         {
-                            cellNumbs[prop] = cell.ColumnIndex;
+                            properties[prop] = cell.ColumnIndex;
                         }
                     }
                 }
@@ -55,9 +59,13 @@ namespace Frontline.GameDesign
                 {
                     var ladderConfig = new T();
                     bool failed = false;
-                    foreach (var cellPair in cellNumbs)
+                    foreach (var prop in properties)
                     {
-                        var cell = row.GetCell(cellPair.Value);
+                        if(prop.Value == -1)
+                        {
+                            continue;
+                        }
+                        var cell = row.GetCell(prop.Value);
                         if(cell == null)
                         {
                             continue;
@@ -65,29 +73,29 @@ namespace Frontline.GameDesign
                         }
                         try
                         {
-                            if (cellPair.Key.PropertyType == typeof(int))
+                            if (prop.Key.PropertyType == typeof(int))
                             {
                                 if (cell.CellType == CellType.String)
                                 {
                                     int numb = int.Parse(cell.StringCellValue);
-                                    cellPair.Key.SetValue(ladderConfig, numb);
+                                    prop.Key.SetValue(ladderConfig, numb);
                                 }
                                 else
                                 {
-                                    cellPair.Key.SetValue(ladderConfig, Convert.ToInt32(cell.NumericCellValue));
+                                    prop.Key.SetValue(ladderConfig, Convert.ToInt32(cell.NumericCellValue));
                                 }
                             }
-                            else if (cellPair.Key.PropertyType == typeof(double))
+                            else if (prop.Key.PropertyType == typeof(double))
                             {
-                                cellPair.Key.SetValue(ladderConfig, Convert.ToDouble(cell.NumericCellValue));
+                                prop.Key.SetValue(ladderConfig, Convert.ToDouble(cell.NumericCellValue));
                             }
-                            else if (cellPair.Key.PropertyType == typeof(float))
+                            else if (prop.Key.PropertyType == typeof(float))
                             {
-                                cellPair.Key.SetValue(ladderConfig, Convert.ToSingle(cell.NumericCellValue));
+                                prop.Key.SetValue(ladderConfig, Convert.ToSingle(cell.NumericCellValue));
                             }
-                            else if (cellPair.Key.PropertyType == typeof(bool))
+                            else if (prop.Key.PropertyType == typeof(bool))
                             {
-                                cellPair.Key.SetValue(ladderConfig, Convert.ToBoolean(cell.NumericCellValue));
+                                prop.Key.SetValue(ladderConfig, Convert.ToBoolean(cell.NumericCellValue));
                             }
                             //else if (cellPair.Key.PropertyType == typeof(int[]))
                             //{
@@ -97,72 +105,80 @@ namespace Frontline.GameDesign
                             //    //int[] valInts = val.Select(int.Parse).ToArray();
                             //    //cellPair.Key.SetValue(ladderConfig, valInts);
                             //}
-                            else if (cellPair.Key.PropertyType == typeof(string))
+                            else if (prop.Key.PropertyType == typeof(string))
                             {
-                                cellPair.Key.SetValue(ladderConfig, cell.StringCellValue);
+                                prop.Key.SetValue(ladderConfig, cell.StringCellValue);
                             }
-                            else if (cellPair.Key.PropertyType == typeof(TimeSpan))
+                            else if (prop.Key.PropertyType == typeof(TimeSpan))
                             {
-                                TimeSpan ts = TimeSpan.Parse(cell.StringCellValue);
-                                cellPair.Key.SetValue(ladderConfig, ts);
-                                string[] hms = cell.StringCellValue.Substring(cell.StringCellValue.IndexOf(".") + 1).Split(":");
-                                int h = int.Parse(hms[0]);
-                                int m = int.Parse(hms[1]);
-                                int s = int.Parse(hms[2]);
-                                if (h >= 24 || m >= 60 || s >= 60)
+                                if (cell.CellType == CellType.Numeric)
                                 {
-                                    throw new Exception($"表格{filename} 第{cell.RowIndex}行 第{cellPair.Key.Name}:{cellPair.Value}列 [{ cell.StringCellValue }]时间格式不对");
+                                    TimeSpan ts = TimeSpan.FromDays(cell.NumericCellValue);
+                                    prop.Key.SetValue(ladderConfig, ts);
                                 }
-                            }
-                            else if (cellPair.Key.PropertyType == typeof(TimeSpan?))
-                            {
-                                if (!string.IsNullOrEmpty(cell.StringCellValue))
+                                else
                                 {
                                     TimeSpan ts = TimeSpan.Parse(cell.StringCellValue);
-                                    cellPair.Key.SetValue(ladderConfig, ts);
+                                    prop.Key.SetValue(ladderConfig, ts);
                                     string[] hms = cell.StringCellValue.Substring(cell.StringCellValue.IndexOf(".") + 1).Split(":");
                                     int h = int.Parse(hms[0]);
                                     int m = int.Parse(hms[1]);
                                     int s = int.Parse(hms[2]);
                                     if (h >= 24 || m >= 60 || s >= 60)
                                     {
-                                        throw new Exception($"表格{filename} 第{cell.RowIndex}行 第{cellPair.Key.Name}:{cellPair.Value}列 [{ cell.StringCellValue }]时间格式不对");
+                                        throw new Exception($"表格{filename} 第{cell.RowIndex}行 第{prop.Key.Name}:{prop.Value}列 [{ cell.StringCellValue }]时间格式不对");
                                     }
                                 }
                             }
-                            else if (cellPair.Key.PropertyType == typeof(DateTime?))
+                            else if (prop.Key.PropertyType == typeof(TimeSpan?))
+                            {
+                                if (!string.IsNullOrEmpty(cell.StringCellValue))
+                                {
+                                    TimeSpan ts = TimeSpan.Parse(cell.StringCellValue);
+                                    prop.Key.SetValue(ladderConfig, ts);
+                                    string[] hms = cell.StringCellValue.Substring(cell.StringCellValue.IndexOf(".") + 1).Split(":");
+                                    int h = int.Parse(hms[0]);
+                                    int m = int.Parse(hms[1]);
+                                    int s = int.Parse(hms[2]);
+                                    if (h >= 24 || m >= 60 || s >= 60)
+                                    {
+                                        throw new Exception($"表格{filename} 第{cell.RowIndex}行 第{prop.Key.Name}:{prop.Value}列 [{ cell.StringCellValue }]时间格式不对");
+                                    }
+                                }
+                            }
+                            else if (prop.Key.PropertyType == typeof(DateTime?))
                             {
                                 if (!string.IsNullOrEmpty(cell.StringCellValue))
                                 {
                                     DateTime ts = DateTime.Parse(cell.StringCellValue);
-                                    cellPair.Key.SetValue(ladderConfig, ts);
+                                    prop.Key.SetValue(ladderConfig, ts);
                                 }
                             }
-                            else if (cellPair.Key.PropertyType == typeof(JsonObject<int[]>))
+                            else if (prop.Key.PropertyType == typeof(JsonObject<int[]>))
                             {
                                 if (!string.IsNullOrEmpty(cell.StringCellValue))
                                 {
                                     var arr = cell.StringCellValue.Trim(new[] { '[', ']' }).Split(',');
                                     var ts = arr.Where(x=>!string.IsNullOrEmpty(x)).Select(int.Parse).ToArray();
-                                    cellPair.Key.SetValue(ladderConfig, new JsonObject<int[]>(ts));
+                                    prop.Key.SetValue(ladderConfig, new JsonObject<int[]>(ts));
                                 }
                             }
-                            else if (cellPair.Key.PropertyType == typeof(JsonObject<float[]>))
+                            else if (prop.Key.PropertyType == typeof(JsonObject<float[]>))
                             {
                                 if (!string.IsNullOrEmpty(cell.StringCellValue))
                                 {
                                     var arr = cell.StringCellValue.Trim(new[] { '[', ']' }).Split(',');
                                     var ts = arr.Where(x => !string.IsNullOrEmpty(x)).Select(float.Parse).ToArray();
-                                    cellPair.Key.SetValue(ladderConfig, new JsonObject<float[]>(ts));
+                                    prop.Key.SetValue(ladderConfig, new JsonObject<float[]>(ts));
                                 }
                             }
-                            else if (cellPair.Key.PropertyType == typeof(JsonObject<List<int>>))
+                            else if (prop.Key.PropertyType == typeof(JsonObject<List<int>>))
                             {
                                 if (!string.IsNullOrEmpty(cell.StringCellValue))
                                 {
                                     var arr = cell.StringCellValue.Trim(new[] { '[', ']' }).Split(',');
                                     var ts = arr.Where(x => !string.IsNullOrEmpty(x)).Select(int.Parse).ToList();
-                                    cellPair.Key.SetValue(ladderConfig, new JsonObject<List<int>>(ts));
+                                    prop.Key.SetValue(ladderConfig, new JsonObject<List<int>>(ts));
                                 }
                             }
                             else
@@ -172,7 +188,7 @@ namespace Frontline.GameDesign
                         }
                         catch (Exception ex)
                         {
-                            throw new Exception($"表格{filename} 第{cell.RowIndex}行 第{cellPair.Key.Name}:{cellPair.Value}列 [{ cell.StringCellValue }]有问题请查看", ex);
+                            throw new Exception($"表格{filename} 第{cell.RowIndex}行 第{prop.Key.Name}:{prop.Value}列 [{ cell.StringCellValue }]有问题请查看", ex);
                         }
                     }
                     if (!failed)

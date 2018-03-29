@@ -5,7 +5,7 @@ using SKit;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using SKit.Common;
+using SKit.Common.Utils;
 using Microsoft.EntityFrameworkCore;
 using Frontline.Domain;
 using Frontline.GameDesign;
@@ -237,7 +237,7 @@ namespace Frontline.GameControllers
             response.section = request.section;
             response.type = request.type;
             response.fbs = new List<FBInfo>();
-            response.receiveds = section.RecvdStarReward.StringToListInt();
+            response.receiveds = section.RecvdStarReward.StringToMany(int.Parse);
             response.id = section.PlayerId;
 
             var dds = DDungeons[section.Type][section.Index].Values;
@@ -545,7 +545,7 @@ namespace Frontline.GameControllers
             var player = CurrentSession.GetBindPlayer();
             var section = player.Sections.First(s => s.Type == request.type && s.Index == request.section);
             //判断是否已领取
-            var recved = section.RecvdStarReward.StringToListInt();
+            var recved = section.RecvdStarReward.StringToMany(int.Parse);
             if (recved.Contains(request.reward))
             {
                 return (int)GameErrorCode.已领取过此评星奖励;
@@ -561,7 +561,7 @@ namespace Frontline.GameControllers
             var playercon = Server.GetController<PlayerController>();
             playercon.AddCurrency(player, dreward.res_type, dreward.res_count, reason);
             recved.Add(dreward.index);
-            section.RecvdStarReward = recved.ListIntToString();
+            section.RecvdStarReward = recved.ManyToString(x=>x.ToString());
             _db.SaveChanges();
             FBGetStarRewardResponse response = new FBGetStarRewardResponse();
             response.success = true;
