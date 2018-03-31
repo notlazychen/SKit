@@ -22,5 +22,8 @@ namespace Frontline.Domain
         public DateTime DmdFreeNextTime { get; set; }//下次免费钻石抽时间
         public int DmdBaseNumb { get; set; }//剩余出钻石保底奖励的次数
         public DateTime DmdLastTime { get; set; }//最后一次钻石抽时间
+
+
+        public DateTime LastRefreshDay { get; set; }//每日刷新时间
     }
 }

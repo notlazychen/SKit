@@ -43,6 +43,17 @@ namespace SKit.Common.Utils
             var outData = cipher.DoFinal(data);
             return outData;
         }
+
+        public static string Decrypt(byte[] data, string key)
+        {
+            byte[] keyBytes = Convert.FromBase64String(key);
+            PaddedBufferedBlockCipher cipher = new PaddedBufferedBlockCipher(new DesEngine());
+            cipher.Init(false, new DesParameters(keyBytes));
+            var outData = cipher.DoFinal(data);
+            string outStr = Encoding.UTF8.GetString(outData);
+            return outStr;
+        }
+
         /**/
 
         /// <summary> 

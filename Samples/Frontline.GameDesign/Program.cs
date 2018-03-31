@@ -16,8 +16,9 @@ namespace Frontline.GameDesign
         private static GameDesignContext db;
         static void Main(string[] args)
         {
-            //var options = new DbContextOptionsBuilder().UseMySql(connection).Options;
             db = new GameDesignContext();
+
+            //ImportRandomNames(db);
 
             //ReadConfigAndWriteToDB("道具表.xlsx", db.DItems);
             //ReadConfigAndWriteToDB("玩家等级表.xlsx", db.DLevels);
@@ -46,14 +47,14 @@ namespace Frontline.GameDesign
             //ReadConfigAndWriteToDB("夺旗战-排行榜奖励.xlsx", db.DArenaRankRewards);
 
             //ReadConfigAndWriteToDB("副本评星奖励.xlsx", db.DDungeonStars);
-            //ReadConfigAndWriteToDB("军团配置表.xlsx", db.DLegions);            
+            //ReadConfigAndWriteToDB("军团配置表.xlsx", db.DLegions);
 
             //ReadConfigAndWriteToDB("后勤基地-工人表.xlsx", db.DFacWorkers);
             //ReadConfigAndWriteToDB("后勤基地-派遣任务.xlsx", db.DFacTasks);
             //ReadConfigAndWriteToDB("后勤基地-派遣任务分组.xlsx", db.DFacTaskGroup);
-            //db.SaveChanges();
-            ReadConfigAndWriteToDB("VIP特权.xlsx", db.VIPPrivileges);
+            //ReadConfigAndWriteToDB("VIP特权.xlsx", db.VIPPrivileges);
             db.SaveChanges();
+
         }
 
         public static void ReadConfigAndWriteToDB<T>(string path, DbSet<T> set, Func<T, bool> check = null) 
@@ -82,6 +83,24 @@ namespace Frontline.GameDesign
                     throw new Exception($"[{path}]中{JsonConvert.SerializeObject(d)}配置有误请检查", ex);
                 }
             }
+        }
+
+
+        private static void ImportRandomNames(GameDesignContext db)
+        {
+            var nametable = ExcelReader.ReadFromFile<NameTable>(Path.Combine(rootPath, "随机名字配置表.xlsx"));
+            var firstNames = nametable.Select(x => x.first_name).Where(n => !string.IsNullOrEmpty(n)).Distinct().ToList();
+            var lastNames = nametable.Select(x => x.last_name).Where(n => !string.IsNullOrEmpty(n)).Distinct().ToList();
+
+            foreach (string f in firstNames)
+            {
+                foreach (string l in lastNames)
+                {
+                    string name = $"{f} {l}";
+                    db.DNames.Add(new DName { Name = name });
+                }
+            }
+            db.SaveChanges();
         }
     }
 }

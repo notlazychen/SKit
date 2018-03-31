@@ -5,9 +5,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Frontline.GameControllers
+namespace Frontline.Modules
 {
-    public class ScienceController : GameController
+    public class ScienceController : GameModule
     {
         public int Call_Info(ScienceInfoRequest request)
         {
@@ -16,7 +16,7 @@ namespace Frontline.GameControllers
             response.totalDevs = 1;
             response.sciences = new List<ScienceInfo>();
             response.devs = new List<int>();
-            CurrentSession.SendAsync(response);
+            Session.SendAsync(response);
             return 0;
         }
 

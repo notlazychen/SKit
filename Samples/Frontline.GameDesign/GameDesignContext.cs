@@ -20,7 +20,7 @@ namespace Frontline.GameDesign
         {
             if (IsDoConfig)
             {
-                var connection = "Server=101.132.118.172;database=frontline_design;uid=chenrong;pwd=abcd1234;SslMode=None;charset=utf8;pooling=false";
+                var connection = "Server=140.143.28.95;database=frontline_design;uid=chenrong;pwd=abcd1234;SslMode=None;charset=utf8;pooling=false";
                 //var connection = "Filename=./sqlitedb.db";
                 optionsBuilder.UseMySql(connection);
             }
@@ -69,7 +69,7 @@ namespace Frontline.GameDesign
         public DbSet<DFacWorker> DFacWorkers { get; set; }
 
         public DbSet<VIPPrivilege> VIPPrivileges { get; set; }
-        
+        public DbSet<DName> DNames { get; set; }
     }
 }
 

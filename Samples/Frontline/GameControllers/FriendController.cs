@@ -13,33 +13,30 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Frontline.GameControllers
+namespace Frontline.Modules
 {
-    public class FriendController : GameController
+    public class FriendController : GameModule
     {
-        private GameDesignContext _designDb;
+        
         private DataContext _db;
         private ILogger _logger;
 
-        public FriendController(DataContext db, GameDesignContext design, ILogger<FriendController> logger)
+        private PlayerModule _playerModule;
+
+        public FriendController(DataContext db, ILogger<FriendController> logger)
         {
             _db = db;
-            _designDb = design;
             _logger = logger;
         }
 
-        protected override void OnReadGameDesignTables()
+        protected override void OnConfiguringModules()
         {
-        }
-
-        protected override void OnRegisterEvents()
-        {
-            base.OnRegisterEvents();
-            var playerController = this.Server.GetController<PlayerController>();
-            playerController.PlayerCreating += PlayerController_PlayerCreating;
-            playerController.PlayerLoading += PlayerController_PlayerLoading;
-            playerController.PlayerLoaded += PlayerController_PlayerLoaded;
-            playerController.PlayerEverydayRefresh += PlayerController_PlayerEverydayRefresh;
+            base.OnConfiguringModules();
+            _playerModule = this.Server.GetModule<PlayerModule>();
+            _playerModule.PlayerCreating += PlayerController_PlayerCreating;
+            _playerModule.PlayerLoading += PlayerController_PlayerLoading;
+            _playerModule.PlayerLoaded += PlayerController_PlayerLoaded;
+            _playerModule.PlayerEverydayRefresh += PlayerController_PlayerEverydayRefresh;
         }
         #region 事件
         #endregion
@@ -103,8 +100,8 @@ namespace Frontline.GameControllers
         #region 辅助函数
         public Player FindPlayerFriendListOnly(string fid)
         {
-            var playerController = Server.GetController<PlayerController>();
-            var other = playerController.QueryPlayer(fid);
+            var playerModule = Server.GetModule<PlayerModule>();
+            var other = playerModule.QueryPlayer(fid);
             if(other != null)
             {
                 if (other.FriendList.LastRefreshTime.Date != DateTime.Today)
@@ -133,7 +130,7 @@ namespace Frontline.GameControllers
         {
             FriendListResponse response = new FriendListResponse();
             response.success = true;
-            var player = CurrentSession.GetBindPlayer();
+            var player = _playerModule.QueryPlayer(Session.PlayerId);
             FriendList fl = player.FriendList;
 
             response.pid = player.Id;
@@ -178,7 +175,7 @@ namespace Frontline.GameControllers
                 _db.SaveChanges();
             }
 
-            CurrentSession.SendAsync(response);
+            Session.SendAsync(response);
             return 0;
         }
 
@@ -189,7 +186,7 @@ namespace Frontline.GameControllers
             response.pid = request.pid;
             response.ps = new List<FriendInfo>();
 
-            var player = CurrentSession.GetBindPlayer();
+            var player = _playerModule.QueryPlayer(Session.PlayerId);
             FriendList fl = player.FriendList;
 
             var friendsId = fl.FriendApplications.Select(x => x.PlayerId).ToList();
@@ -227,13 +224,13 @@ namespace Frontline.GameControllers
                 _db.SaveChanges();
             }
             //FriendAddListResponse response = JsonConvert.DeserializeObject<FriendAddListResponse>("{\"pid\":\"10000f2\",\"ps\":[],\"success\":true}");
-            CurrentSession.SendAsync(response);
+            Session.SendAsync(response);
             return 0;
         }
 
         public int Call_SendFriendApplication(AddFriendRequest request)
         {
-            var player = CurrentSession.GetBindPlayer();
+            var player = _playerModule.QueryPlayer(Session.PlayerId);
             string fid = request.id;
             if (string.IsNullOrEmpty(fid) || player.Id == fid)
             {
@@ -272,7 +269,7 @@ namespace Frontline.GameControllers
             AddFriendResponse response = new AddFriendResponse();
             response.success = true;
             response.id = request.id;
-            CurrentSession.SendAsync(response);
+            Session.SendAsync(response);
 
             FriendAddRequestNotify notify = new FriendAddRequestNotify();
             notify.success = true;
@@ -296,7 +293,7 @@ namespace Frontline.GameControllers
             string fid = request.id;
             bool pass = request.pass;
 
-            var player = CurrentSession.GetBindPlayer();
+            var player = _playerModule.QueryPlayer(Session.PlayerId);
             FriendList fl = player.FriendList;
 
             var app = fl.FriendApplications.FirstOrDefault(x => x.PlayerId == fid);
@@ -351,7 +348,7 @@ namespace Frontline.GameControllers
             response.id = request.id;
             response.pass = request.pass;
             response.success = true;
-            CurrentSession.SendAsync(response);
+            Session.SendAsync(response);
             return 0;
         }
 
@@ -359,7 +356,7 @@ namespace Frontline.GameControllers
         {
             string fid = request.id;
 
-            var player = CurrentSession.GetBindPlayer();
+            var player = _playerModule.QueryPlayer(Session.PlayerId);
             FriendList fl = player.FriendList;
             var friend = fl.Friends.FirstOrDefault(x => x.PlayerId == fid);
             if (friend == null)
@@ -385,13 +382,13 @@ namespace Frontline.GameControllers
             DelFriendResponse response = new DelFriendResponse();
             response.id = fid;
             response.success = true;
-            CurrentSession.SendAsync(response);
+            Session.SendAsync(response);
             return 0;
         }
 
         public int Call_RecommendFriendList(RecommendFriendListRequest request)
         {
-            var player = CurrentSession.GetBindPlayer();
+            var player = _playerModule.QueryPlayer(Session.PlayerId);
             RecommendFriendListResponse response = new RecommendFriendListResponse();
             response.pid = request.pid;
             response.success = true;
@@ -416,7 +413,7 @@ namespace Frontline.GameControllers
                 })
                 .AsNoTracking().ToList();
             response.friends = fsl;
-            CurrentSession.SendAsync(response);
+            Session.SendAsync(response);
             return 0;
         }
 
@@ -427,7 +424,7 @@ namespace Frontline.GameControllers
             response.id = request.id;
             response.all = request.all;
             response.success = true;
-            var player = CurrentSession.GetBindPlayer();
+            var player = _playerModule.QueryPlayer(Session.PlayerId);
             bool change = false;
             if (all)
             {
@@ -474,13 +471,13 @@ namespace Frontline.GameControllers
                 _db.SaveChanges();
             }
 
-            CurrentSession.SendAsync(response);
+            Session.SendAsync(response);
             return 0;
         }
 
         public int Call_RecvFriendOil(GetOilFromFriendRequest request)
         {
-            var player = CurrentSession.GetBindPlayer();
+            var player = _playerModule.QueryPlayer(Session.PlayerId);
             bool all = request.all;
             int oil = 0;
             if (all)
@@ -524,15 +521,15 @@ namespace Frontline.GameControllers
             response.maxOilTimes = GameConfig.FriendMaxOilTimes;
             if (oil != 0)
             {
-                var playerController = Server.GetController<PlayerController>();
-                playerController.AddCurrency(player, CurrencyType.OIL, oil, "领取好友赠送原油");
+                var playerModule = Server.GetModule<PlayerModule>();
+                playerModule.AddCurrency(player, CurrencyType.OIL, oil, "领取好友赠送原油");
                 _db.SaveChanges();
 
-                response.oilRemain = playerController.GetCurrencyValue(player, CurrencyType.OIL);
+                response.oilRemain = playerModule.GetCurrencyValue(player, CurrencyType.OIL);
                 response.id = request.id;
                 response.oilTimes = player.FriendList.RecvTimes;
             }
-            CurrentSession.SendAsync(response);
+            Session.SendAsync(response);
             return 0;
         }
 
@@ -543,7 +540,7 @@ namespace Frontline.GameControllers
             response.pid = request.pid;
             response.fs = new List<string>();
 
-            var player = CurrentSession.GetBindPlayer();
+            var player = _playerModule.QueryPlayer(Session.PlayerId);
             FriendList fl = player.FriendList;
             foreach (var app in player.FriendList.FriendApplications)
             {
@@ -582,7 +579,7 @@ namespace Frontline.GameControllers
                 notify.success = true;
                 Server.SendByUserNameAsync(fid, notify);
             }
-            CurrentSession.SendAsync(response);
+            Session.SendAsync(response);
             return 0;
         }
 

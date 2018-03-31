@@ -34,9 +34,9 @@ namespace Frontline.Controllers
 
         public IActionResult Handlers()
         {
-            var hs = _server.Handlers.Select(x =>
+            var hs = _server.CommandInfos.Select(x =>
             {
-                string name = $"{x.Controller.GetType().Name}.{x.MethodInfo.Name}";
+                string name = $"{x.Command.ToString()}";
                 string type = x.CMD;
                 int cmd = x.RequestType.GetCustomAttribute<ProtoAttribute>().value;
 

@@ -10,9 +10,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 
-namespace Frontline.GameControllers
+namespace Frontline.Modules
 {
-    public class RankListController : GameController
+    public class RankListController : GameModule
     {
         public const int POWER = 1;//战力榜
         public const int RESIST = 2;//铁壁战榜
@@ -23,21 +23,25 @@ namespace Frontline.GameControllers
         public const int MAX_RANKING_COUNT = 50;
         public const int MAX_RANKING_SITE_COUNT = 500;
 
-        private GameDesignContext _designDb;
+        
         private DataContext _db;
         private ILogger _logger;
+
         private LegionController _legionController;
-        public RankListController(DataContext db, GameDesignContext design, ILogger<RankListController> logger)
+        private PlayerModule _playerModule;
+
+        public RankListController(DataContext db, ILogger<RankListController> logger)
         {
-            _db = db;
-            _designDb = design;
+            _db = db;            
             _logger = logger;
         }
 
-        protected override void OnRegisterEvents()
+        protected override void OnConfiguringModules()
         {
-            base.OnRegisterEvents();
-            _legionController = Server.GetController<LegionController>();
+            _playerModule = Server.GetModule<PlayerModule>();
+
+            base.OnConfiguringModules();
+            _legionController = Server.GetModule<LegionController>();
         }
 
         #region 客户端接口
@@ -71,8 +75,8 @@ namespace Frontline.GameControllers
             GetRankingListResponse resp = new GetRankingListResponse();
             resp.success = true;
             resp.type = FLAG;
-            var playercon = Server.GetController<PlayerController>();
-            var player = CurrentSession.GetBindPlayer();
+            var playercon = Server.GetModule<PlayerModule>();
+            var player = _playerModule.QueryPlayer(Session.PlayerId);
             var war = player.ArenaCert;
             if (war != null)
             {
@@ -97,7 +101,7 @@ namespace Frontline.GameControllers
                 ri.legionName = _legionController.QueryLegion(p.LegionId)?.Name;
                 resp.rankInfos.Add(ri);
             }
-            CurrentSession.SendAsync(resp);
+            Session.SendAsync(resp);
         }
 
         /// <summary>
@@ -108,7 +112,7 @@ namespace Frontline.GameControllers
             GetRankingListResponse resp = new GetRankingListResponse();
             resp.success = true;
             resp.type = RESIST;
-            CurrentSession.SendAsync(resp);
+            Session.SendAsync(resp);
         }
 
         private List<RankInfo> _powerRankInfo = null;
@@ -118,8 +122,8 @@ namespace Frontline.GameControllers
             GetRankingListResponse resp = new GetRankingListResponse();
             resp.success = true;
             resp.type = POWER;
-            var playercon = Server.GetController<PlayerController>();
-            var player = CurrentSession.GetBindPlayer();
+            var playercon = Server.GetModule<PlayerModule>();
+            var player = _playerModule.QueryPlayer(Session.PlayerId);
             if (_powerRankInfo == null || _powerRankOverdueTime < DateTime.Now)
             {
                 _powerRankInfo = _db.Players
@@ -149,7 +153,7 @@ namespace Frontline.GameControllers
             {
                 resp.myRank = me.rank;
             }
-            CurrentSession.SendAsync(resp);
+            Session.SendAsync(resp);
         }
         /// <summary>
         /// 抢滩
@@ -159,7 +163,7 @@ namespace Frontline.GameControllers
             GetRankingListResponse resp = new GetRankingListResponse();
             resp.success = true;
             resp.type = DEFENCE;
-            CurrentSession.SendAsync(resp);
+            Session.SendAsync(resp);
         }
         /// <summary>
         /// 周常
@@ -169,7 +173,7 @@ namespace Frontline.GameControllers
             GetRankingListResponse resp = new GetRankingListResponse();
             resp.success = true;
             resp.type = WEEKWORK;
-            CurrentSession.SendAsync(resp);
+            Session.SendAsync(resp);
         }
         
         #endregion

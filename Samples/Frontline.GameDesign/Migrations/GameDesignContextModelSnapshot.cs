@@ -545,6 +545,18 @@ namespace Frontline.GameDesign.Migrations
                     b.ToTable("DMonsterInDungeons");
                 });
 
+            modelBuilder.Entity("Frontline.GameDesign.DName", b =>
+                {
+                    b.Property<string>("Name")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<bool>("IsUsed");
+
+                    b.HasKey("Name");
+
+                    b.ToTable("DNames");
+                });
+
             modelBuilder.Entity("Frontline.GameDesign.DOlReward", b =>
                 {
                     b.Property<int>("id")

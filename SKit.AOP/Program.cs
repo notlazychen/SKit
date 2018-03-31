@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Dynamic;
 using System.Reflection;
+using System.Threading;
 
 namespace SKit.AOP
 {
@@ -98,19 +99,45 @@ namespace SKit.AOP
             //person.ID = 1;
             //Person p = person;
             //Console.WriteLine(p.Name);
+            MonitorSample();
+        }
+
+        static void MonitorSample()
+        {
+            var obj = new object();
+            Monitor.Enter(obj);
+            Console.WriteLine(DateTime.Now);
+            Thread t = new Thread(() => {
+                Thread.Sleep(2000);
+                Monitor.Enter(obj);
+                Thread.Sleep(2000);
+                Monitor.Pulse(obj);
+                Thread.Sleep(2000);
+                Monitor.Exit(obj);
+            });
+            t.Start();
+            Monitor.Wait(obj);
+
+            Console.WriteLine(DateTime.Now);
+            Console.WriteLine("over");
+            Console.ReadKey();
+        }
+
+        static void RandomArenaRankPlayers()
+        {
             Random random = new Random();
             while (true)
             {
-                int cur = int.Parse(   Console.ReadLine());
+                int cur = int.Parse(Console.ReadLine());
                 int step = (int)Math.Ceiling(cur / 3d);
                 int from = cur - step;
-                if(from > cur - 5)
+                if (from > cur - 5)
                 {
                     from = cur - 5;
                 }
                 int to = cur;
                 int wei = (int)Math.Ceiling(step / 5d);
-                
+
                 Console.WriteLine($"{from} - {to} / {wei}");
                 Console.WriteLine($"-------------------");
                 for (int i = 0; i < 5; i++)

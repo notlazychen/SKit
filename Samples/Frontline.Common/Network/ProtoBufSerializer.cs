@@ -25,16 +25,16 @@ namespace Frontline.Common.Network
         private Dictionary<Type, short> _types = new Dictionary<Type, short>();
         private Dictionary<short, string> _cmds = new Dictionary<short, string>();
         private ILogger _logger;
-        private GameConfig _config;
+        private GameServerSettings _config;
 
-        public ProtoBufSerializer(GameConfig config, ILogger logger)
+        public ProtoBufSerializer(GameServerSettings config, ILogger logger)
         {
             _config = config;
             _xorbytes = Encoding.UTF8.GetBytes(_config.Secret);
             _logger = logger;
         }
 
-        public ProtoBufSerializer(IOptions<GameConfig> config, ILogger<ProtoBufSerializer> logger)
+        public ProtoBufSerializer(IOptions<GameServerSettings> config, ILogger<ProtoBufSerializer> logger)
         {
             _config = config.Value;
             _xorbytes = Encoding.UTF8.GetBytes(config.Value.Secret);

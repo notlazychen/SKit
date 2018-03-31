@@ -48,7 +48,7 @@ namespace Frontline
                     new int[] { 2 });
             }));
 
-            services.Configure<GameConfig>(Configuration.GetSection("game"));
+            services.Configure<GameServerSettings>(Configuration.GetSection("game"));
             services.AddSKit<VerintHeadPackager, ProtoBufSerializer>();
             services.AddMvc();
         }
@@ -63,7 +63,7 @@ namespace Frontline
 
             app.UseSKit();
             app.UseMvcWithDefaultRoute();
-            //app.UseMvc();
+
         }
     }
 }

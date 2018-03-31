@@ -13,35 +13,42 @@ using SKit.Common.Utils;
 using Frontline.Common;
 using Microsoft.Extensions.Logging;
 
-namespace Frontline.GameControllers
+namespace Frontline.Modules
 {
-    public class LegionController : GameController
+    public class LegionController : GameModule
     {
-        private GameDesignContext _designDb;
+        
         private DataContext _db;
         private ILogger _logger;
+
+        private PlayerModule _playerModule;
 
         public Dictionary<int, DLegion> DLegions { get; private set; }
 
         private Legion _freeLegion;//那些没有入团的成员信息统统丢入此内
         private Dictionary<string, Legion> _legions = new Dictionary<string, Legion>();
         
-        public LegionController(DataContext db, GameDesignContext design, ILogger<LegionController> logger)
+        public LegionController(DataContext db, ILogger<LegionController> logger)
         {
-            _db = db;
-            _designDb = design;
+            _db = db;            
             _logger = logger;
         }
 
-        protected override void OnReadGameDesignTables()
+        protected override void OnConfiguringModules()
         {
-            DLegions = _designDb.DLegions.AsNoTracking().ToDictionary(x=>x.level, x=>x);
+            _playerModule = Server.GetModule<PlayerModule>();
+
+            var designModule = Server.GetModule<DesignDataModule>();
+            designModule.Register(this, designDb =>
+            {
+                DLegions = designDb.DLegions.AsNoTracking().ToDictionary(x => x.level, x => x);
+            });
         }
 
-        protected override void OnRegisterEvents()
+        protected override void OnConfigured()
         {
-            _freeLegion = _db.Legions.FirstOrDefault(x=>x.Id == string.Empty);
-            if(_freeLegion == null)
+            _freeLegion = _db.Legions.FirstOrDefault(x => x.Id == string.Empty);
+            if (_freeLegion == null)
             {
                 _freeLegion = new Legion()
                 {
@@ -54,6 +61,7 @@ namespace Frontline.GameControllers
                 _db.SaveChanges();
             }
         }
+
         #region 事件
         #endregion
 
@@ -106,7 +114,7 @@ namespace Frontline.GameControllers
                 next_exp = dl.exp,
                 shortName = legion.ShortName,
                 applied = false,
-                leaderName = Server.GetController<PlayerController>().QueryPlayerBaseInfo(legion.LeaderId).NickName
+                leaderName = Server.GetModule<PlayerModule>().QueryPlayerBaseInfo(legion.LeaderId).NickName
             };
         }
         #endregion
@@ -114,7 +122,7 @@ namespace Frontline.GameControllers
         #region 客户端接口
         public int Call_LegionDetail(PartyDetailRequest request)
         {
-            var player = CurrentSession.GetBindPlayer();
+            var player = _playerModule.QueryPlayer(Session.PlayerId);
             var member = QueryLegionMember(player.Id);
             PartyDetailResponse response = new PartyDetailResponse();
             response.success = true;
@@ -124,7 +132,7 @@ namespace Frontline.GameControllers
                 response.id = legion.Id;
                 response.pi = this.ToLegionInfo(legion);
                 response.members = new List<PartyMemberInfo>();
-                var playercon = Server.GetController<PlayerController>();
+                var playercon = Server.GetModule<PlayerModule>();
                 foreach(var m in legion.Members)
                 {
                     var p = playercon.QueryPlayerBaseInfo(m.PlayerId);
@@ -144,7 +152,7 @@ namespace Frontline.GameControllers
                     response.members.Add(mi);
                 }
             }
-            CurrentSession.SendAsync(response);
+            Session.SendAsync(response);
 
             return 0;
         }
@@ -163,13 +171,13 @@ namespace Frontline.GameControllers
             //todo: 和谐字检查
 
             //检查退团CD
-            var player = CurrentSession.GetBindPlayer();
+            var player = _playerModule.QueryPlayer(Session.PlayerId);
             //检查等级是否满足
             if(player.Level < GameConfig.LegionCreateLevel)
             {
                 return (int)GameErrorCode.等级不符合要求;
             }
-            var playerCon = Server.GetController<PlayerController>();
+            var playerCon = Server.GetModule<PlayerModule>();
             if(!playerCon.IsCurrencyEnough(player, CurrencyType.DIAMOND, GameConfig.LegionCreateCostDiamond))
             {
                 return (int)GameErrorCode.资源不足;
@@ -219,7 +227,7 @@ namespace Frontline.GameControllers
             response.success = true;
             response.party = ToLegionInfo(legion);
 
-            CurrentSession.SendAsync(response);
+            Session.SendAsync(response);
             return 0;
         }
 
@@ -234,7 +242,7 @@ namespace Frontline.GameControllers
             {
                 response.parties.Add(ToLegionInfo(legion));
             }
-            CurrentSession.SendAsync(response);
+            Session.SendAsync(response);
             return 0;
         }
 
@@ -247,7 +255,7 @@ namespace Frontline.GameControllers
             var legion = this.QueryLegion(request.id);
             if(legion != null)
             {
-                var playercon = Server.GetController<PlayerController>();
+                var playercon = Server.GetModule<PlayerModule>();
                 foreach (var m in legion.Members)
                 {
                     var p = playercon.QueryPlayerBaseInfo(m.PlayerId);
@@ -267,7 +275,7 @@ namespace Frontline.GameControllers
                     response.members.Add(mi);
                 }
             }
-            CurrentSession.SendAsync(response);
+            Session.SendAsync(response);
             return 0;
         }
         #endregion

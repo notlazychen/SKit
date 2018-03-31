@@ -7,17 +7,15 @@ namespace SKit
 {
     public class GameSession : IDisposable
     {
-        public string Id { get;  }
+        internal string Id { get;  }
         public Socket Socket { get; internal set; }
         public DateTime CreateTime { get; internal set; }
         public GameServer Server { get; internal set; }
-
-        private Dictionary<Type, Object> _cacheStore = new Dictionary<Type, object>();
-
+        
         /// <summary>
         /// 登录用户，请通过Login()函数设置
         /// </summary>
-        public string UserId { get; private set; }
+        public string PlayerId { get; private set; }
         /// <summary>
         /// 是否登录，请通过Login()函数设置
         /// </summary>
@@ -38,7 +36,7 @@ namespace SKit
             {
                 return;
             }
-            this.UserId = userid;
+            this.PlayerId = userid;
             this.Server.SetLogin(this);
             IsAuthorized = true;
             LoginTime = DateTime.Now;
@@ -48,7 +46,7 @@ namespace SKit
         {
             if (IsAuthorized)
             {
-                this.UserId = null;
+                this.PlayerId = null;
                 this.IsAuthorized = false;
             }
         }
@@ -63,7 +61,7 @@ namespace SKit
         {
             if (IsAuthorized)
             {
-                this.Server.SendByUserNameAsync(UserId, msg);
+                this.Server.SendByUserNameAsync(PlayerId, msg);
             }
             else
             {
@@ -71,37 +69,20 @@ namespace SKit
             }
         }
 
-        public bool TryGetBind<T>(out T data) where T : class
-        {
-            _cacheStore.TryGetValue(typeof(T), out var o);
-            data = o as T;
-            return data != null;
-        }
 
-        /// <summary>
-        /// 获取绑定的数据
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
-        public T GetBind<T>() where T : class
+        public event EventHandler<ClientCloseReason> PlayerLeave;
+
+        internal void OnPlayerLeave(ClientCloseReason reason)
         {
-            Object o;
-            if(_cacheStore.TryGetValue(typeof(T), out o))
+            if (IsAuthorized)
             {
-                return o as T;
+                PlayerLeave?.Invoke(this, reason);
             }
-            return null;
-        }
-
-        public void SetBind<T>(T data)
-        {
-            _cacheStore[typeof(T)] = data;
         }
 
         public void Dispose()
         {
-            _cacheStore.Clear();
-            SocketAsyncEventArgs.Dispose();
+            //_cacheStore.Clear();
         }
     }
 }

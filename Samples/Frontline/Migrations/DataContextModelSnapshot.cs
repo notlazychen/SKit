@@ -195,14 +195,14 @@ namespace Frontline.Migrations
 
                     b.Property<DateTime>("LastRefreshDay");
 
-                    b.Property<string>("PlayerId")
-                        .IsRequired();
+                    b.Property<string>("PlayerId");
 
                     b.Property<int>("TodayMarketRefreshTimes");
 
                     b.HasKey("Id");
 
-                    b.HasAlternateKey("PlayerId");
+                    b.HasIndex("PlayerId")
+                        .IsUnique();
 
                     b.ToTable("Factories");
                 });
@@ -313,24 +313,23 @@ namespace Frontline.Migrations
 
                     b.Property<int>("MaxGlory");
 
-                    b.Property<string>("Name")
-                        .IsRequired();
+                    b.Property<string>("Name");
 
                     b.Property<bool>("NeedCheck");
 
                     b.Property<string>("Note");
 
-                    b.Property<string>("ShortName")
-                        .IsRequired();
+                    b.Property<string>("ShortName");
 
                     b.HasKey("Id");
 
-                    b.HasAlternateKey("Name");
-
-
-                    b.HasAlternateKey("ShortName");
-
                     b.HasIndex("Level");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.HasIndex("ShortName")
+                        .IsUnique();
 
                     b.ToTable("Legions");
                 });
@@ -363,7 +362,8 @@ namespace Frontline.Migrations
 
             modelBuilder.Entity("Frontline.Domain.Lottery", b =>
                 {
-                    b.Property<string>("PlayerId");
+                    b.Property<string>("PlayerId")
+                        .ValueGeneratedOnAdd();
 
                     b.Property<int>("Dmd10UsedNumb");
 
@@ -389,9 +389,11 @@ namespace Frontline.Migrations
 
                     b.Property<int>("GoldUsedNumb");
 
+                    b.Property<DateTime>("LastRefreshDay");
+
                     b.HasKey("PlayerId");
 
-                    b.ToTable("Lottery");
+                    b.ToTable("Lotteries");
                 });
 
             modelBuilder.Entity("Frontline.Domain.Player", b =>
@@ -438,7 +440,6 @@ namespace Frontline.Migrations
                     b.Property<int>("MaxPower");
 
                     b.Property<string>("NickName")
-                        .IsRequired()
                         .HasMaxLength(32);
 
                     b.Property<bool>("OldPlayer");
@@ -467,7 +468,8 @@ namespace Frontline.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasAlternateKey("NickName");
+                    b.HasIndex("NickName")
+                        .IsUnique();
 
                     b.HasIndex("UserCenterId");
 
@@ -609,6 +611,8 @@ namespace Frontline.Migrations
 
                     b.Property<int>("GOLD");
 
+                    b.Property<int>("GoldBuyTimes");
+
                     b.Property<int>("HORN");
 
                     b.Property<int>("IRON");
@@ -616,6 +620,8 @@ namespace Frontline.Migrations
                     b.Property<int>("LEGIONCOIN");
 
                     b.Property<int>("OIL");
+
+                    b.Property<int>("OilBuyTimes");
 
                     b.Property<int>("SMOKE");
 
@@ -704,14 +710,6 @@ namespace Frontline.Migrations
                     b.HasOne("Frontline.Domain.Legion")
                         .WithMany("Members")
                         .HasForeignKey("LegionId");
-                });
-
-            modelBuilder.Entity("Frontline.Domain.Lottery", b =>
-                {
-                    b.HasOne("Frontline.Domain.Player")
-                        .WithOne("Lottery")
-                        .HasForeignKey("Frontline.Domain.Lottery", "PlayerId")
-                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("Frontline.Domain.PlayerItem", b =>

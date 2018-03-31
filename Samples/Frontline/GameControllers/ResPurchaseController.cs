@@ -6,9 +6,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Frontline.GameControllers
+namespace Frontline.Modules
 {
-    public class ResPurchaseController : GameController
+    public class ResPurchaseController : GameModule
     {
         /// <summary>
         /// 资源购买详情
@@ -19,7 +19,7 @@ namespace Frontline.GameControllers
         public int Call_ResPurchaseInfo(ResPurchaseInfoRequest request)
         {
             ResPurchaseInfoResponse response = JsonConvert.DeserializeObject<ResPurchaseInfoResponse>("{ \"success\":true,\"buyResInfos\":[{\"count\":800,\"times\":0,\"cost\":60,\"timesRemain\":1,\"type\":1},{\"count\":800,\"times\":0,\"cost\":60,\"timesRemain\":1,\"type\":2},{\"count\":10000,\"times\":0,\"cost\":50,\"timesRemain\":1,\"type\":4},{\"count\":200,\"times\":0,\"cost\":30,\"timesRemain\":1,\"type\":5}]}");            
-            CurrentSession.SendAsync(response);
+            Session.SendAsync(response);
             return 0;
         }
     }

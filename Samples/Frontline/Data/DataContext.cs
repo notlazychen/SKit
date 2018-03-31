@@ -23,7 +23,7 @@ namespace Frontline.Data
             base.OnModelCreating(modelBuilder);
             modelBuilder.Entity<Player>().HasIndex(p => p.UserCenterId);
             modelBuilder.Entity<Player>().HasIndex(p => p.UserCode);
-            modelBuilder.Entity<Player>().HasAlternateKey(p => p.NickName);
+            modelBuilder.Entity<Player>().HasIndex(p => p.NickName).IsUnique();
             //modelBuilder.Entity<Player>().HasBaseType<PlayerBaseInfo>();
             //modelBuilder.Entity<Player>().HasMany(p => p.Items);
             //modelBuilder.Entity<Player>().HasMany(p => p.Sections);
@@ -53,12 +53,12 @@ namespace Frontline.Data
             modelBuilder.Entity<ArenaBattleHistory>().HasOne<ArenaCert>().WithMany(a => a.ArenaBattleHistories).HasForeignKey(h => h.ArenaCertId);
 
             modelBuilder.Entity<Legion>().HasIndex(l => l.Level);
-            modelBuilder.Entity<Legion>().HasAlternateKey(l => l.Name);
-            modelBuilder.Entity<Legion>().HasAlternateKey(l => l.ShortName);
+            modelBuilder.Entity<Legion>().HasIndex(l => l.Name).IsUnique();
+            modelBuilder.Entity<Legion>().HasIndex(l => l.ShortName).IsUnique();
             //modelBuilder.Entity<LegionMember>().HasAlternateKey(l => l.PlayerId);
             modelBuilder.Entity<LegionMember>().HasOne<Legion>().WithMany(l=>l.Members).HasForeignKey(m=>m.LegionId);
 
-            modelBuilder.Entity<Factory>().HasAlternateKey(l => l.PlayerId);
+            modelBuilder.Entity<Factory>().HasIndex(l => l.PlayerId).IsUnique();
             modelBuilder.Entity<FacWorker>().HasIndex(l => l.PlayerId);
             modelBuilder.Entity<FacTask>().HasIndex(l => l.PlayerId);
             modelBuilder.Entity<FacTask>().HasOne<Factory>().WithMany(f => f.FacTasks).HasForeignKey(t => t.PlayerId);
@@ -68,6 +68,8 @@ namespace Frontline.Data
 
         public DbSet<Player> Players { get; set; }
         public DbSet<Wallet> Wallets { get; set; }
+
+        public DbSet<Lottery> Lotteries { get; set; }
 
         public DbSet<ArenaCert> ArenaCerts { get; set; }
         public DbSet<ArenaBattleHistory> ArenaBattleHistories { get; set; }

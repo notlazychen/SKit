@@ -69,13 +69,21 @@ namespace SKit
         private readonly ConcurrentDictionary<string, GameSession> _users = new ConcurrentDictionary<string, GameSession>();//登录的连接 Key:UserName
         #endregion
 
-        private readonly Dictionary<string, GameProtoHandlerInfo> _handlers = new Dictionary<string, GameProtoHandlerInfo>();
-        private readonly Dictionary<Type, GameController> _controllers = new Dictionary<Type, GameController>();
-        public IEnumerable<GameProtoHandlerInfo> Handlers
+        //private readonly Dictionary<string, GameProtoHandlerInfo> _handlers = new Dictionary<string, GameProtoHandlerInfo>();
+        private readonly Dictionary<string, GameCommandInfo> _commands = new Dictionary<string, GameCommandInfo>();
+        private readonly Dictionary<Type, GameModule> _modules = new Dictionary<Type, GameModule>();
+        public IEnumerable<GameModule> Modules
         {
             get
             {
-                return _handlers.Values;
+                return _modules.Values;
+            }
+        }
+        public IEnumerable<GameCommandInfo> CommandInfos
+        {
+            get
+            {
+                return _commands.Values;
             }
         }
         /// <summary>
@@ -252,9 +260,24 @@ namespace SKit
             Stop();
         }
 
+        public void InvokeGameTask(Action action, bool wait = false)
+        {
+            var task = new GameInvokeTask(action, wait);
+            if (wait)
+            {
+                Monitor.Enter(task);
+            }
+            _workingQueue.Enqueue(task);
+            if (wait)
+            {
+                Monitor.Wait(task);
+                Monitor.Exit(task);
+            }
+        }
+
         internal void SetLogin(GameSession session)
         {
-            _users.AddOrUpdate(session.UserId, session, (username, oldSession) =>
+            _users.AddOrUpdate(session.PlayerId, session, (username, oldSession) =>
             {
                 //把原来的玩家踢下线
                 CloseClientSocket(oldSession.SocketAsyncEventArgs, ClientCloseReason.Displacement);
@@ -352,19 +375,6 @@ namespace SKit
         }
         #endregion
         
-        /// <summary>
-        /// 接收消息前，可用于重写Filter
-        /// </summary>
-        /// <returns>是否过滤掉</returns>
-        protected virtual bool Filter(GameSession session, GameProtoHandlerInfo handler)
-        {
-            if (!handler.AllowAnonymous && !session.IsAuthorized)
-            {
-                return true;
-            }
-            return false;
-        }
-
         #region 网络部分
         void acceptEventArg_Completed(object sender, SocketAsyncEventArgs e)
         {
@@ -554,9 +564,9 @@ namespace SKit
 
             if(_sessions.TryRemove(token.Id, out _))
             {
-                if (token.UserId != null && _users.TryRemove(token.UserId, out _))
+                if (token.PlayerId != null && _users.TryRemove(token.PlayerId, out _))
                 {
-                    var task = new GamePlayerLeaveTask(token, reason, _controllers.Values);
+                    var task = new GamePlayerLeaveTask(token, reason, _modules.Values);
                     if (reason == ClientCloseReason.Displacement)
                     {
                         try
@@ -575,6 +585,8 @@ namespace SKit
                     }
                 }
                 _socketRecvBufferPool.Push(e.Buffer);
+                e.Completed -= IO_Completed;
+                e.Dispose();
                 token?.Dispose();
                 // Free the SocketAsyncEventArg so they can be reused by another client
                 _logger.LogDebug($"{token.Id}: LEAVE, reason: {reason}|当前连接数: {ClientCount}");
@@ -780,6 +792,10 @@ namespace SKit
                                     ResultCode = result,
                                 });
                             }
+                            else
+                            {
+                                task.DoAction();
+                            }
                         }
                     }
                 }
@@ -804,22 +820,22 @@ namespace SKit
         protected bool DigestRecevedData(GameSession session, ArraySegment<byte> data)
         {
             string cmd = _serializer.DataToCmd(data.Array, data.Offset, data.Count);
-            if (cmd == null || !this._handlers.ContainsKey(cmd))
+            if (cmd == null || !this._commands.ContainsKey(cmd))
             {
                 //如果没有处理器，先刷掉一批
                 return false;
             }
 
-            var handler = this._handlers[cmd];
-            var type = handler.RequestType;
-            if (Filter(session, handler))
+            var cmdInfo = this._commands[cmd];
+            var type = cmdInfo.RequestType;
+            if (!cmdInfo.AllowAnonymous && !session.IsAuthorized)
             {
                 return false;
             }
 
             var request = _serializer.Deserialize(type, data.Array, data.Offset, data.Count);
-            var task = new GameRequestTask(handler, session, request);
-            if (handler.IsAsynchronous)
+            var task = new GameRequestTask(cmdInfo.Command, session, request);
+            if (cmdInfo.Asynchronous)
             {
                 //当遇到allowanonymous的任务时，即表示此任务不需要其他游戏逻辑线程同步，只要session同步即可，那么可以不放入逻辑线程而直接执行
                 task.DoAction();
@@ -836,10 +852,10 @@ namespace SKit
         /// <summary>
         /// 获得其他控制器
         /// </summary>
-        public T GetController<T>() where T : GameController
+        public T GetModule<T>() where T : GameModule
         {
             Type t = typeof(T);
-            return _controllers[t] as T;
+            return _modules[t] as T;
         }
         /// <summary>
         /// 消息驱动，通过消息实体名找处理函数
@@ -849,20 +865,21 @@ namespace SKit
             _logger.LogInformation($"开始读取模块");
             foreach (var type in Assembly.GetEntryAssembly().ExportedTypes)
             {
-                if (type.GetTypeInfo().BaseType == typeof(GameController))
+                if (type.GetTypeInfo().BaseType == typeof(GameModule))
                 {
-                    _services.AddTransient(typeof(GameController), type);
+                    _services.AddTransient(typeof(GameModule), type);
                 }
             }
 
             var provider = _services.BuildServiceProvider();
-            var controllers = provider.GetServices<GameController>();
-            foreach (var controller in controllers)
+            var modules = provider.GetServices<GameModule>();
+            foreach (var module in modules)
             {
-                Type type = controller.GetType();
-                controller.Server = this;
-                _controllers.Add(type, controller);
+                Type type = module.GetType();
+                module.Server = this;
+                _modules.Add(type, module);
 
+                //加载handler并转化为command
                 MethodInfo[] methods = type.GetMethods(BindingFlags.Public | BindingFlags.DeclaredOnly | BindingFlags.Instance);
                 foreach (var methodInfo in methods)
                 {
@@ -870,17 +887,15 @@ namespace SKit
                     {
                         continue;
                     }
-                    if(methodInfo.ReturnType != typeof(int))
+                    if (methodInfo.ReturnType != typeof(int))
                     {
-                        _logger.LogWarning($"Method handler [{controller.GetType().Name}.{methodInfo.Name}] has wrong return type!");
+                        _logger.LogWarning($"Method handler [{module.GetType().Name}.{methodInfo.Name}] has wrong return type!");
                         continue;
                     }
                     ParameterInfo[] parameterInfos = methodInfo.GetParameters();
-                    bool allowanonymous = methodInfo.GetCustomAttribute<AllowAnonymousAttribute>() != null;
-                    bool isAsynchronous = methodInfo.GetCustomAttribute<AsynchronousAttribute>() != null;
                     if (parameterInfos.Length > 2 || parameterInfos.Length < 1)
                     {
-                        _logger.LogWarning($"Protocol Handler {controller.GetType().Name }.{methodInfo.Name} parameters count wrong!");
+                        _logger.LogWarning($"Protocol Handler {module.GetType().Name }.{methodInfo.Name} parameters count wrong!");
                     }
                     else
                     {
@@ -889,10 +904,10 @@ namespace SKit
                         {
                             parameterTypes.Add(p.ParameterType);
                         }
-                        var requestType = parameterTypes.FirstOrDefault(x=>x != typeof(GameSession));
+                        var requestType = parameterTypes.FirstOrDefault(x => x != typeof(GameSession));
                         if (requestType == null)
                         {
-                            _logger.LogWarning($"Protocol Handler {controller.GetType().Name }.{methodInfo.Name} parameters not contains request entity!");
+                            _logger.LogWarning($"Protocol Handler {module.GetType().Name }.{methodInfo.Name} parameters not contains request entity!");
                             continue;
                         }
                         String cmd = requestType.Name;
@@ -917,36 +932,92 @@ namespace SKit
                         }
                         parameterTypes.Add(typeof(int));
                         Type methodType = methodGenericType.MakeGenericType(parameterTypes.ToArray());
-                        Delegate actionMethod = Delegate.CreateDelegate(methodType, controller, methodInfo);
-                        var handler = new GameProtoHandlerInfo()
+                        Delegate actionMethod = Delegate.CreateDelegate(methodType, module, methodInfo);
+
+                        var options = methodInfo.GetCustomAttribute<GameCommandOptionsAttribute>();
+                        var commandInfo = new GameCommandInfo()
                         {
                             CMD = cmd,
-                            MethodInfo = methodInfo,
-                            ProcessAction = actionMethod,
                             RequestType = requestType,
-                            Controller = controller,
-                            AllowAnonymous = allowanonymous,
-                            IsAsynchronous = isAsynchronous,
-                            ParameterTypes = paramSeq
+                            Command = new GameMethodHandlerCommand() {
+                                MethodInfo = methodInfo,
+                                Module = module,
+                                ProcessAction = actionMethod,
+                                ParameterTypes = paramSeq,
+                                Server = this,
+                            }
                         };
-                        GameProtoHandlerInfo oldhandler = null;
-                        if (!_handlers.TryGetValue(handler.CMD, out oldhandler))
+                        if(options != null)
                         {
-                            _handlers.Add(handler.CMD, handler);
+                            commandInfo.AllowAnonymous = options.AllowAnonymous;
+                            commandInfo.Asynchronous = options.Asynchronous;
+                            commandInfo.CMD = options.CMD ?? requestType.Name;                            
+                        }
+                        if (!_commands.TryGetValue(commandInfo.CMD, out var old))
+                        {
+                            _commands.Add(commandInfo.CMD, commandInfo);
                             _serializer.Register(requestType);
                         }
                         else
                         {
-                            _logger.LogWarning($"Request CMD [{handler.CMD}] in [{handler.Controller.GetType().Name }.{handler.MethodInfo.Name}] already declared in method: [{oldhandler.Controller.GetType().Name }.{oldhandler.MethodInfo.Name}]");
+                            _logger.LogWarning($"Request CMD [{commandInfo.CMD}] in [{commandInfo.Command.ToString()}] already declared in method: [{old.Command.ToString()}]");
                         }
                     }
                 }
             }
 
-            foreach (var controller in controllers)
+            //加载command
+            foreach (var type in Assembly.GetEntryAssembly().ExportedTypes)
             {
-                _logger.LogInformation($"加载模块:{controller.GetType().Name}");
-                controller.RegisterEvents();
+                if (type.BaseType.IsGenericType)
+                {
+                    if(type.BaseType.BaseType == typeof(GameCommandBase))
+                    {
+                        var requestType = type.BaseType.GetGenericArguments()[0];
+                        var options = type.GetCustomAttribute<GameCommandOptionsAttribute>();
+                        var command = Activator.CreateInstance(type) as GameCommandBase;
+                        command.Server = this;
+                        var commandInfo = new GameCommandInfo()
+                        {
+                            Command = command,
+                            RequestType = requestType,
+                            CMD = requestType.Name
+                        };
+                        if (options != null)
+                        {
+                            commandInfo.AllowAnonymous = options.AllowAnonymous;
+                            commandInfo.Asynchronous = options.Asynchronous;
+                            commandInfo.CMD = options.CMD ?? requestType.Name;
+                        }
+                        if (!_commands.TryGetValue(commandInfo.CMD, out var old))
+                        {
+                            _commands.Add(commandInfo.CMD, commandInfo);
+                            _serializer.Register(requestType);
+                        }
+                        else
+                        {
+                            _logger.LogWarning($"Request CMD [{commandInfo.CMD}] in [{commandInfo.Command.ToString()}] already declared in method: [{old.Command.ToString()}]");
+                        }
+                    }
+                }
+            }
+
+            //模块初始化
+            foreach (var module in modules)
+            {
+                _logger.LogInformation($"加载模块:{module.GetType().Name}");
+                module.ConfigureServices();
+            }
+            foreach(var module in modules)
+            {
+                _logger.LogInformation($"配置模块:{module.GetType().Name}");
+                module.Configure();
+            }
+
+            //命令初始化
+            foreach(var command in _commands.Values)
+            {
+                command.Command.Init();
             }
         }
 

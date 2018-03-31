@@ -8,7 +8,7 @@ using SKit.Common;
 
 namespace ChatRoomSample.GameControllers
 {
-    public class ChatRoomController: GameController
+    public class ChatRoomController: GameModule
     {
         private GameServer _server;
         private ILogger<ChatRoomController> _logger;
@@ -37,7 +37,7 @@ namespace ChatRoomSample.GameControllers
         
         public override void OnLeave(ClientCloseReason reason)
         {
-            _logger.LogDebug($"{CurrentSession.Id}: LEAVE, reason: {reason}");
+            _logger.LogDebug($"{Session.Id}: LEAVE, reason: {reason}");
         }
     }
 }

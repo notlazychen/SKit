@@ -1,7 +1,7 @@
 ﻿using Frontline.Common;
 using Frontline.Common.Network;
 using Frontline.Data;
-using Frontline.GameControllers;
+using Frontline.Modules;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System;

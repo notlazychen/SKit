@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 
 namespace SKit
 {
@@ -29,38 +30,27 @@ namespace SKit
     /// </summary>
     public class GameRequestTask : GamePlayerTask
     {
-        public GameRequestTask(GameProtoHandlerInfo handler, GameSession session, Object entity) 
+        public GameRequestTask(GameCommandBase command, GameSession session, Object entity) 
             : base(session)
         {
-            Handler = handler;
-            Entity = entity;
+            Command = command;
+            Command.RequestEntity = entity;
+            Command.Session = session;
         }
 
-        public GameProtoHandlerInfo Handler { get; private set; }
-
-        public Object Entity { get; private set; }
+        public GameCommandBase Command { get; private set; }
 
         protected override int OnDoAction()
         {
-            var parameters = new List<Object>();
-            switch (Handler.ParameterTypes)
-            {
-                case GameProtoHandlerParameters.Request:
-                    return (int)this.Handler.ProcessAction.DynamicInvoke(Entity);
-                case GameProtoHandlerParameters.RequestAndGameSession:
-                    return (int)this.Handler.ProcessAction.DynamicInvoke(Entity, Session);
-                case GameProtoHandlerParameters.GameSessionAndRequest:
-                    return (int)this.Handler.ProcessAction.DynamicInvoke(Session, Entity);
-            }
-            return 0;
+            return Command.ExecuteCommand();
         }
     }
 
     public class GamePlayerLeaveTask : GamePlayerTask
     {
-        private readonly IEnumerable<GameController> _controllers;
+        private readonly IEnumerable<GameModule> _controllers;
         public ClientCloseReason Reason { get; private set; }
-        public GamePlayerLeaveTask(GameSession session, ClientCloseReason reason, IEnumerable<GameController> controllers) 
+        public GamePlayerLeaveTask(GameSession session, ClientCloseReason reason, IEnumerable<GameModule> controllers)
             : base(session)
         {
             Reason = reason;
@@ -69,9 +59,40 @@ namespace SKit
 
         protected override int OnDoAction()
         {
-            foreach(var c in this._controllers)
+            Session.OnPlayerLeave(Reason);
+            return 0;
+        }
+    }
+
+
+    public class GameInvokeTask : GameTask
+    {
+        private Action _action;
+        private bool _wait;
+        public GameInvokeTask(Action action, bool wait)
+        {
+            _wait = wait;
+            _action = action;
+        }
+
+        protected override int OnDoAction()
+        {
+            try
             {
-                c.OnLeave(Reason);
+                if (_wait)
+                {
+                    Monitor.Enter(this);
+                }
+                _action();
+            }
+            finally
+            {
+                if (_wait)
+                {
+                    Monitor.Pulse(this);
+                    Monitor.Exit(this);
+                    _wait = false;
+                }
             }
             return 0;
         }

@@ -23,6 +23,9 @@ namespace Frontline.Domain
         public int SMOKE { get; private set; }//香烟
         public int LEGIONCOIN { get; private set; }//军团币
 
+        public int OilBuyTimes { get; set; }
+        public int GoldBuyTimes { get; set; }
+
         public int AddCurrency(int type, int value)
         {
             switch (type)

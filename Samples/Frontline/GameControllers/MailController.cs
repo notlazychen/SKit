@@ -5,13 +5,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Frontline.GameControllers
+namespace Frontline.Modules
 {
-    public class MailController : GameController
+    public class MailController : GameModule
     {
         public int Call_MailList(MailListRequest request)
         {
-            String pid = CurrentSession.UserId;
+            String pid = Session.PlayerId;
             MailListResponse response = new MailListResponse();
             List<MailInfo> ms = new List<MailInfo>()
             {
@@ -20,7 +20,7 @@ namespace Frontline.GameControllers
             response.id = pid;
             response.mails = ms;
             response.success = true;
-            CurrentSession.SendAsync(response);
+            Session.SendAsync(response);
             return 0;
         }
     }

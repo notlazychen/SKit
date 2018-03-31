@@ -13,35 +13,37 @@ using Microsoft.EntityFrameworkCore;
 using Frontline.Common;
 using Frontline.Domain;
 
-namespace Frontline.GameControllers
+namespace Frontline.Modules
 {
-    public class JJCController : GameController
+    public class JJCController : GameModule
     {
-        private GameDesignContext _designDb;
+        
         private DataContext _db;
         private ILogger _logger;
 
         public Dictionary<int, DArenaRankReward> DArenaRankRewards { get; private set; }
         public Dictionary<int, DArenaChallengeReward> DArenaChallengeRewards { get; private set; }
 
-        public JJCController(DataContext db, GameDesignContext design, ILogger<BaseController> logger)
+        private PlayerModule _playerModule;
+
+        public JJCController(DataContext db, ILogger<BaseModule> logger)
         {
             _db = db;
-            _designDb = design;
             _logger = logger;
         }
 
-        protected override void OnReadGameDesignTables()
+        protected override void OnConfiguringModules()
         {
-            DArenaRankRewards = _designDb.DArenaRankRewards.AsNoTracking().ToDictionary(x => x.id, x => x);
-            DArenaChallengeRewards = _designDb.DArenaChallengeRewards.AsNoTracking().ToDictionary(x => x.id, x => x);
-        }
+            _playerModule = this.Server.GetModule<PlayerModule>();
+            _playerModule.PlayerLoading += Playercon_PlayerLoading;
+            _playerModule.PlayerEverydayRefresh += Playercon_PlayerEverydayRefresh;
 
-        protected override void OnRegisterEvents()
-        {
-            var playercon = Server.GetController<PlayerController>();
-            playercon.PlayerLoading += Playercon_PlayerLoading;
-            playercon.PlayerEverydayRefresh += Playercon_PlayerEverydayRefresh;
+            var designModule = Server.GetModule<DesignDataModule>();
+            designModule.Register(this, designDb =>
+            {
+                DArenaRankRewards = designDb.DArenaRankRewards.AsNoTracking().ToDictionary(x => x.id, x => x);
+                DArenaChallengeRewards = designDb.DArenaChallengeRewards.AsNoTracking().ToDictionary(x => x.id, x => x);
+            });
         }
 
         private void Playercon_PlayerEverydayRefresh(object sender, Player e)
@@ -69,7 +71,7 @@ namespace Frontline.GameControllers
             {
                 GrabFlagAdversaryInfo adv = new GrabFlagAdversaryInfo();
 
-                var pc = Server.GetController<PlayerController>();
+                var pc = Server.GetModule<PlayerModule>();
                 var player = pc.QueryPlayerBaseInfo(p.PlayerId);
                 adv.pid = p.PlayerId;
                 adv.icon = player.Icon;
@@ -112,7 +114,7 @@ namespace Frontline.GameControllers
         {
             GrabFlagScoreResponse response = new GrabFlagScoreResponse();
             response.success = true;
-            var player = CurrentSession.GetBindPlayer();
+            var player = _playerModule.QueryPlayer(Session.PlayerId);
             var war = player.ArenaCert;
 
             response.scoreInfos = new List<GrabFlagScoreInfo>();
@@ -133,7 +135,7 @@ namespace Frontline.GameControllers
                 response.scoreInfos.Add(srinfo);
             }
 
-            CurrentSession.SendAsync(response);
+            Session.SendAsync(response);
             return 0;
         }
 
@@ -144,7 +146,7 @@ namespace Frontline.GameControllers
         {
 
             DArenaChallengeReward reward = DArenaChallengeRewards[request.rewardId];
-            var player = CurrentSession.GetBindPlayer();
+            var player = _playerModule.QueryPlayer(Session.PlayerId);
             var war = player.ArenaCert;
 
             if (war.Score < reward.times)
@@ -159,7 +161,7 @@ namespace Frontline.GameControllers
 
             string reason = "领取竞技场次数奖励";
             //发放奖励
-            var pkg = Server.GetController<PkgController>();
+            var pkg = Server.GetModule<PkgModule>();
             RewardInfo rewardInfo = pkg.RandomReward(player, reward.random_id, 1, reason);
             receRewards.Add(reward.id);
             war.ReceivedRewards = string.Join(",", receRewards);
@@ -169,13 +171,13 @@ namespace Frontline.GameControllers
             resp.rewardId = request.rewardId;
             resp.rewardInfo = rewardInfo;
             resp.success = true;
-            CurrentSession.SendAsync(resp);
+            Session.SendAsync(resp);
             return 0;
         }
         
         public int Call_GetEnemies(GrabFlagAdversariesRequest request)
         {
-            var player = CurrentSession.GetBindPlayer();
+            var player = _playerModule.QueryPlayer(Session.PlayerId);
             var war = player.ArenaCert;
 
             GrabFlagAdversariesResponse response = new GrabFlagAdversariesResponse();
@@ -233,7 +235,7 @@ namespace Frontline.GameControllers
                 response.adversaries.AddRange(this.ToAdvInfo(vs));
             }
 
-            CurrentSession.SendAsync(response);
+            Session.SendAsync(response);
             return 0;
         }
 
@@ -241,7 +243,7 @@ namespace Frontline.GameControllers
         {
             string enemyPid = request.adversaryPid;
 
-            var player = CurrentSession.GetBindPlayer();
+            var player = _playerModule.QueryPlayer(Session.PlayerId);
             var war = player.ArenaCert;
             var warEnemy = _db.ArenaCerts.FirstOrDefault(x=>x.PlayerId == enemyPid);
             if (warEnemy == null)
@@ -257,17 +259,17 @@ namespace Frontline.GameControllers
             String battleId = $"{war.PlayerId}AB{war.TotalBattleNumb}" ;
             resp.remainChallengeTimes = remainTimes - 1;
 
-            var camp = Server.GetController<CampController>();
+            var camp = Server.GetModule<CampModule>();
             resp.myUnits = camp.GetCurrentTeamUnitInfos(player);
 
-            var playerController = Server.GetController<PlayerController>();
-            var pem = playerController.QueryPlayer(enemyPid);
+            var playerModule = Server.GetModule<PlayerModule>();
+            var pem = playerModule.QueryPlayer(enemyPid);
             resp.adversaryUnits = camp.GetCurrentTeamUnitInfos(pem);
             resp.enemyName = pem.NickName;
             resp.battleId = battleId;
             resp.success = true;
 
-            CurrentSession.SendAsync(resp);
+            Session.SendAsync(resp);
             return 0;
         }
 
@@ -276,7 +278,7 @@ namespace Frontline.GameControllers
         {
             GrabFlagBattleChallengeOverResponse resp = new GrabFlagBattleChallengeOverResponse();
 
-            var player = CurrentSession.GetBindPlayer();
+            var player = _playerModule.QueryPlayer(Session.PlayerId);
             var war = player.ArenaCert;
             if (!war.IsBattling)
             {
@@ -299,14 +301,14 @@ namespace Frontline.GameControllers
             resp.success = true;
             resp.adversaryPid = war.BattleEnemyPid;
 
-            var playerController = Server.GetController<PlayerController>();
+            var playerModule = Server.GetModule<PlayerModule>();
             int delta = 0;
             string reason = "竞技场挑战胜利";
-            var enemy = playerController.QueryPlayer(war.BattleEnemyPid);
+            var enemy = playerModule.QueryPlayer(war.BattleEnemyPid);
             if (request.win)
             {
                 RewardInfo reward = new RewardInfo() { items = new List<RewardItem>(), res = new List<ResInfo>()};
-                playerController.AddCurrency(player, CurrencyType.GOLD, GameConfig.ArenaBattleWinAddGold, reason);
+                playerModule.AddCurrency(player, CurrencyType.GOLD, GameConfig.ArenaBattleWinAddGold, reason);
                 reward.res.Add(new ResInfo { type = CurrencyType.GOLD, count = GameConfig.ArenaBattleWinAddGold });
 
                 var warEnemy = _db.ArenaCerts.First(x => x.PlayerId == war.BattleEnemyPid);
@@ -335,7 +337,7 @@ namespace Frontline.GameControllers
             resp.currentRank = war.CurrentRank;
             resp.remainChallengeTimes = GameConfig.ArenaChallengeNumber - war.ChallengeTimes;
             resp.score = war.Score;
-            CurrentSession.SendAsync(resp);
+            Session.SendAsync(resp);
             return 0;
         }
 
@@ -343,10 +345,10 @@ namespace Frontline.GameControllers
         {
             FlagCDResetResponse response = new FlagCDResetResponse();
 
-            var player = CurrentSession.GetBindPlayer();
+            var player = _playerModule.QueryPlayer(Session.PlayerId);
             //判断钻石够不够
             int diamond = GameConfig.ArenaBattleCDCostDiamond;
-            var playercon = Server.GetController<PlayerController>();
+            var playercon = Server.GetModule<PlayerModule>();
             if (playercon.GetCurrencyValue(player, CurrencyType.DIAMOND) >= diamond)
             {
                 playercon.AddCurrency(player, CurrencyType.DIAMOND, -diamond, "竞技场清楚挑战CD");                
@@ -355,7 +357,7 @@ namespace Frontline.GameControllers
                 _db.SaveChanges();
             }
 
-            CurrentSession.SendAsync(response);
+            Session.SendAsync(response);
             return 0;
         }
 
@@ -377,7 +379,7 @@ namespace Frontline.GameControllers
                 info.items_cnt.AddRange(reward.items_cnt.Object);
                 response.rewardInfos.Add(info);
             }
-            CurrentSession.SendAsync(response);
+            Session.SendAsync(response);
 
             return 0;
         }
@@ -386,7 +388,7 @@ namespace Frontline.GameControllers
         {
             GrabFlagBattleHistoryResponse resp = new GrabFlagBattleHistoryResponse();
             resp.histories = new List<GrabFlagBattleHistoryInfo>();
-            var player = Server.GetController<PlayerController>().QueryPlayer(CurrentSession.UserId);
+            var player = Server.GetModule<PlayerModule>().QueryPlayer(Session.PlayerId);
             foreach (ArenaBattleHistory history in player.ArenaCert.ArenaBattleHistories)
             {
                 GrabFlagBattleHistoryInfo h = new GrabFlagBattleHistoryInfo();
@@ -400,7 +402,7 @@ namespace Frontline.GameControllers
                 resp.histories.Add(h);
             }
             resp.success = true;
-            CurrentSession.SendAsync(resp);
+            Session.SendAsync(resp);
             return 0;
         }
     }

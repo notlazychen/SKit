@@ -9,9 +9,9 @@ namespace Frontline
 {
     public static class GameSessionExtensions
     {
-        public static Player GetBindPlayer(this GameSession session)
-        {
-            return session.GetBind<Player>();
-        }
+        //public static Player GetBindPlayer(this GameSession session)
+        //{
+        //    return session.GetBind<Player>();
+        //}
     }
 }

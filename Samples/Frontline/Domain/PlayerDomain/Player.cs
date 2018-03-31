@@ -121,7 +121,7 @@ namespace Frontline.Domain
 
         public FriendList FriendList { get; set; }
         public Wallet Wallet { get; set; }
-        public Lottery Lottery { get; set; }
+
         public ArenaCert ArenaCert { get; set; }
         public PlayerOlReward OlReward { get; set; }
         

@@ -12,11 +12,10 @@ using Frontline.GameDesign;
 using Frontline.Domain.Temporary;
 using Frontline.Common;
 
-namespace Frontline.GameControllers
+namespace Frontline.Modules
 {
-    public class DungeonController : GameController
+    public class DungeonController : GameModule
     {
-        private readonly GameDesignContext _designDb;
         private readonly DataContext _db;
 
         public Dictionary<int, Dictionary<int, SortedDictionary<int, DDungeon>>> DDungeons { get; private set; }//type:{section:{mission:x}}
@@ -24,30 +23,31 @@ namespace Frontline.GameControllers
         public Dictionary<int, DMonsterAbility> DMonsterAbilities { get; private set; }//level:x
         public Dictionary<int, Dictionary<int, DMonsterInDungeon>> DMonsterInDungeons { get; private set; }//dungeonid:{monsterid:x}
         public Dictionary<int, Dictionary<int, Dictionary<int, DDungeonStar>>> DDStars { get; private set; }//type:{section : {index : x}}
-        private readonly Dictionary<string, Battle> _battles = new Dictionary<string, Battle>();
 
-        public DungeonController(DataContext db, GameDesignContext design)
+        private readonly Dictionary<string, Battle> _battles = new Dictionary<string, Battle>();
+        private PlayerModule _playerModule;
+
+        public DungeonController(DataContext db)
         {
             _db = db;
-            _designDb = design;
         }
 
-        protected override void OnReadGameDesignTables()
-        {
-            DDungeons = _designDb.DDungeons.GroupBy(x => x.type).AsNoTracking().ToDictionary(x => x.Key, x => x.GroupBy(y => y.section).ToDictionary(y => y.Key, y => new SortedDictionary<int, DDungeon>(y.ToDictionary(z => z.mission, z => z))));
-            DMonsters = _designDb.DMonsters.AsNoTracking().ToDictionary(x => x.id, x => x);
-            DMonsterAbilities = _designDb.DMonsterAbilities.AsNoTracking().ToDictionary(x => x.level, x => x);
-            DMonsterInDungeons = _designDb.DMonsterInDungeons.GroupBy(x => x.dungeon_id).AsNoTracking().ToDictionary(x => x.Key, x => x.ToDictionary(y => y.mid, y => y));
-            DDStars = _designDb.DDungeonStars.AsNoTracking().GroupBy(x => x.type).ToDictionary(x => x.Key, x => x.GroupBy(y => y.section).ToDictionary(z => z.Key, z => z.ToDictionary(a => a.index, a => a)));
-        }
-
-        protected override void OnRegisterEvents()
+        protected override void OnConfiguringModules()
         {
             //事件注册
-            var playerController = this.Server.GetController<PlayerController>();
-            playerController.PlayerCreating += _PlayerController_PlayerCreating;
-            playerController.PlayerLoading += PlayerController_PlayerLoading;
-            playerController.PlayerEverydayRefresh += PlayerController_PlayerEverydayRefresh;
+            _playerModule = this.Server.GetModule<PlayerModule>();
+            _playerModule.PlayerCreating += _PlayerController_PlayerCreating;
+            _playerModule.PlayerLoading += PlayerController_PlayerLoading;
+            _playerModule.PlayerEverydayRefresh += PlayerController_PlayerEverydayRefresh;
+            var design = Server.GetModule<DesignDataModule>();
+            design.Register(this, designDb =>
+            {
+                DDungeons = designDb.DDungeons.GroupBy(x => x.type).AsNoTracking().ToDictionary(x => x.Key, x => x.GroupBy(y => y.section).ToDictionary(y => y.Key, y => new SortedDictionary<int, DDungeon>(y.ToDictionary(z => z.mission, z => z))));
+                DMonsters = designDb.DMonsters.AsNoTracking().ToDictionary(x => x.id, x => x);
+                DMonsterAbilities = designDb.DMonsterAbilities.AsNoTracking().ToDictionary(x => x.level, x => x);
+                DMonsterInDungeons = designDb.DMonsterInDungeons.GroupBy(x => x.dungeon_id).AsNoTracking().ToDictionary(x => x.Key, x => x.ToDictionary(y => y.mid, y => y));
+                DDStars = designDb.DDungeonStars.AsNoTracking().GroupBy(x => x.type).ToDictionary(x => x.Key, x => x.GroupBy(y => y.section).ToDictionary(z => z.Key, z => z.ToDictionary(a => a.index, a => a)));
+            });
         }
 
         private void PlayerController_PlayerEverydayRefresh(object sender, Player e)
@@ -202,10 +202,10 @@ namespace Frontline.GameControllers
         /// </summary>
         public int Call_SectionInfo(SectionInfoRequest request)
         {
-            var sections = CurrentSession.GetBindPlayer().Sections;
+            var sections = _playerModule.QueryPlayer(Session.PlayerId).Sections;
             SectionInfoResponse response = new SectionInfoResponse();
             response.success = true;
-            response.id = this.CurrentSession.UserId;
+            response.id = this.Session.PlayerId;
             response.sections = new List<SectionInfo>();
             foreach (var section in sections)
             {
@@ -217,7 +217,7 @@ namespace Frontline.GameControllers
                 response.sections.Add(si);
             }
 
-            this.CurrentSession.SendAsync(response);
+            this.Session.SendAsync(response);
             return 0;
         }
 
@@ -226,7 +226,7 @@ namespace Frontline.GameControllers
         /// </summary>
         public int Call_FbInfo(FBInfoRequest request)
         {
-            var sections = CurrentSession.GetBindPlayer().Sections;
+            var sections = _playerModule.QueryPlayer(Session.PlayerId).Sections;
             var section = sections.FirstOrDefault(s => s.Index == request.section && s.Type == request.type);
             if (section == null)
             {
@@ -276,7 +276,7 @@ namespace Frontline.GameControllers
                 }
                 response.fbs.Add(fi);
             }
-            CurrentSession.SendAsync(response);
+            Session.SendAsync(response);
             return 0;
         }
 
@@ -290,7 +290,7 @@ namespace Frontline.GameControllers
             {
                 return -1;
             }
-            var player = this.CurrentSession.GetBindPlayer();
+            var player = _playerModule.QueryPlayer(Session.PlayerId);
             Dungeon dungeon = null;
             foreach (var section in player.Sections)
             {
@@ -320,7 +320,7 @@ namespace Frontline.GameControllers
                 MonsterInfo mi = this.ToMonsterInfo(dm.Key, dm.Value.level);
                 response.monster.Add(mi);
             }
-            CurrentSession.SendAsync(response);
+            Session.SendAsync(response);
             return 0;
         }
 
@@ -330,7 +330,7 @@ namespace Frontline.GameControllers
             {
                 return -1;
             }
-            var player = this.CurrentSession.GetBindPlayer();
+            var player = _playerModule.QueryPlayer(Session.PlayerId);
             Dungeon dungeon = null;
             foreach (var section in player.Sections)
             {
@@ -372,7 +372,7 @@ namespace Frontline.GameControllers
             response.id = dungeon.Id;
             response.success = true;
             response.token = battle.Id;
-            CurrentSession.SendAsync(response);
+            Session.SendAsync(response);
             return 0;
         }
 
@@ -390,7 +390,7 @@ namespace Frontline.GameControllers
                 return (int)GameErrorCode.战斗令牌错误或战斗已经失效;
             }
             Battle battle;
-            if (!this._battles.TryGetValue(request.token, out battle) || battle.PlayerId != CurrentSession.UserId || battle.Dungeon.Id != request.id)
+            if (!this._battles.TryGetValue(request.token, out battle) || battle.PlayerId != Session.PlayerId || battle.Dungeon.Id != request.id)
             {
                 return (int)GameErrorCode.战斗令牌错误或战斗已经失效;
             }
@@ -402,7 +402,7 @@ namespace Frontline.GameControllers
             response.success = true;
             if (request.win)
             {
-                var player = this.CurrentSession.GetBindPlayer();
+                var player = _playerModule.QueryPlayer(Session.PlayerId);
                 Dungeon dungeon = battle.Dungeon;
                 //Dungeon dungeon = player.Sections.Select(x=>x.Dungeons.FirstOrDefault(d=>d.Id == request.id)).First(x=>x != null);
                 DDungeon ddungeon = DDungeons[dungeon.Type][dungeon.Section][dungeon.Mission];
@@ -507,18 +507,18 @@ namespace Frontline.GameControllers
                 }
 
                 //派发奖励
-                var playerController = this.Server.GetController<PlayerController>();
+                var playerModule = this.Server.GetModule<PlayerModule>();
 
                 int costoil = ddungeon.oil_cost;
                 int addexp = ddungeon.exp;
                 int addunitexp = ddungeon.exp_element;
                 //扣体力
-                playerController.AddCurrency(player, CurrencyType.OIL, -costoil, reason);
-                playerController.AddExp(player, addexp, reason);
+                playerModule.AddCurrency(player, CurrencyType.OIL, -costoil, reason);
+                playerModule.AddExp(player, addexp, reason);
                 //发放兵种经验
-                var campController = this.Server.GetController<CampController>();
+                var campController = this.Server.GetModule<CampModule>();
                 response.units = campController.GrantUnitExp(player, addunitexp, reason);
-                var pkgController = this.Server.GetController<PkgController>();
+                var pkgController = this.Server.GetModule<PkgModule>();
 
                 response.reward = pkgController.RandomReward(player, ddungeon.random_id, 1, reason);
                 response.reward.exp = ddungeon.exp;
@@ -535,14 +535,14 @@ namespace Frontline.GameControllers
             }
             response.id = request.id;
             response.win = request.win;
-            CurrentSession.SendAsync(response);
+            Session.SendAsync(response);
             return 0;
         }
 
         public int Call_RecvStarReward(FBGetStarRewardRequest request)
         {
             DDungeonStar dreward = DDStars[request.type][request.section][request.reward];
-            var player = CurrentSession.GetBindPlayer();
+            var player = _playerModule.QueryPlayer(Session.PlayerId);
             var section = player.Sections.First(s => s.Type == request.type && s.Index == request.section);
             //判断是否已领取
             var recved = section.RecvdStarReward.StringToMany(int.Parse);
@@ -558,7 +558,7 @@ namespace Frontline.GameControllers
             }
 
             string reason = $"领取副本评星奖励";
-            var playercon = Server.GetController<PlayerController>();
+            var playercon = Server.GetModule<PlayerModule>();
             playercon.AddCurrency(player, dreward.res_type, dreward.res_count, reason);
             recved.Add(dreward.index);
             section.RecvdStarReward = recved.ManyToString(x=>x.ToString());
@@ -569,7 +569,7 @@ namespace Frontline.GameControllers
             response.section = section.Index;
             response.type = request.type;
             response.receiveds = recved;
-            CurrentSession.SendAsync(response);
+            Session.SendAsync(response);
 
             return 0;
         }
@@ -580,7 +580,7 @@ namespace Frontline.GameControllers
                 return -1;
             FBWipeResponse response = new FBWipeResponse();
             response.rewards = new List<RewardInfo>();
-            var player = this.CurrentSession.GetBindPlayer();
+            var player = _playerModule.QueryPlayer(Session.PlayerId);
             Dungeon dungeon = null;
             foreach (var section in player.Sections)
             {
@@ -608,7 +608,7 @@ namespace Frontline.GameControllers
             {
                 return (int)GameErrorCode.副本挑战次数不足;
             }
-            var playercon = Server.GetController<PlayerController>();
+            var playercon = Server.GetModule<PlayerModule>();
             if (!playercon.IsCurrencyEnough(player, CurrencyType.OIL, df.oil_cost))
             {
                 return (int)GameErrorCode.体力不足;
@@ -617,18 +617,18 @@ namespace Frontline.GameControllers
             string reason = $"副本{df.id}:{df.name}扫荡";
 
             //派发奖励
-            var playerController = this.Server.GetController<PlayerController>();
+            var playerModule = this.Server.GetModule<PlayerModule>();
 
             int costoil = df.oil_cost * request.count;
             int addexp = df.exp * request.count;
             int addunitexp = df.exp_element * request.count;
             //扣体力
-            playerController.AddCurrency(player, CurrencyType.OIL, -costoil, reason);
-            playerController.AddExp(player, addexp, reason);
+            playerModule.AddCurrency(player, CurrencyType.OIL, -costoil, reason);
+            playerModule.AddExp(player, addexp, reason);
             //发放兵种经验
-            var campController = this.Server.GetController<CampController>();
+            var campController = this.Server.GetModule<CampModule>();
             response.units = campController.GrantUnitExp(player, addunitexp, reason);
-            var pkgController = this.Server.GetController<PkgController>();
+            var pkgController = this.Server.GetModule<PkgModule>();
 
             for (int i = 0; i < request.count; i++)
             {
@@ -642,7 +642,7 @@ namespace Frontline.GameControllers
             response.success = true;
             response.id = request.id;
             response.count = request.count;
-            CurrentSession.SendAsync(response);
+            Session.SendAsync(response);
 
             return 0;
         }
@@ -650,7 +650,7 @@ namespace Frontline.GameControllers
         public int Call_Reset(FBResetRequest request)
         {
             FBResetResponse response = new FBResetResponse();
-            var player = this.CurrentSession.GetBindPlayer();
+            var player = _playerModule.QueryPlayer(Session.PlayerId);
             Dungeon dungeon = null;
             foreach (var section in player.Sections)
             {
@@ -675,7 +675,7 @@ namespace Frontline.GameControllers
                 return (int)GameErrorCode.副本重置次数不足;
             }
 
-            var playercon = Server.GetController<PlayerController>();
+            var playercon = Server.GetModule<PlayerModule>();
 
             int[] prices = GameConfig.DungeonResetCostDiamond;
 
@@ -695,7 +695,7 @@ namespace Frontline.GameControllers
             response.fight_times = DDungeons[dungeon.Type][dungeon.Section][dungeon.Mission].fight_times;
             response.remainNumb = remain - 1;
 
-            CurrentSession.SendAsync(response);
+            Session.SendAsync(response);
             return 0;
         }
         #endregion
