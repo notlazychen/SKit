@@ -226,6 +226,8 @@ namespace Frontline.Modules
                 }
             };
             Server.SendByUserNameAsync(player.Id, notify);
+
+            _db.SaveChanges();
             return item;
         }
 

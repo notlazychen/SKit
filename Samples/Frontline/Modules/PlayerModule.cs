@@ -28,8 +28,9 @@ namespace Frontline.Modules
         private GameConfig _config;
         private ILogger<PlayerModule> _logger;
 
-        public Dictionary<int, DLevel> DLevels;
+        public Dictionary<int, DLevel> DLevels { get; private set; }
         public Dictionary<int, VIPPrivilege> VIP { get; private set; }
+        public Dictionary<int, DResPrice> DResPrices { get; private set; }//times:x
 
         Dictionary<string, Player> _players = new Dictionary<string, Player>();
         Dictionary<string, PlayerBaseInfo> _simplePlayers = new Dictionary<string, PlayerBaseInfo>();
@@ -59,6 +60,7 @@ namespace Frontline.Modules
             {
                 DLevels = designDb.DLevels.AsNoTracking().ToDictionary(x => x.level, x => x);
                 VIP = designDb.VIPPrivileges.AsNoTracking().ToDictionary(x => x.lv, x => x);
+                DResPrices = designDb.DResPrices.AsNoTracking().ToDictionary(x=>x.times, x=>x);
             });
         }
         
@@ -142,7 +144,6 @@ namespace Frontline.Modules
                     OnPlayerLoaded(player);
                     //check new day refresh
                     _db.SaveChanges();
-
                     _players.Add(pid, player);
                 }
             }
@@ -152,7 +153,10 @@ namespace Frontline.Modules
             {
                 //需要刷新
                 OnPlayerEverydayRefresh(player);
-
+                player.Wallet.TodayBuyGold = 0;
+                player.Wallet.TodayBuyIron = 0;
+                player.Wallet.TodayBuyOil = 0;
+                player.Wallet.TodayBuySupply = 0;
                 player.LastDayRefreshTime = DateTime.Today;
                 _db.SaveChanges();
             }
@@ -328,6 +332,7 @@ namespace Frontline.Modules
                     notify.success = true;
                     Server.SendByUserNameAsync(player.Id, notify);//发送给当前player 
                 }
+                _db.SaveChanges();
             }
         }
         #endregion

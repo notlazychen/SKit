@@ -13,9 +13,10 @@ using System.Collections.Generic;
 namespace Frontline.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20180331140050_quest")]
+    partial class quest
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -556,12 +557,6 @@ namespace Frontline.Migrations
 
                     b.Property<string>("PlayerId");
 
-                    b.Property<int>("Progress");
-
-                    b.Property<int>("Status");
-
-                    b.Property<int>("Tid");
-
                     b.HasKey("Id");
 
                     b.HasIndex("PlayerId");
@@ -575,12 +570,6 @@ namespace Frontline.Migrations
                         .ValueGeneratedOnAdd();
 
                     b.Property<string>("PlayerId");
-
-                    b.Property<int>("Progress");
-
-                    b.Property<int>("Status");
-
-                    b.Property<int>("Tid");
 
                     b.HasKey("Id");
 
@@ -669,6 +658,8 @@ namespace Frontline.Migrations
 
                     b.Property<int>("GOLD");
 
+                    b.Property<int>("GoldBuyTimes");
+
                     b.Property<int>("HORN");
 
                     b.Property<int>("IRON");
@@ -677,6 +668,8 @@ namespace Frontline.Migrations
 
                     b.Property<int>("OIL");
 
+                    b.Property<int>("OilBuyTimes");
+
                     b.Property<int>("SMOKE");
 
                     b.Property<int>("SUPPLY");
@@ -684,14 +677,6 @@ namespace Frontline.Migrations
                     b.Property<int>("TEC");
 
                     b.Property<int>("TOKEN");
-
-                    b.Property<int>("TodayBuyGold");
-
-                    b.Property<int>("TodayBuyIron");
-
-                    b.Property<int>("TodayBuyOil");
-
-                    b.Property<int>("TodayBuySupply");
 
                     b.Property<int>("WIPES");
 

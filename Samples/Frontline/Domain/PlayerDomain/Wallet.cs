@@ -22,9 +22,12 @@ namespace Frontline.Domain
         public int TEC { get; private set; }//科技点数
         public int SMOKE { get; private set; }//香烟
         public int LEGIONCOIN { get; private set; }//军团币
-
-        public int OilBuyTimes { get; set; }
-        public int GoldBuyTimes { get; set; }
+        
+        //今日购买次数
+        public int TodayBuyGold { get; set; }
+        public int TodayBuyOil { get; set; }
+        public int TodayBuyIron { get; set; }
+        public int TodayBuySupply { get; set; }
 
         public int AddCurrency(int type, int value)
         {

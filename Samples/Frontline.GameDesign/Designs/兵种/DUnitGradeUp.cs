@@ -13,8 +13,8 @@ namespace Frontline.GameDesign
         public int max_level { get; set; }
         public int item_cnt { get; set; }
         public int gold { get; set; }
-        public int atk { get; set; }
-        public int defence { get; set; }
-        public int hp { get; set; }
+        public float atk { get; set; }
+        public float defence { get; set; }
+        public float hp { get; set; }
     }
 }

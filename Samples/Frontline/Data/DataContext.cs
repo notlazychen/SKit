@@ -64,6 +64,9 @@ namespace Frontline.Data
             modelBuilder.Entity<FacTask>().HasOne<Factory>().WithMany(f => f.FacTasks).HasForeignKey(t => t.PlayerId);
             modelBuilder.Entity<FacWorker>().HasOne<Factory>().WithMany(f=>f.FacWorkers).HasForeignKey(w=>w.PlayerId);
             //modelBuilder.Entity<FacWorker>().HasOne<FacTask>().WithMany(f => f.FacWorkers).HasForeignKey(w => w.FacTaskId);
+
+            modelBuilder.Entity<Quest>().HasOne<PlayerQuestData>().WithMany(f => f.Quests).HasForeignKey(w => w.PlayerId);
+            modelBuilder.Entity<QuestDaily>().HasOne<PlayerQuestData>().WithMany(f => f.QuestDailys).HasForeignKey(w => w.PlayerId);
         }
 
         public DbSet<Player> Players { get; set; }
@@ -90,5 +93,9 @@ namespace Frontline.Data
         public DbSet<Factory> Factories { get; set; }
         public DbSet<FacWorker> FacWorkers { get; set; }
         public DbSet<FacTask> FacTasks { get; set; }
+
+        public DbSet<PlayerQuestData> PlayerQuestDatas { get; set; }
+        public DbSet<Quest> Quests { get; set; }
+        public DbSet<QuestDaily> QuestDailys { get; set; }
     }
 }

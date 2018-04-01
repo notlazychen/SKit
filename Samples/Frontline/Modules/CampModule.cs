@@ -343,9 +343,9 @@ namespace Frontline.Modules
                 info.defence_growth = du.prop_grow_val.Object[1];
 
                 //等级加成
-                info.hp = (int)(info.hp + info.hp_growth * u.Level);
-                info.defence = (int)(info.defence + info.defence_growth * u.Level);
-                info.att = (int)(info.att + info.att_growth * u.Level);
+                info.hp = (int)(info.hp + info.hp_growth * (u.Level -1));
+                info.defence = (int)(info.defence + info.defence_growth * (u.Level - 1));
+                info.att = (int)(info.att + info.att_growth * (u.Level - 1));
                 //进阶加成
                 if (u.Grade > 0)
                 {
@@ -366,9 +366,9 @@ namespace Frontline.Modules
                     ei.level = eq.Level;
                     info.equips.Add(ei);
 
-                    int v = de.base_attr_value + de.level_grow * (eq.Level - 1);
+                    int v = (int)(de.base_attr_value + de.level_grow * (eq.Level - 1d));
                     //升阶增加的属性 =（基础属性 +（100 - 1）*成长属性）*（升阶增加属性万分比）
-                    v += (int)((de.base_attr_value + (100 - 1) * de.level_grow) * deg.grade_grow / 10000d);
+                    v += (int)((de.base_attr_value + (100 - 1d) * de.level_grow) * deg.grade_grow / 10000d);
                     switch (de.base_attr_type)
                     {
                         case 1:
@@ -458,6 +458,7 @@ namespace Frontline.Modules
             };
             Server.SendByUserNameAsync(player.Id, response);
 
+            _db.SaveChanges();
             return unitInfo;
         }
 

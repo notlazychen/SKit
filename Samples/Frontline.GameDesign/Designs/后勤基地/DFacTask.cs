@@ -17,9 +17,9 @@ namespace Frontline.GameDesign
         public int cost_oil { get; set; }
         public int w { get; set; }
         public int worker_q { get; set; }
-        public TimeSpan cost_time { get; set; }
-        public JsonObject<int[]> res_type { get; set; }
-        public JsonObject<int[]> res_cnt { get; set; }
+        public int cost_time { get; set; }//完成时间-秒
+        public int res_type { get; set; }
+        public int res_cnt { get; set; }
         public JsonObject<int[]> item_type { get; set; }
         public JsonObject<int[]> item_cnt { get; set; }
         public float reward_ex_prob { get; set; }

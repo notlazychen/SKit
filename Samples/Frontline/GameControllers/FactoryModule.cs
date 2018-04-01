@@ -315,7 +315,7 @@ namespace Frontline.Modules
             playercon.AddCurrency(player, CurrencyType.OIL, -dt.cost_oil, reason);
             task.State = FacTaskState.Doing;
             task.FacWorkers = works.ManyToString(w => w.Id.ToString());
-            task.EndTime = DateTime.Now.Add(dt.cost_time);
+            task.EndTime = DateTime.Now.AddSeconds(dt.cost_time);
             task.IsWorkersReleased = false;
             foreach (var worker in works)
             {
@@ -401,14 +401,10 @@ namespace Frontline.Modules
                 outAdd += dw.output_p /10000d;
                 itemexAdd += dw.itemes_p/10000d;
             }
-            RewardInfo reward = new RewardInfo() { res = new List<ResInfo>(), items = new List<RewardItem>()};
-            for(int i =0; i < dt.res_type.Object.Length; i++)
-            {
-                int restype = dt.res_type.Object[i];
-                int rescnt = (int)(dt.res_cnt.Object[i] * (1 + outAdd));
-                reward.res.Add(new ResInfo() { type = restype, count = rescnt });
-                playercon.AddCurrency(player, restype, rescnt, reason);
-            }
+            RewardInfo reward = new RewardInfo() { res = new List<ResInfo>(), items = new List<RewardItem>() };
+            int rescnt = (int)(dt.res_cnt * (1 + outAdd));
+            reward.res.Add(new ResInfo() { type = dt.res_type, count = rescnt });
+            playercon.AddCurrency(player, dt.res_type, rescnt, reason);
             for(int i = 0; i< dt.item_type.Object.Length; i++)
             {
                 int itemid = dt.item_type.Object[i];

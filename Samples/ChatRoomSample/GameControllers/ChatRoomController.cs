@@ -18,7 +18,7 @@ namespace ChatRoomSample.GameControllers
             _logger = logger;
         }
 
-        [AllowAnonymous]
+        [GameCommandOptions(allowAnonymous:true, asynchronous:true)]
         public void Call_Chat(string msg)
         {
             string str;
@@ -33,11 +33,6 @@ namespace ChatRoomSample.GameControllers
             str = msg;
             _server.BroadcastAllSessionAsync(str);
             _logger.LogDebug(str);
-        }
-        
-        public override void OnLeave(ClientCloseReason reason)
-        {
-            _logger.LogDebug($"{Session.Id}: LEAVE, reason: {reason}");
         }
     }
 }

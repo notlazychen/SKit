@@ -12,9 +12,10 @@ using System.Collections.Generic;
 namespace Frontline.GameDesign.Migrations
 {
     [DbContext(typeof(GameDesignContext))]
-    partial class GameDesignContextModelSnapshot : ModelSnapshot
+    [Migration("20180331132455_quest")]
+    partial class quest
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -154,11 +155,11 @@ namespace Frontline.GameDesign.Migrations
 
                     b.Property<int>("base_attr_type");
 
-                    b.Property<float>("base_attr_value");
+                    b.Property<int>("base_attr_value");
 
                     b.Property<int>("gradeid");
 
-                    b.Property<float>("level_grow");
+                    b.Property<int>("level_grow");
 
                     b.Property<int>("level_k");
 
@@ -178,7 +179,7 @@ namespace Frontline.GameDesign.Migrations
 
                     b.Property<int>("grade");
 
-                    b.Property<float>("grade_grow");
+                    b.Property<int>("grade_grow");
 
                     b.Property<JsonObject<Int32[]>>("grade_item_cnt");
 
@@ -214,7 +215,7 @@ namespace Frontline.GameDesign.Migrations
 
                     b.Property<int>("cost_oil");
 
-                    b.Property<int>("cost_time");
+                    b.Property<TimeSpan>("cost_time");
 
                     b.Property<int>("done_item_cnt");
 
@@ -230,9 +231,9 @@ namespace Frontline.GameDesign.Migrations
 
                     b.Property<JsonObject<Int32[]>>("item_type");
 
-                    b.Property<int>("res_cnt");
+                    b.Property<JsonObject<Int32[]>>("res_cnt");
 
-                    b.Property<int>("res_type");
+                    b.Property<JsonObject<Int32[]>>("res_type");
 
                     b.Property<float>("reward_ex_prob");
 
@@ -670,32 +671,6 @@ namespace Frontline.GameDesign.Migrations
                     b.ToTable("DRandoms");
                 });
 
-            modelBuilder.Entity("Frontline.GameDesign.DResPrice", b =>
-                {
-                    b.Property<int>("times")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<int>("gold");
-
-                    b.Property<int>("gold_cost");
-
-                    b.Property<int>("iron");
-
-                    b.Property<int>("iron_cost");
-
-                    b.Property<int>("oil");
-
-                    b.Property<int>("oil_cost");
-
-                    b.Property<int>("supply");
-
-                    b.Property<int>("supply_cost");
-
-                    b.HasKey("times");
-
-                    b.ToTable("DResPrices");
-                });
-
             modelBuilder.Entity("Frontline.GameDesign.DUnit", b =>
                 {
                     b.Property<int>("tid")
@@ -813,13 +788,13 @@ namespace Frontline.GameDesign.Migrations
 
                     b.Property<int>("grade");
 
-                    b.Property<float>("atk");
+                    b.Property<int>("atk");
 
-                    b.Property<float>("defence");
+                    b.Property<int>("defence");
 
                     b.Property<int>("gold");
 
-                    b.Property<float>("hp");
+                    b.Property<int>("hp");
 
                     b.Property<int>("item_cnt");
 

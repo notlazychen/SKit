@@ -12,9 +12,10 @@ using System.Collections.Generic;
 namespace Frontline.GameDesign.Migrations
 {
     [DbContext(typeof(GameDesignContext))]
-    partial class GameDesignContextModelSnapshot : ModelSnapshot
+    [Migration("20180401145956_fac4")]
+    partial class fac4
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -154,11 +155,11 @@ namespace Frontline.GameDesign.Migrations
 
                     b.Property<int>("base_attr_type");
 
-                    b.Property<float>("base_attr_value");
+                    b.Property<int>("base_attr_value");
 
                     b.Property<int>("gradeid");
 
-                    b.Property<float>("level_grow");
+                    b.Property<int>("level_grow");
 
                     b.Property<int>("level_k");
 
@@ -178,7 +179,7 @@ namespace Frontline.GameDesign.Migrations
 
                     b.Property<int>("grade");
 
-                    b.Property<float>("grade_grow");
+                    b.Property<int>("grade_grow");
 
                     b.Property<JsonObject<Int32[]>>("grade_item_cnt");
 
@@ -813,13 +814,13 @@ namespace Frontline.GameDesign.Migrations
 
                     b.Property<int>("grade");
 
-                    b.Property<float>("atk");
+                    b.Property<int>("atk");
 
-                    b.Property<float>("defence");
+                    b.Property<int>("defence");
 
                     b.Property<int>("gold");
 
-                    b.Property<float>("hp");
+                    b.Property<int>("hp");
 
                     b.Property<int>("item_cnt");
 

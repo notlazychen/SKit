@@ -31,6 +31,7 @@ namespace Frontline.Modules
             _actions.Add("addunit", AddUnit);
             _actions.Add("ul", UnlockAll);
             _actions.Add("invincible", Invincible);
+            _actions.Add("无敌", Invincible);
             _actions.Add("win", Win);
         }
 

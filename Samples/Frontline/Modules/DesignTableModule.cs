@@ -21,10 +21,10 @@ namespace Frontline.Modules
 
         protected override void OnConfigured()
         {
-            ReadTables(null);
+            LoadTables(null);
         }
 
-        public void ReadTables(string moduleName)
+        public void LoadTables(string moduleName)
         {
             if (string.IsNullOrEmpty(moduleName))
             {

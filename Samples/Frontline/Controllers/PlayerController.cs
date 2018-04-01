@@ -8,7 +8,9 @@ using Frontline.Domain;
 using Frontline.Modules;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using protocol;
 using SKit;
+using SKit.Common.Utils;
 
 namespace Frontline.Controllers
 {
@@ -89,11 +91,11 @@ namespace Frontline.Controllers
                 su.tec = w.TEC.ToString();
                 su.supply = w.SUPPLY.ToString();
                 su.smoke = w.SMOKE.ToString();
-                su.oilBuyTimes = w.OilBuyTimes.ToString();
+                su.oilBuyTimes = w.TodayBuyOil.ToString();
                 su.oil = w.OIL.ToString();
                 su.legionCoin = w.LEGIONCOIN.ToString();
                 su.horn = w.HORN.ToString();
-                su.goldBuyTimes = w.GoldBuyTimes.ToString();
+                su.goldBuyTimes = w.TodayBuyGold.ToString();
                 su.iron = w.IRON.ToString();
                 re.success = true;
                 re.info = JsonConvert.SerializeObject(su);
@@ -170,7 +172,108 @@ namespace Frontline.Controllers
             }
             return Json(re);
         }
-    }
+
+        [HttpPost]
+        [Route("/river/player/ulunit.pf")]
+        public JsonResult UnlockUnit(RiverModel model)
+        {
+            String pid = model["pid"];
+            int tid = int.Parse(model["tid"]);
+            Result re = new Result();
+            if (pid != null)
+            {
+                UnitInfo unitInfo = null;
+                _server.InvokeGameTask(() =>
+                {
+                    var playerModule = _server.GetModule<PlayerModule>();
+                    var p = playerModule.QueryPlayer(pid);
+                    var camp = _server.GetModule<CampModule>();
+                    unitInfo = camp.UnlockUnit(p, tid);
+                }, true);
+
+                if (unitInfo != null)
+                {
+                    re.info = unitInfo.name;
+                    re.success = true;;
+                }
+            }
+            return Json(re);
+        }
+
+        [HttpPost]
+        [Route("/river/player/doneguide.pf")]
+        public JsonResult DoneGuide(RiverModel model)
+        {
+            String pid = model["pid"];
+            int index = int.Parse(model["index"]);
+            Result re = new Result();
+            if (pid != null)
+            {
+                _server.InvokeGameTask(() =>
+                {
+                    var playerModule = _server.GetModule<PlayerModule>();
+                    var p = playerModule.QueryPlayer(pid);
+                    p.Guide = index;                    
+                }, true);
+
+                re.info = index.ToString();
+                re.success = true;
+            }
+            return Json(re);
+        }
+
+        [HttpPost]
+        [Route("/river/player/addres.pf")]
+        public JsonResult AddRes(RiverModel model)
+        {
+            String pid = model["pid"];
+            int count = int.Parse(model["count"]);
+            int type = int.Parse(model["type"]);
+            Result re = new Result();
+            if (pid != null)
+            {
+                int c = -1;
+                _server.InvokeGameTask(() =>
+                {
+                    var playerModule = _server.GetModule<PlayerModule>();
+                    var p = playerModule.QueryPlayer(pid);
+                    c = playerModule.AddCurrency(p, type, count, Reason);
+                }, true);
+
+                if(c != -1)
+                {
+                    re.info = c.ToString();
+                    re.success = true;
+                }
+            }
+            return Json(re);
+        }
+
+        [HttpPost]
+        [Route("/river/player/state.pf")]
+        public JsonResult SetStateBan(RiverModel model)
+        {
+            String pid = model["pid"];
+            int state = int.Parse(model["state"]);
+            long time = long.Parse(model["time"]);
+            Result re = new Result();
+            if (pid != null)
+            {
+                int c = 0;
+                _server.InvokeGameTask(() =>
+                {
+                    var playerModule = _server.GetModule<PlayerModule>();
+                    var p = playerModule.QueryPlayer(pid);
+                    p.State = state;
+                    p.StateTime = time;
+                }, true);
+
+                re.info = c.ToString();
+                re.success = true;
+            }
+            return Json(re);
+        }
+}
 
     public class ItemInfo
     {

@@ -70,6 +70,12 @@ namespace Frontline.GameDesign
 
         public DbSet<VIPPrivilege> VIPPrivileges { get; set; }
         public DbSet<DName> DNames { get; set; }
+
+        public DbSet<DQuest> DQuests { get; set; }
+        public DbSet<DQuestDaily> DQuestDailys { get; set; }
+        public DbSet<DQuestDailyReward> DQuestDailyRewards { get; set; }
+
+        public DbSet<DResPrice> DResPrices { get; set; }
     }
 }
 

@@ -4,6 +4,7 @@ using Frontline.Common;
 using Frontline.Common.Network;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
+using protocol;
 using SKit.Client;
 using SKit.Common.Packagers;
 using SKit.Common.Serialization;
@@ -52,7 +53,7 @@ namespace Frontline.Client
         private static GameClient CreateClient()
         {
             //1 创建客户端
-            GameClient client = new GameClient(new VerintHeadPackager(), new ProtoBufSerializer(new GameConfig()
+            GameClient client = new GameClient(new VerintHeadPackager(), new ProtoBufSerializer(new GameServerSettings()
             {
                 DESKey = "421w6tW1ivg=",
                 Secret = "whoareyou?"
@@ -66,6 +67,10 @@ namespace Frontline.Client
             client.MessageReceived += Client_MessageReceived;
             //启动
             client.Start(ip, 6003);
+
+            client.Send(new AuthRequest() {
+                
+            });
             return client;
         }
 
