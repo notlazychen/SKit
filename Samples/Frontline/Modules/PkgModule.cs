@@ -121,7 +121,7 @@ namespace Frontline.Modules
                 if (item.Count >= count)
                 {
                     item.Count -= count;
-                    if (item.Count == 0)
+                    if (item.Count <= 0)
                     {
                         //player.Items.Remove(item);
                         _db.Items.Remove(item);

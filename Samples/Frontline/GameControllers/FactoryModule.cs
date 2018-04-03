@@ -94,24 +94,6 @@ namespace Frontline.Modules
             }
             if (!isnew)
             {
-                //检查任务是否完成, 完成则撤回工人
-                foreach (var task in fac.FacTasks)
-                {
-                    if (task.State == FacTaskState.Doing && !task.IsWorkersReleased && task.EndTime <= DateTime.Now)
-                    {
-                        task.IsWorkersReleased = true;
-                        needsave = true;
-                        var workersId = task.FacWorkers.StringToMany(x => x);
-                        foreach (var w in fac.FacWorkers)
-                        {
-                            if (workersId.Contains(w.Id))
-                            {
-                                w.State = FacWorkerState.Idle;
-                            }
-                        }
-                    }
-                }
-
                 if (fac.LastRefreshDay != DateTime.Today)
                 {
                     needsave = true;
@@ -121,6 +103,11 @@ namespace Frontline.Modules
                     RefreshMarket(fac);
                     RefreshTask(player, fac);
                 }
+                //else if (!fac.FacTasks.Any())
+                //{
+                //    needsave = true;
+                //    RefreshTask(player, fac);
+                //}
             }
             if (needsave)
             {
@@ -147,8 +134,9 @@ namespace Frontline.Modules
 
         private void RefreshMarket(Factory fac)
         {
-            _db.FacWorkers.RemoveRange(fac.FacWorkers.Where(w => w.State == FacWorkerState.Free));
-            _db.SaveChanges();
+            _db.FacWorkers.RemoveRange(fac.FacWorkers.Where(w => w.State == FacWorkerState.Free || w.State == FacWorkerState.Fired));
+            fac.FacWorkers.Where(w => w.InMarket).ToList().ForEach(w=>w.InMarket = false);           
+            //_db.SaveChanges();
             for (int i = 0; i < GameConfig.FactoryWorkerMarketLength; i++)
             {
                 var worker = new FacWorker();
@@ -157,6 +145,7 @@ namespace Frontline.Modules
                 var dw = MathUtils.RandomElement(DFacWorkers.Values, w => w.weight);
                 worker.Tid = dw.id;
                 worker.State = FacWorkerState.Free;
+                worker.InMarket = true;
                 fac.FacWorkers.Add(worker);
             }
             _db.SaveChanges();
@@ -165,7 +154,9 @@ namespace Frontline.Modules
         private void RefreshTask(Player player, Factory fac)
         {
             //确定任务组
-            var group = DFacTaskGroups.Values.First(g => player.Level >= g.min_level && player.Level <= g.max_level);
+            var group = DFacTaskGroups.Values.FirstOrDefault(g => player.Level >= g.min_level && player.Level <= g.max_level);
+            if (group == null)
+                return;
 
             if (fac.FacTasks.Count == 0)
             {
@@ -212,8 +203,12 @@ namespace Frontline.Modules
             var fac = this.QueryPlayerFactory(_playerModule.QueryPlayer(Session.PlayerId));
             response.todayRefreshWorkerMarketNumb = fac.TodayMarketRefreshTimes;
             response.hireWorkersNumb = fac.HireWorkerNumb;
-            response.workers = fac.FacWorkers.Where(w => w.State != FacWorkerState.Free).Select(w => this.ToWorkerInfo(w)).ToList();
-            response.workerMarket = fac.FacWorkers.Where(w => w.State == FacWorkerState.Free).Select(w => this.ToWorkerInfo(w)).ToList();
+            response.workers = fac.FacWorkers
+                .Where(w => w.State != FacWorkerState.Free && w.State != FacWorkerState.Fired)
+                .Select(w => this.ToWorkerInfo(w)).ToList();
+            response.workerMarket = fac.FacWorkers
+                .Where(w => w.InMarket)
+                .Select(w => this.ToWorkerInfo(w)).ToList();
             response.taskInfos = fac.FacTasks.Select(t => ToWorkTaskInfo(t)).ToList();
             Session.SendAsync(response);
             return 0;
@@ -235,7 +230,7 @@ namespace Frontline.Modules
             RefreshWorkerMarketResponse response = new RefreshWorkerMarketResponse();
             response.success = true;
             this.RefreshMarket(fac);
-            response.workerMarket = fac.FacWorkers.Where(w => w.State == FacWorkerState.Free).Select(this.ToWorkerInfo).ToList();
+            response.workerMarket = fac.FacWorkers.Where(w => w.InMarket).Select(this.ToWorkerInfo).ToList();
             Session.SendAsync(response);
             return 0;
         }
@@ -260,9 +255,16 @@ namespace Frontline.Modules
             {
                 return (int)GameErrorCode.资源不足;
             }
+            //判断工人总数
+            var canbuy = _playerModule.VIP[player.VIP].work_total_hire_n;
+            if(fac.HireWorkerNumb >= canbuy)
+            {
+                return (int)GameErrorCode.雇佣人数已满;
+            }
             string reason = $"雇佣工人{dw.id}";
             playercon.AddCurrency(player, dw.res_type, -dw.res_cnt, reason);
             worker.State = FacWorkerState.Idle;
+            fac.HireWorkerNumb++;
             _db.SaveChanges();
 
             HireWorkerResponse response = new HireWorkerResponse();
@@ -282,8 +284,9 @@ namespace Frontline.Modules
             {
                 return (int)GameErrorCode.无此工人;
             }
-            fac.FacWorkers.Remove(worker);
-            _db.FacWorkers.Remove(worker);
+            //fac.FacWorkers.Remove(worker);
+            //_db.FacWorkers.Remove(worker);
+            worker.State = FacWorkerState.Fired;
             _db.SaveChanges();
             FireWorkerResponse response = new FireWorkerResponse();
             response.success = true;
@@ -306,7 +309,8 @@ namespace Frontline.Modules
                 return (int)GameErrorCode.体力不足;
             }
             //判断工人是否符合
-            bool can = works.Any(w => DFacWorkers[w.Tid].star >= dt.worker_q);
+            bool can = works.Any(w => DFacWorkers[w.Tid].star >= dt.worker_q)
+                && works.All(w=>w.State == FacWorkerState.Idle);
             if (!can)
             {
                 return (int)GameErrorCode.工人品质未满足条件;
@@ -423,16 +427,25 @@ namespace Frontline.Modules
                     reward.items.Add(new RewardItem() { id = itemid, count = itemcnt });
                 }
             }
-
+            
+            //完成则撤回工人
+            task.IsWorkersReleased = true;
+            var workersId = task.FacWorkers.StringToMany(x => x);
+            foreach (var w in fac.FacWorkers)
+            {
+                if (workersId.Contains(w.Id))
+                {
+                    w.State = FacWorkerState.Idle;
+                }
+            }
             FinishWorkResponse response = new FinishWorkResponse();
             response.success = true;
-            response.rewardInfo = new RewardInfo();
+            response.rewardInfo = reward;
             response.taskInfo = ToWorkTaskInfo(task);
-
-
             task.FacWorkers = string.Empty;
             _db.SaveChanges();
 
+            Session.SendAsync(response);
             return 0;
         }
         #endregion

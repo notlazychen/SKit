@@ -11,6 +11,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -147,6 +148,36 @@ namespace SKit
             //_listener.AllowNatTraversal(true);
         }
 
+        private const int SOL_SOCKET_OSX = 0xffff;
+        private const int SO_REUSEADDR_OSX = 0x0004;
+        private const int SOL_SOCKET_LINUX = 0x0001;
+        private const int SO_REUSEADDR_LINUX = 0x0002;
+        [DllImport("libc", SetLastError = true)]
+        private static extern int setsockopt(int socket, int level, int option_name, IntPtr option_value, uint option_len);
+        // Without setting SO_REUSEADDR on macOS and Linux, binding to a recently used endpoint can fail.
+        // https://github.com/dotnet/corefx/issues/24562
+        private unsafe void EnableRebinding(Socket listenSocket)
+        {
+            var optionValue = 1;
+            var setsockoptStatus = 0;
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                setsockoptStatus = setsockopt(listenSocket.Handle.ToInt32(), SOL_SOCKET_LINUX, SO_REUSEADDR_LINUX,
+                                              (IntPtr)(&optionValue), sizeof(int));
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                setsockoptStatus = setsockopt(listenSocket.Handle.ToInt32(), SOL_SOCKET_OSX, SO_REUSEADDR_OSX,
+                                              (IntPtr)(&optionValue), sizeof(int));
+            }
+
+            if (setsockoptStatus != 0)
+            {
+                _logger.LogError($"Setting SO_REUSEADDR failed with errno '{ Marshal.GetLastWin32Error()}'.");
+            }
+        }
+
         /// <summary>
         /// 启动服务器
         /// </summary>
@@ -172,27 +203,31 @@ namespace SKit
                 _sendingTask = new Thread(LoopSending);
                 _sendingTask.Start();
 
-                IPEndPoint endPoint = new IPEndPoint(IPAddress.Any, Config.Port);
-                _listener = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                try
+                {
+                    IPEndPoint endPoint = new IPEndPoint(IPAddress.Any, Config.Port);
+                    _listener = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                    EnableRebinding(_listener);
+                    _listener.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
+                    //_listener.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 
-                _logger.LogInformation($"绑定端口{Config.Port}");
-                _listener.Bind(endPoint);
-                _listener.Listen(Config.Backlog);
+                    _logger.LogInformation($"绑定端口{Config.Port}");
+                    _listener.Bind(endPoint);
+                    _listener.Listen(Config.Backlog);
+                    
+                    SocketAsyncEventArgs acceptEventArg = new SocketAsyncEventArgs();
+                    _acceptEventArg = acceptEventArg;
+                    acceptEventArg.Completed += acceptEventArg_Completed;
 
-                _listener.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
-                //_listener.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
-                //_listener.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.DontLinger, true);
-
-                SocketAsyncEventArgs acceptEventArg = new SocketAsyncEventArgs();
-                _acceptEventArg = acceptEventArg;
-                acceptEventArg.Completed += acceptEventArg_Completed;
-
-                _logger.LogInformation($"开启监听");
-                if (!_listener.AcceptAsync(acceptEventArg))
-                    ProcessAccept(acceptEventArg);
-
-                _logger.LogInformation($"服务器[{Id}]已启动");
-
+                    _logger.LogInformation($"开启监听");
+                    if (!_listener.AcceptAsync(acceptEventArg))
+                        ProcessAccept(acceptEventArg);
+                    _logger.LogInformation($"服务器[{Id}]已启动");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, ex.Message);
+                }
             }
         }
 
@@ -214,7 +249,7 @@ namespace SKit
 
                     try
                     {
-                        _listener.Close();
+                        _listener.Dispose();
                     }
                     catch (Exception)
                     {
@@ -387,13 +422,14 @@ namespace SKit
 
             if (e.SocketError != SocketError.Success)
             {
-                var errorCode = (int)e.SocketError;
-
                 //The listen socket was closed
-                if (errorCode == 995 || errorCode == 10004 || errorCode == 10038)
+                if (e.SocketError ==  SocketError.OperationAborted
+                    || e.SocketError ==  SocketError.Interrupted
+                    || e.SocketError == SocketError.InvalidArgument
+                    || e.SocketError == SocketError.NotSocket)
                     return;
 
-                _logger.LogError(new SocketException(errorCode), e.SocketError.ToString());
+                _logger.LogError(new SocketException((int)e.SocketError), e.SocketError.ToString());
             }
             else
             {

@@ -5,17 +5,16 @@ using System;
 namespace protocol
 {
     /// <summary>
-    /// 科技列表 协议:365
+    /// 升级军团科技 协议:368
     /// </summary>
-	[Proto(value=365,description="科技列表")]
+	[Proto(value=368,description="升级军团科技")]
 	[ProtoContract]
-	public class PartyScienceListRequest
-	{
+	public class LegionScienceLevelUpRequest
+    {
         /// <summary>
-        ///  党id
+        ///  科技Id
         /// </summary>
 		[ProtoMember(1, IsRequired = false)]
-		public string party;
-
+		public int scienceId;
 	}
 }

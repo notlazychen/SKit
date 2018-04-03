@@ -20,20 +20,20 @@ namespace Frontline.GameDesign
 
             //ImportRandomNames(db);
 
-            ReadConfigAndWriteToDB("道具表.xlsx", db.DItems);
-            ReadConfigAndWriteToDB("玩家等级表.xlsx", db.DLevels);
+            //ReadConfigAndWriteToDB("道具表.xlsx", db.DItems);
+            //ReadConfigAndWriteToDB("玩家等级表.xlsx", db.DLevels);
             ReadConfigAndWriteToDB("战斗系统——怪物配置表.xlsx", db.DMonsters);
             ReadConfigAndWriteToDB("战斗系统——怪物能力表.xlsx", db.DMonsterAbilities);
             ReadConfigAndWriteToDB("战斗系统——关卡对应怪物表.xlsx", db.DMonsterInDungeons, d => d.mid != 0);
             ReadConfigAndWriteToDB("战斗系统——关卡配置表.xlsx", db.DDungeons);
-            ReadConfigAndWriteToDB("兵种属性表.xlsx", db.DUnits);
-            ReadConfigAndWriteToDB("兵种进阶表.xlsx", db.DUnitGradeUps);
-            ReadConfigAndWriteToDB("兵种升级消耗.xlsx", db.DUnitLevelUps);
-            ReadConfigAndWriteToDB("兵种购买表.xlsx", db.DUnitUnlocks);
-            ReadConfigAndWriteToDB("兵种装备表.xlsx", db.DEquips);
-            ReadConfigAndWriteToDB("兵种装备升级消耗.xlsx", db.DEquipLevelCosts);
-            ReadConfigAndWriteToDB("兵种装备升阶表.xlsx", db.DEquipGrades);
-            ReadConfigAndWriteToDB("随机库表.xlsx", db.DRandoms);
+            //ReadConfigAndWriteToDB("兵种属性表.xlsx", db.DUnits);
+            //ReadConfigAndWriteToDB("兵种进阶表.xlsx", db.DUnitGradeUps);
+            //ReadConfigAndWriteToDB("兵种升级消耗.xlsx", db.DUnitLevelUps);
+            //ReadConfigAndWriteToDB("兵种购买表.xlsx", db.DUnitUnlocks);
+            //ReadConfigAndWriteToDB("兵种装备表.xlsx", db.DEquips);
+            //ReadConfigAndWriteToDB("兵种装备升级消耗.xlsx", db.DEquipLevelCosts);
+            //ReadConfigAndWriteToDB("兵种装备升阶表.xlsx", db.DEquipGrades);
+            //ReadConfigAndWriteToDB("随机库表.xlsx", db.DRandoms);
             db.SaveChanges();
 
             //ReadConfigAndWriteToDB("十连抽-抽奖配置.xlsx", db.DLotteries);

@@ -20,7 +20,7 @@ namespace SKit.Common.Utils
 
         public static string ManyToString<T>(this List<T> list, Func<T, string> selecter)
         {
-            return string.Join(",", list);
+            return string.Join(",", list.Select(selecter));
         }
         
     }

@@ -16,9 +16,11 @@ namespace Frontline.Domain
         public int Tid { get; set; }
 
         /// <summary>
-        /// 工人状态 0休息中,1派遣中, 2未雇佣
+        /// 工人状态 0休息中,1派遣中, 2未雇佣, 3已解雇
         /// </summary>
         public FacWorkerState State { get; set; }
+
+        public bool InMarket { get; set; }
 
         public string FacTaskId { get; set; }
     }
@@ -28,5 +30,6 @@ namespace Frontline.Domain
         Idle = 0,
         Working,
         Free,
+        Fired,
     }
 }
