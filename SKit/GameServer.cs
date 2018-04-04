@@ -25,6 +25,7 @@ namespace SKit
     {
         public const string MainWorldThreadName = "MainWorldThread";
         public int Id { get; }
+        public string Name { get; }
         public bool IsRunning { get; private set; }
         /// <summary>
         /// 监听端口
@@ -134,6 +135,7 @@ namespace SKit
             _packager = provicer.GetService<Packager>();
             Debug.Assert(_packager != null, "ISPackager Can't be NULL!");
             this.Id = Config.Id;
+            this.Name = Config.Name;
 
             _socketRecvBufferPool = new ElasticPool<byte[]>(() =>
             {
@@ -382,6 +384,23 @@ namespace SKit
                 _socketSendBufferPool.Push(buff);
             }
         }
+
+        /// <summary>
+        /// 发送给指定登录用户
+        /// </summary>
+        public void MultiSendByUserName(byte[] data, params string[] usersnames)
+        {
+            if (usersnames == null)
+                return;
+            foreach (var username in usersnames)
+            {
+                if(_users.TryGetValue(username, out var session))
+                {
+                    session.Socket.Send(data, 0, data.Length, SocketFlags.None);
+                }
+            }
+        }
+
         /// <summary>
         /// 发送给指定登录用户
         /// </summary>

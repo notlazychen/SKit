@@ -9,7 +9,7 @@ namespace Frontline.GameDesign
     {
         [Key]
         public string Name { get; set; }
-        public bool IsUsed { get; set; }
+        public int UsedNumber { get; set; }
     }
 
     public class NameTable

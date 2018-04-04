@@ -68,10 +68,14 @@ namespace Frontline.Modules
 
         private void Session_PlayerLeave(object sender, ClientCloseReason e)
         {
-            Session.PlayerLeave -= Session_PlayerLeave;
-            var player = _playerModule.QueryPlayer(Session.PlayerId);
-            player.OnlineTime += (DateTime.Now - player.LastLoginTime);
-            _db.SaveChanges();
+            var session = sender as GameSession;
+            if(session != null)
+            {
+                session.PlayerLeave -= Session_PlayerLeave;
+                var player = _playerModule.QueryPlayer(session.PlayerId);
+                player.OnlineTime += (DateTime.Now - player.LastLoginTime);
+                _db.SaveChanges();
+            }
         }
     }
 }

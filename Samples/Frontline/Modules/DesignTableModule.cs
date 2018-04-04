@@ -10,7 +10,8 @@ namespace Frontline.Modules
 {
     public class DesignDataModule : GameModule
     {
-        private GameDesignContext _desiongDb;
+        public GameDesignContext _desiongDb;
+
         private Dictionary<string, Action<GameDesignContext>> _modules = new Dictionary<string, Action<GameDesignContext>>();
         private ILogger _logger;
         public DesignDataModule(GameDesignContext desiongDb, ILogger<DesignDataModule> logger)

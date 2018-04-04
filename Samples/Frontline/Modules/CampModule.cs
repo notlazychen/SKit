@@ -73,7 +73,7 @@ namespace Frontline.Modules
                     Id = Guid.NewGuid().ToString("D"),
                     PlayerId = e.Id,
                     Tid = uid,
-                    Number = 81,
+                    //Number = 81,
                     Level = 1,
                     Equips = new List<Equip>()
                 };
@@ -246,32 +246,30 @@ namespace Frontline.Modules
                 du = DUnits[u.Tid];
             }
             info.id = u.Id;
-            info.number = u.Number;
+            //info.number = u.Number;
             info.tid = u.Tid;
             info.exp = u.Exp;
             info.level = u.Level;
             info.claz = u.Grade;
             info.pid = u.PlayerId;
 
-            if (u.IsResting && u.RestEndTime <= DateTime.Now)
-            {
-                u.IsResting = false;
-                u.Number = du.max_energy;
-                //推送
-                TimesUpNotify notify = new TimesUpNotify();
-                notify.id = u.Tid;
-                notify.lv = u.Number;
-                notify.unitid = u.Id;
-                notify.success = true;
-                notify.type = GameConfig.TYPE_UNITREST;
-                this.Server.SendByUserNameAsync(u.PlayerId, notify);
-            }
-            info.prepareEndTime = u.RestEndTime.ToUnixTime();
-            info.preparing = u.IsResting;
+            //if (u.IsResting && u.RestEndTime <= DateTime.Now)
+            //{
+            //    u.IsResting = false;
+            //    u.Number = du.max_energy;
+            //    //推送
+            //    TimesUpNotify notify = new TimesUpNotify();
+            //    notify.id = u.Tid;
+            //    notify.lv = u.Number;
+            //    notify.unitid = u.Id;
+            //    notify.success = true;
+            //    notify.type = GameConfig.TYPE_UNITREST;
+            //    this.Server.SendByUserNameAsync(u.PlayerId, notify);
+            //}
+            //info.prepareEndTime = u.RestEndTime.ToUnixTime();
+            //info.preparing = u.IsResting;
+            //info.prepareEndTime = u.RestEndTime.ToUnixTime();
             info.equips = new List<EquipInfo>();
-
-
-            info.prepareEndTime = u.RestEndTime.ToUnixTime();
             if (du != null)
             {
                 info.name = du.name;
@@ -426,7 +424,7 @@ namespace Frontline.Modules
             {
                 Id = Guid.NewGuid().ToString("D"),
                 Level = 1,
-                Number = du.max_energy,
+                //Number = du.max_energy,
                 Tid = uid,
                 Equips = new List<Equip>()
             };

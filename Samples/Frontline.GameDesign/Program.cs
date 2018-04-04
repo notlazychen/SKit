@@ -20,7 +20,7 @@ namespace Frontline.GameDesign
 
             //ImportRandomNames(db);
 
-            //ReadConfigAndWriteToDB("道具表.xlsx", db.DItems);
+            ReadConfigAndWriteToDB("道具表.xlsx", db.DItems);
             //ReadConfigAndWriteToDB("玩家等级表.xlsx", db.DLevels);
             ReadConfigAndWriteToDB("战斗系统——怪物配置表.xlsx", db.DMonsters);
             ReadConfigAndWriteToDB("战斗系统——怪物能力表.xlsx", db.DMonsterAbilities);
@@ -49,7 +49,7 @@ namespace Frontline.GameDesign
             //ReadConfigAndWriteToDB("副本评星奖励.xlsx", db.DDungeonStars);
             //ReadConfigAndWriteToDB("军团配置表.xlsx", db.DLegions);
 
-            //ReadConfigAndWriteToDB("后勤基地-工人表.xlsx", db.DFacWorkers);
+            ReadConfigAndWriteToDB("后勤基地-工人表.xlsx", db.DFacWorkers);
             //ReadConfigAndWriteToDB("后勤基地-派遣任务.xlsx", db.DFacTasks);
             //ReadConfigAndWriteToDB("后勤基地-派遣任务分组.xlsx", db.DFacTaskGroup);
             //ReadConfigAndWriteToDB("VIP特权.xlsx", db.VIPPrivileges);
@@ -98,12 +98,18 @@ namespace Frontline.GameDesign
             var firstNames = nametable.Select(x => x.first_name).Where(n => !string.IsNullOrEmpty(n)).Distinct().ToList();
             var lastNames = nametable.Select(x => x.last_name).Where(n => !string.IsNullOrEmpty(n)).Distinct().ToList();
 
+            var oldnames = db.DNames.AsNoTracking().ToDictionary(x=>x.Name.ToLower(), x=>x.UsedNumber);
             foreach (string f in firstNames)
             {
                 foreach (string l in lastNames)
                 {
-                    string name = $"{f} {l}";
-                    db.DNames.Add(new DName { Name = name });
+                    string name = $"{f}{l}";
+                    string key = name.ToLower();
+                    if (!oldnames.ContainsKey(key))
+                    {
+                        oldnames.Add(key, 0);
+                        db.DNames.Add(new DName { Name = name, UsedNumber = 0 });
+                    }
                 }
             }
             db.SaveChanges();

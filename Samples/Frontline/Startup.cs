@@ -48,6 +48,7 @@ namespace Frontline
                     new int[] { 2 });
             }));
 
+            services.AddSingleton<Services.MessageBus>();
             services.Configure<GameServerSettings>(Configuration.GetSection("game"));
             services.AddSKit<VerintHeadPackager, ProtoBufSerializer>();
             services.AddMvc();

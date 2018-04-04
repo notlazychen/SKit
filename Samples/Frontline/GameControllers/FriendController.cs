@@ -33,21 +33,65 @@ namespace Frontline.Modules
         {
             base.OnConfiguringModules();
             _playerModule = this.Server.GetModule<PlayerModule>();
-            _playerModule.PlayerCreating += PlayerController_PlayerCreating;
-            _playerModule.PlayerLoading += PlayerController_PlayerLoading;
-            _playerModule.PlayerLoaded += PlayerController_PlayerLoaded;
-            _playerModule.PlayerEverydayRefresh += PlayerController_PlayerEverydayRefresh;
+            //_playerModule.PlayerCreating += PlayerController_PlayerCreating;
+            //_playerModule.PlayerLoading += PlayerController_PlayerLoading;
+            //_playerModule.PlayerLoaded += PlayerController_PlayerLoaded;
+            //_playerModule.PlayerEverydayRefresh += PlayerController_PlayerEverydayRefresh;
         }
         #region 事件
         #endregion
 
-        private void PlayerController_PlayerEverydayRefresh(object sender, Player e)
+        //private void PlayerController_PlayerEverydayRefresh(object sender, Player e)
+        //{
+        //    if (e.FriendList.LastRefreshTime.Date != DateTime.Today)
+        //    {
+        //        e.FriendList.LastRefreshTime = DateTime.Today;
+        //        e.FriendList.RecvTimes = GameConfig.FriendMaxOilTimes;
+        //        foreach (var f in e.FriendList.Friends)
+        //        {
+        //            if (f.CanRecvOil)
+        //            {
+        //                f.CanRecvOil = false;
+        //            }
+        //            if (!f.CanSendOil)
+        //            {
+        //                f.CanSendOil = true;
+        //            }
+        //        }
+        //    }
+        //}
+
+        #region 辅助函数
+        private Dictionary<string, FriendList> _friendlists = new Dictionary<string, FriendList>();
+        public FriendList QueryPlayerFriendList(string playerId)
         {
-            if (e.FriendList.LastRefreshTime.Date != DateTime.Today)
+            bool needsave = false;
+            if(!_friendlists.TryGetValue(playerId, out var friendList))
             {
-                e.FriendList.LastRefreshTime = DateTime.Today;
-                e.FriendList.RecvTimes = GameConfig.FriendMaxOilTimes;
-                foreach (var f in e.FriendList.Friends)
+                friendList = _db.FriendLists
+                    .Include(fl => fl.Friends)
+                    .Include(fl => fl.FriendApplications)
+                    .FirstOrDefault(fl => fl.PlayerId == playerId);
+                if (friendList == null)
+                {
+                    needsave = true;
+                    friendList = new FriendList()
+                    {
+                        PlayerId = playerId,
+                        RecvTimes = GameConfig.FriendMaxOilTimes,
+                        FriendApplications = new List<FriendApplication>(),
+                        Friends = new List<Friendship>(),
+                        LastRefreshTime = DateTime.Now
+                    };
+                    _db.FriendLists.Add(friendList);
+                }
+            }
+            if (friendList.LastRefreshTime.Date != DateTime.Today)
+            {
+                needsave = true;
+                friendList.LastRefreshTime = DateTime.Today;
+                friendList.RecvTimes = GameConfig.FriendMaxOilTimes;
+                foreach (var f in friendList.Friends)
                 {
                     if (f.CanRecvOil)
                     {
@@ -59,69 +103,11 @@ namespace Frontline.Modules
                     }
                 }
             }
-        }
-
-        private void PlayerController_PlayerLoaded(object sender, Player e)
-        {
-            if (e.FriendList == null)
+            if (needsave)
             {
-                e.FriendList = new FriendList()
-                {
-                    PlayerId = e.Id,
-                    RecvTimes = GameConfig.FriendMaxOilTimes,
-                    FriendApplications = new List<FriendApplication>(),
-                    Friends = new List<Friendship>(),
-                    LastRefreshTime = DateTime.Now
-                };
+                _db.SaveChanges();
             }
-        }
-
-        private void PlayerController_PlayerCreating(object sender, Domain.Player e)
-        {
-            e.FriendList = new FriendList()
-            {
-                PlayerId = e.Id,
-                RecvTimes = GameConfig.FriendMaxOilTimes,
-                FriendApplications = new List<FriendApplication>(),
-                Friends = new List<Friendship>(),
-                LastRefreshTime = DateTime.Now
-            };
-        }
-
-        private void PlayerController_PlayerLoading(object sender, PlayerLoader e)
-        {
-            e.Loader = e.Loader
-                .Include(x => x.FriendList)
-                .ThenInclude(fl => fl.Friends)
-                .Include(x => x.FriendList)
-                .ThenInclude(fl => fl.FriendApplications);
-        }
-
-        #region 辅助函数
-        public Player FindPlayerFriendListOnly(string fid)
-        {
-            var playerModule = Server.GetModule<PlayerModule>();
-            var other = playerModule.QueryPlayer(fid);
-            if(other != null)
-            {
-                if (other.FriendList.LastRefreshTime.Date != DateTime.Today)
-                {
-                    other.FriendList.LastRefreshTime = DateTime.Today;
-                    other.FriendList.RecvTimes = GameConfig.FriendMaxOilTimes;
-                    foreach (var f in other.FriendList.Friends)
-                    {
-                        if (f.CanRecvOil)
-                        {
-                            f.CanRecvOil = false;
-                        }
-                        if (!f.CanSendOil)
-                        {
-                            f.CanSendOil = true;
-                        }
-                    }
-                }
-            }
-            return other;
+            return friendList;
         }
         #endregion
 
@@ -131,10 +117,10 @@ namespace Frontline.Modules
             FriendListResponse response = new FriendListResponse();
             response.success = true;
             var player = _playerModule.QueryPlayer(Session.PlayerId);
-            FriendList fl = player.FriendList;
+            FriendList fl = this.QueryPlayerFriendList(player.Id);
 
             response.pid = player.Id;
-            response.oilTimes = player.FriendList.RecvTimes;
+            response.oilTimes = fl.RecvTimes;
             response.maxOilTimes = GameConfig.FriendMaxOilTimes;
             response.friends = new List<FriendInfo>();
 
@@ -187,7 +173,7 @@ namespace Frontline.Modules
             response.ps = new List<FriendInfo>();
 
             var player = _playerModule.QueryPlayer(Session.PlayerId);
-            FriendList fl = player.FriendList;
+            FriendList fl = this.QueryPlayerFriendList(player.Id);
 
             var friendsId = fl.FriendApplications.Select(x => x.PlayerId).ToList();
             var friends = _db.Players
@@ -238,7 +224,7 @@ namespace Frontline.Modules
                 return (int)GameErrorCode.不能添加自己为好友;
             }
 
-            FriendList myFl = player.FriendList;
+            FriendList myFl = this.QueryPlayerFriendList(player.Id);
             if (myFl.Friends.Any(f => f.PlayerId == fid))
             {
                 return (int)GameErrorCode.已经是好友;
@@ -248,17 +234,24 @@ namespace Frontline.Modules
                 return (int)GameErrorCode.好友列表已满;
             }
 
-            var other = this.FindPlayerFriendListOnly(fid);
+            var other = _playerModule.QueryPlayerBaseInfo(fid);
             if (other == null)
             {
                 return (int)GameErrorCode.查无此人;
             }
 
-            FriendList hisfl = other.FriendList;//获取想要加的好友的朋友列表
+            FriendList hisfl = this.QueryPlayerFriendList(other.Id);//获取想要加的好友的朋友列表
             if (hisfl.FriendApplications.Any(f => f.PlayerId == player.Id))
-            {
-                return (int)GameErrorCode.已提交过好友申请;
+            {                
+                Session.SendAsync(new AddFriendResponse()
+                {
+                    success = true,
+                    id = request.id
+                });
+                return 0;
+                //return (int)GameErrorCode.已提交过好友申请;
             }
+
             if (hisfl.FriendApplications.Count >= GameConfig.FriendApplicationsMax)
             {
                 return (int)GameErrorCode.对方好友申请已达上限;
@@ -294,8 +287,8 @@ namespace Frontline.Modules
             bool pass = request.pass;
 
             var player = _playerModule.QueryPlayer(Session.PlayerId);
-            FriendList fl = player.FriendList;
-
+            FriendList fl = this.QueryPlayerFriendList(player.Id);
+            
             var app = fl.FriendApplications.FirstOrDefault(x => x.PlayerId == fid);
             if (app != null)
             {
@@ -313,35 +306,44 @@ namespace Frontline.Modules
                 {
                     return (int)GameErrorCode.好友列表已满;
                 }
-                var other = FindPlayerFriendListOnly(fid);
+                var other = _playerModule.QueryPlayerBaseInfo(fid);
                 if (other == null)
                 {
                     return (int)GameErrorCode.查无此人;
                 }
-                if (other.FriendList.Friends.Count >= GameConfig.FriendMaxCount)
+                var otherFlist = this.QueryPlayerFriendList(other.Id);
+                if (otherFlist.Friends.Count >= GameConfig.FriendMaxCount)
                 {
                     return (int)GameErrorCode.对方好友列表已满;
                 }
-                fl.Friends.Add(new Friendship() { CanRecvOil = false, CanSendOil = true, FriendListId = fl.PlayerId, PlayerId = fid, FromTime = DateTime.Now });
-                FriendList hisfl = other.FriendList;//获取想要加的好友的朋友列表
-                var otherFs = new Friendship() { CanRecvOil = false, CanSendOil = true, FriendListId = hisfl.PlayerId, PlayerId = player.Id, FromTime = DateTime.Now };
-                hisfl.Friends.Add(otherFs);
-                _db.SaveChanges();
-
-                NewFriendNotify notify = new NewFriendNotify();
-                notify.friend = new FriendInfo()
+                //检查是否已经是好友
+                if (!fl.Friends.Any(f => f.PlayerId == fid))
                 {
-                    canGetOil = otherFs.CanRecvOil,
-                    canGiveOil = otherFs.CanSendOil,
-                    id = other.Id,
-                    icon = other.Icon,
-                    level = other.Level,
-                    nickyName = other.NickName,
-                    power = other.MaxPower,
-                    vip = other.VIP
-                };
-                notify.success = true;
-                Server.SendByUserNameAsync(fid, notify);
+                    fl.Friends.Add(new Friendship() { CanRecvOil = false, CanSendOil = true, FriendListId = player.Id, PlayerId = fid, FromTime = DateTime.Now });
+                }
+                FriendList hisfl = otherFlist;//获取想要加的好友的朋友列表
+                if (!hisfl.Friends.Any(f=> f.PlayerId == player.Id))
+                {
+                    var otherFs = new Friendship() { CanRecvOil = false, CanSendOil = true, FriendListId = fid, PlayerId = player.Id, FromTime = DateTime.Now };
+                    hisfl.Friends.Add(otherFs);
+
+
+                    NewFriendNotify notify = new NewFriendNotify();
+                    notify.success = true;
+                    notify.friend = new FriendInfo()
+                    {
+                        canGetOil = otherFs.CanRecvOil,
+                        canGiveOil = otherFs.CanSendOil,
+                        id = other.Id,
+                        icon = other.Icon,
+                        level = other.Level,
+                        nickyName = other.NickName,
+                        power = other.MaxPower,
+                        vip = other.VIP
+                    };
+                    Server.SendByUserNameAsync(fid, notify);
+                }                    
+                _db.SaveChanges();
             }
 
             ProcessFriendAddResponse response = new ProcessFriendAddResponse();
@@ -357,27 +359,30 @@ namespace Frontline.Modules
             string fid = request.id;
 
             var player = _playerModule.QueryPlayer(Session.PlayerId);
-            FriendList fl = player.FriendList;
+            FriendList fl = this.QueryPlayerFriendList(player.Id);
             var friend = fl.Friends.FirstOrDefault(x => x.PlayerId == fid);
             if (friend == null)
             {
-                return 0;
+                Session.SendAsync(new DelFriendResponse()
+                {
+                    id = fid,
+                    success = true,
+                });
+                return -1;
             }
             _db.Friendships.Remove(friend);
 
-            var other = FindPlayerFriendListOnly(fid);
-            var otherFs = other.FriendList.Friends.FirstOrDefault(x => x.PlayerId == player.Id);
+            var otherFl = this.QueryPlayerFriendList(fid);
+            var otherFs = otherFl.Friends.FirstOrDefault(x => x.PlayerId == player.Id);
             if (otherFs != null)
             {
                 _db.Friendships.Remove(otherFs);
+                FriendDelNotify notify = new FriendDelNotify();
+                notify.success = true;
+                notify.pid = player.Id;
+                Server.SendByUserNameAsync(request.id, notify);
             }
             _db.SaveChanges();
-
-
-            FriendDelNotify notify = new FriendDelNotify();
-            notify.success = true;
-            notify.pid = player.Id;
-            Server.SendByUserNameAsync(request.id, notify);
 
             DelFriendResponse response = new DelFriendResponse();
             response.id = fid;
@@ -392,17 +397,22 @@ namespace Frontline.Modules
             RecommendFriendListResponse response = new RecommendFriendListResponse();
             response.pid = request.pid;
             response.success = true;
-            var friendsId = player.FriendList.Friends.Select(x => x.PlayerId).ToList();
-            friendsId.AddRange(player.FriendList.FriendApplications.Select(x => x.PlayerId));
+            var myfriendList = this.QueryPlayerFriendList(player.Id);
+            var friendsId = myfriendList.Friends.Select(x => x.PlayerId).ToList();
+            friendsId.AddRange(myfriendList.FriendApplications.Select(x => x.PlayerId));
 
             DateTime yestoday = DateTime.Today.AddDays(-3);
-            var fsl = _db.Players
-                .Where(p => p.LastLoginTime >= yestoday)
-                .Where(p => p.Id != player.Id && !friendsId.Contains(p.Id))
-                .Include(p=>p.FriendList).ThenInclude(p=>p.FriendApplications)
-                .Where(p=>!p.FriendList.FriendApplications.Any(f=>f.PlayerId == player.Id))
+            var fsl = _db.FriendLists
+                .Where(p => p.LastRefreshTime >= yestoday)
+                .Where(p => p.PlayerId != player.Id && !friendsId.Contains(p.PlayerId))
+                .Include(p => p.FriendApplications)
+                .Where(p => !p.FriendApplications.Any(f => f.PlayerId == player.Id))
                 .Take(5)
-                .Select(p => new FriendInfo()
+                .AsNoTracking().ToList();
+            response.friends = fsl.Select(f =>
+            {
+                var p = _playerModule.QueryPlayerBaseInfo(f.PlayerId);
+                return new FriendInfo()
                 {
                     id = p.Id,
                     icon = p.Icon,
@@ -410,9 +420,8 @@ namespace Frontline.Modules
                     nickyName = p.NickName,
                     power = p.MaxPower,
                     vip = p.VIP,
-                })
-                .AsNoTracking().ToList();
-            response.friends = fsl;
+                };
+            }).ToList();
             Session.SendAsync(response);
             return 0;
         }
@@ -425,10 +434,11 @@ namespace Frontline.Modules
             response.all = request.all;
             response.success = true;
             var player = _playerModule.QueryPlayer(Session.PlayerId);
+            var friendlist = this.QueryPlayerFriendList(player.Id);
             bool change = false;
             if (all)
-            {
-                foreach (var fs in player.FriendList.Friends)
+            {                
+                foreach (var fs in friendlist.Friends)
                 {
                     if (fs.CanSendOil)
                     {
@@ -449,7 +459,7 @@ namespace Frontline.Modules
             else
             {
                 String fid = request.id;//朋友的id
-                var fs = player.FriendList.Friends.FirstOrDefault(x => x.PlayerId == fid);
+                var fs = friendlist.Friends.FirstOrDefault(x => x.PlayerId == fid);
                 if (fs != null && fs.CanSendOil)
                 {
                     fs.CanSendOil = false;
@@ -478,13 +488,14 @@ namespace Frontline.Modules
         public int Call_RecvFriendOil(GetOilFromFriendRequest request)
         {
             var player = _playerModule.QueryPlayer(Session.PlayerId);
+            var friendlist = this.QueryPlayerFriendList(player.Id);
             bool all = request.all;
             int oil = 0;
             if (all)
             {
-                foreach (var f in player.FriendList.Friends)
+                foreach (var f in friendlist.Friends)
                 {
-                    if (player.FriendList.RecvTimes <= 0)
+                    if (friendlist.RecvTimes <= 0)
                     {
                         break;
                     }
@@ -492,21 +503,21 @@ namespace Frontline.Modules
                     {
                         f.CanRecvOil = false;
                         oil += GameConfig.FriendOil;
-                        player.FriendList.RecvTimes--;
+                        friendlist.RecvTimes--;
                     }
                 }
             }
             else
             {
-                if (player.FriendList.RecvTimes > 0)
+                if (friendlist.RecvTimes > 0)
                 {
                     String fid = request.id;//好友id
-                    var f = player.FriendList.Friends.FirstOrDefault(x => x.PlayerId == fid);
+                    var f = friendlist.Friends.FirstOrDefault(x => x.PlayerId == fid);
                     if (f.CanRecvOil)
                     {
                         f.CanRecvOil = false;
                         oil += GameConfig.FriendOil;
-                        player.FriendList.RecvTimes--;
+                        friendlist.RecvTimes--;
                     }
                 }
                 else
@@ -527,7 +538,7 @@ namespace Frontline.Modules
 
                 response.oilRemain = playerModule.GetCurrencyValue(player, CurrencyType.OIL);
                 response.id = request.id;
-                response.oilTimes = player.FriendList.RecvTimes;
+                response.oilTimes = friendlist.RecvTimes;
             }
             Session.SendAsync(response);
             return 0;
@@ -541,43 +552,49 @@ namespace Frontline.Modules
             response.fs = new List<string>();
 
             var player = _playerModule.QueryPlayer(Session.PlayerId);
-            FriendList fl = player.FriendList;
-            foreach (var app in player.FriendList.FriendApplications)
+            FriendList fl = this.QueryPlayerFriendList(player.Id);
+            foreach (var app in fl.FriendApplications)
             {
+                response.fs.Add(app.PlayerId);
                 string fid = app.PlayerId;
                 if (fl.Friends.Count >= GameConfig.FriendMaxCount)
                 {
                     break;
                 }
-                var other = FindPlayerFriendListOnly(fid);
-                if (other == null)
+                var otherFriendList = this.QueryPlayerFriendList(fid);
+                if (otherFriendList.Friends.Count >= GameConfig.FriendMaxCount)
                 {
-                    continue;
+                    continue;//对方好友列表已满
                 }
-                if (other.FriendList.Friends.Count >= GameConfig.FriendMaxCount)
+                if (!otherFriendList.Friends.Any(f=>f.PlayerId == player.Id))
                 {
-                    continue;
+                    var other = _playerModule.QueryPlayerBaseInfo(fid);
+                    var otherFs = new Friendship() { CanRecvOil = false, CanSendOil = true, FriendListId = fid, PlayerId = player.Id, FromTime = DateTime.Now };
+                    otherFriendList.Friends.Add(otherFs);
+                    NewFriendNotify notify = new NewFriendNotify();
+                    notify.friend = new FriendInfo()
+                    {
+                        canGetOil = otherFs.CanRecvOil,
+                        canGiveOil = otherFs.CanSendOil,
+                        id = other.Id,
+                        icon = other.Icon,
+                        level = other.Level,
+                        nickyName = other.NickName,
+                        power = other.MaxPower,
+                        vip = other.VIP
+                    };
+                    notify.success = true;
+                    Server.SendByUserNameAsync(fid, notify);
                 }
-                fl.Friends.Add(new Friendship() { CanRecvOil = false, CanSendOil = true, FriendListId = fl.PlayerId, PlayerId = fid, FromTime = DateTime.Now });
-                FriendList hisfl = other.FriendList;//获取想要加的好友的朋友列表
-                var otherFs = new Friendship() { CanRecvOil = false, CanSendOil = true, FriendListId = hisfl.PlayerId, PlayerId = player.Id, FromTime = DateTime.Now };
-                hisfl.Friends.Add(otherFs);
+                if(!fl.Friends.Any(f=>f.PlayerId == fid))
+                {
+                    fl.Friends.Add(new Friendship() { CanRecvOil = false, CanSendOil = true, FriendListId = player.Id, PlayerId = fid, FromTime = DateTime.Now });                    
+                }
+            }
+            if (fl.FriendApplications.Any())
+            {
+                _db.FriendApplications.RemoveRange(fl.FriendApplications);
                 _db.SaveChanges();
-
-                NewFriendNotify notify = new NewFriendNotify();
-                notify.friend = new FriendInfo()
-                {
-                    canGetOil = otherFs.CanRecvOil,
-                    canGiveOil = otherFs.CanSendOil,
-                    id = other.Id,
-                    icon = other.Icon,
-                    level = other.Level,
-                    nickyName = other.NickName,
-                    power = other.MaxPower,
-                    vip = other.VIP
-                };
-                notify.success = true;
-                Server.SendByUserNameAsync(fid, notify);
             }
             Session.SendAsync(response);
             return 0;

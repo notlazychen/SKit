@@ -17,11 +17,13 @@ namespace Frontline.Modules
     public class ShowPlayerCommand : GameCommand<ShowPlayerRequest>
     {
         PlayerModule _playerModule;
+        FriendController _friendModule;
         DataContext _db;
         GameServerSettings _config;
 
         protected override void OnInit()
         {
+            _friendModule = Server.GetModule<FriendController>();
             _playerModule = Server.GetModule<PlayerModule>();
             _db = Server.GetModule<GameSettingModule>().DataContext;
             _config = Server.GetModule<GameSettingModule>().Settings;
@@ -36,12 +38,13 @@ namespace Frontline.Modules
             {
                 return (int)GameErrorCode.查无此人;
             }
+            var friendlist = _friendModule.QueryPlayerFriendList(player.Id);
             ShowPlayerResponse response = new ShowPlayerResponse();
             response.success = true;
             response.pid = pid;
             response.power = other.MaxPower;
             response.vip = other.VIP;
-            response.isfriend = player.FriendList.Friends.Any(f => f.PlayerId == other.Id);
+            response.isfriend = friendlist.Friends.Any(f => f.PlayerId == other.Id);
             response.icon = other.Icon;
             response.name = other.NickName;
             response.level = other.Level;

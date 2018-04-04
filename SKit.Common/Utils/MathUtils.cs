@@ -6,8 +6,21 @@ using System.Threading.Tasks;
 
 namespace SKit.Common.Utils
 {
-    public class MathUtils
+    public static class MathUtils
     {
+        private static readonly Random Random = new Random();
+
+        public static void Xor(byte[] bs, int offset, int size, byte[] ks)
+        {
+            if (ks != null && ks.Length > 0)
+            {
+                for (int i = 0; i < size; i++)
+                {
+                    bs[offset + i] = (byte)(bs[offset + i] ^ ks[i % ks.Length]);
+                }
+            }
+        }
+
         public static void Xor(byte[] bs, byte[] ks)
         {
             if (ks != null && ks.Length > 0)
@@ -18,6 +31,7 @@ namespace SKit.Common.Utils
                 }
             }
         }
+
         public static void Xor(ArraySegment<byte> bs, byte[] ks)
         {
             if (ks != null && ks.Length > 0)
@@ -28,9 +42,37 @@ namespace SKit.Common.Utils
                 }
             }
         }
+        public static short ToShort(byte[] b, int index)
+        {
+            return (short)(((b[index + 0] << 8) | b[index + 1] & 0xff));
+        }
 
+        public static void PutShort(byte[] b, short s, int index)
+        {
+            b[index + 0] = (byte)(s >> 8);
+            b[index + 1] = (byte)(s >> 0);
+        }
 
-        private static readonly Random Random = new Random();
+        public static bool ContainsSameValue<T>(this IEnumerable<T> src)
+        {
+            int same;
+            foreach (T element in src)
+            {
+                same = 0;
+                foreach (T elementOther in src)
+                {
+                    if (element.Equals(elementOther))
+                    {
+                        same++;
+                        if (same > 1)
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
 
         public static int RandomNumber(int min, int max)
         {

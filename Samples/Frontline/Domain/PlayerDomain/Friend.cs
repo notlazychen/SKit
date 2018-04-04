@@ -15,8 +15,8 @@ namespace Frontline.Domain
         public int RecvTimes { get; set; }
         public DateTime LastRefreshTime { get; set; }
 
-        public List<Friendship> Friends { get; set; }
-        public List<FriendApplication> FriendApplications { get; set; }
+        public List<Friendship> Friends { get; set; } = new List<Friendship>();
+        public List<FriendApplication> FriendApplications { get; set; } = new List<FriendApplication>();
     }
 
     /// <summary>

@@ -18,9 +18,6 @@ namespace SKit.Common
         /// <summary>
         /// 打包,将实体序列化后的数据打包成网络包
         /// </summary>
-        /// <param name="body">缓冲区</param>
-        /// <param name="offset">实体数据偏移</param>
-        /// <param name="count">实体数据长度</param>
         /// <returns>打包完的数据包</returns>
         public abstract ArraySegment<byte> Pack(byte[] data, byte[] buffer, int offset, int count);
     }

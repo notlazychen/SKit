@@ -93,6 +93,8 @@ namespace Frontline.Common.Network
             var bytes = stream.ToArray();
             MathUtils.Xor(bytes, _xorbytes);
 
+            //2字节 short cmd
+            //其他entity data
             int offset = 0;
             var buffer = new byte[bytes.Length + 2];
 

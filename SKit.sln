@@ -29,7 +29,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Frontline.Client", "Samples
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Frontline.ProtocolExport", "Samples\Frontline.ProtocolExport\Frontline.ProtocolExport.csproj", "{E9E9A736-D799-4F82-93DE-920713AC440E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SKit.AOP", "SKit.AOP\SKit.AOP.csproj", "{B4C285D9-80BF-4ACF-AC85-C90075EB5435}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SKit.AOP", "SKit.AOP\SKit.AOP.csproj", "{B4C285D9-80BF-4ACF-AC85-C90075EB5435}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Frontline.MQ", "Samples\Frontline.MQ\Frontline.MQ.csproj", "{45380C48-D126-43C9-870B-EC2B3F3BBA2B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -89,6 +91,10 @@ Global
 		{B4C285D9-80BF-4ACF-AC85-C90075EB5435}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B4C285D9-80BF-4ACF-AC85-C90075EB5435}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B4C285D9-80BF-4ACF-AC85-C90075EB5435}.Release|Any CPU.Build.0 = Release|Any CPU
+		{45380C48-D126-43C9-870B-EC2B3F3BBA2B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{45380C48-D126-43C9-870B-EC2B3F3BBA2B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{45380C48-D126-43C9-870B-EC2B3F3BBA2B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{45380C48-D126-43C9-870B-EC2B3F3BBA2B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -102,6 +108,7 @@ Global
 		{D1EB7319-481E-4F1E-A1CB-89AEA48FC9C3} = {CA5620A3-3297-4091-B330-0917D645EC96}
 		{08444D5B-A103-4AE2-9545-8F1CC522A6F4} = {CA5620A3-3297-4091-B330-0917D645EC96}
 		{E9E9A736-D799-4F82-93DE-920713AC440E} = {CA5620A3-3297-4091-B330-0917D645EC96}
+		{45380C48-D126-43C9-870B-EC2B3F3BBA2B} = {CA5620A3-3297-4091-B330-0917D645EC96}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C8214006-48A2-42EC-B249-E587DA2363BF}

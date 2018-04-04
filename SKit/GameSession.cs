@@ -46,7 +46,7 @@ namespace SKit
         {
             if (IsAuthorized)
             {
-                this.PlayerId = null;
+                //this.PlayerId = null;
                 this.IsAuthorized = false;
             }
         }

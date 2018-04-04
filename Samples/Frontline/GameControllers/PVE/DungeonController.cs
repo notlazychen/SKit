@@ -239,7 +239,11 @@ namespace Frontline.Modules
             response.fbs = new List<FBInfo>();
             response.receiveds = section.RecvdStarReward.StringToMany(int.Parse);
             response.id = section.PlayerId;
-
+            if (!DDungeons[section.Type].ContainsKey(section.Index))
+            {
+                Session.SendAsync(response);
+                return 0;
+            }
             var dds = DDungeons[section.Type][section.Index].Values;
             foreach (var dd in dds)
             {

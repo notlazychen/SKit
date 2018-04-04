@@ -31,6 +31,7 @@ namespace Frontline.Modules
         public Dictionary<int, DLevel> DLevels { get; private set; }
         public Dictionary<int, VIPPrivilege> VIP { get; private set; }
         public Dictionary<int, DResPrice> DResPrices { get; private set; }//times:x
+        public List<DName> DNames { get; private set; }
 
         Dictionary<string, Player> _players = new Dictionary<string, Player>();
         Dictionary<string, PlayerBaseInfo> _simplePlayers = new Dictionary<string, PlayerBaseInfo>();
@@ -61,6 +62,7 @@ namespace Frontline.Modules
                 DLevels = designDb.DLevels.AsNoTracking().ToDictionary(x => x.level, x => x);
                 VIP = designDb.VIPPrivileges.AsNoTracking().ToDictionary(x => x.lv, x => x);
                 DResPrices = designDb.DResPrices.AsNoTracking().ToDictionary(x=>x.times, x=>x);
+                DNames = designDb.DNames.ToList();
             });
         }
         

@@ -119,7 +119,7 @@ namespace Frontline.Domain
         public DateTime LastDayRefreshTime { get; set; }
         public TimeSpan OnlineTime { get; set; }
 
-        public FriendList FriendList { get; set; }
+        //public FriendList FriendList { get; set; }
         public Wallet Wallet { get; set; }
 
         public ArenaCert ArenaCert { get; set; }

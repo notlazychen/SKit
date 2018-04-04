@@ -72,6 +72,7 @@ namespace Frontline.Modules
                         DmdFreeNumb = dl2.free_cnt,
                         LastRefreshDay = DateTime.Today
                     };
+                    _db.Lotteries.Add(lottery);
                     _db.SaveChanges();
                 }
                 _lotteries.Add(pid, lottery);

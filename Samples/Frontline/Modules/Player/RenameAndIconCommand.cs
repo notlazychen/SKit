@@ -18,11 +18,13 @@ namespace Frontline.Modules
     {
         PlayerModule _playerModule;
         DataContext _db;
+        GameDesign.GameDesignContext _designDb;
         GameServerSettings _config;
 
         protected override void OnInit()
         {
             _playerModule = Server.GetModule<PlayerModule>();
+            _designDb = Server.GetModule<DesignDataModule>()._desiongDb;
             _db = Server.GetModule<GameSettingModule>().DataContext;
             _config = Server.GetModule<GameSettingModule>().Settings;
         }
@@ -40,31 +42,36 @@ namespace Frontline.Modules
                 {
                     return (int)GameErrorCode.名字长度不符合规则;
                 }
+                var player = _playerModule.QueryPlayer(Session.PlayerId);
+                if (Request.nickyName == player.NickName)
+                {
+                    return (int)GameErrorCode.名字已被使用;
+                }
                 bool dup = _db.Players.Any(p => p.NickName == Request.nickyName);
                 if (dup)
                 {
                     return (int)GameErrorCode.名字已被使用;
                 }
-                var player = _playerModule.QueryPlayer(Session.PlayerId);
-                
-                if (Request.nickyName != player.NickName)
+                int[] costs = GameConfig.RenameCostDiamond;
+                int cost = costs[costs.Length - 1];
+                if (player.RenameNumb < costs.Length)
                 {
-                    int[] costs = GameConfig.RenameCostDiamond;
-                    int cost = costs[costs.Length - 1];
-                    if (player.RenameNumb < costs.Length)
-                    {
-                        cost = costs[player.RenameNumb];
-                    }
-
-                    if (player.Wallet.DIAMOND < cost)
-                    {
-                        return (int)GameErrorCode.资源不足;
-                    }
-                    player.NickName = Request.nickyName;
-                    player.RenameNumb++;
-                    _db.SaveChanges();
-                    Session.SendAsync(r);
+                    cost = costs[player.RenameNumb];
                 }
+                if (player.Wallet.DIAMOND < cost)
+                {
+                    return (int)GameErrorCode.资源不足;
+                }
+                player.NickName = Request.nickyName;
+                player.RenameNumb++;
+                var dname = _playerModule.DNames.FirstOrDefault(dn => player.NickName.StartsWith(dn.Name));
+                if (dname != null)
+                {
+                    dname.UsedNumber++;
+                    _designDb.SaveChanges();
+                }
+
+                _db.SaveChanges();
             }
             else
             {

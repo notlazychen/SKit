@@ -11,14 +11,7 @@ namespace Frontline.Common.Network
     {
         protected override ArraySegment<byte> ToHead(byte[] sendData, int offset, int length)
         {
-            //var headBuf = BitConverter.GetBytes(length);
-            //if (BitConverter.IsLittleEndian)
-            //{
-            //    headBuf = headBuf.Reverse().ToArray();
-            //}
-
             var head = Varint.Int2ByteArray(length);
-            //byte[] headBuf = new byte[head.Count];
             return head;
         }
 

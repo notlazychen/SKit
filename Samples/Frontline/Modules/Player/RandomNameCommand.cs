@@ -33,7 +33,17 @@ namespace Frontline.Modules
             r.success = true;
             r.sex = Request.sex;
 
-            r.nickyName = "";
+            int max = _playerModule.DNames.Count;
+            int ran = MathUtils.RandomNumber(0, max);
+
+            var dname = _playerModule.DNames[ran];
+            string name = dname.Name;
+            if (dname.UsedNumber > 0)
+            {
+                name += dname.UsedNumber;
+            }
+
+            r.nickyName = name;
             Session.SendAsync(r);
             return 0;
         }

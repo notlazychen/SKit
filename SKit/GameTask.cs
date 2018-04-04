@@ -30,18 +30,20 @@ namespace SKit
     /// </summary>
     public class GameRequestTask : GamePlayerTask
     {
+        private Object Entity;
         public GameRequestTask(GameCommandBase command, GameSession session, Object entity) 
             : base(session)
         {
             Command = command;
-            Command.RequestEntity = entity;
-            Command.Session = session;
+            Entity = entity;
         }
 
         public GameCommandBase Command { get; private set; }
 
         protected override int OnDoAction()
         {
+            Command.RequestEntity = this.Entity;
+            Command.Session = this.Session;
             return Command.ExecuteCommand();
         }
     }
