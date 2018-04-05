@@ -243,9 +243,9 @@ namespace SKit
                     //各模块自行qingli 
                     foreach(var module in _modules.Values)
                     {
+                        _logger.LogInformation($"Module [{module.GetType().Name}] Close");
                         module.OnServerClosing();
                     }
-
 
                     if(_acceptEventArg != null)
                     {
@@ -1065,7 +1065,7 @@ namespace SKit
             //模块初始化
             foreach (var module in modules)
             {
-                _logger.LogInformation($"加载模块:{module.GetType().Name}");
+                //_logger.LogInformation($"加载模块:{module.GetType().Name}");
                 module.ConfigureServices();
             }
             foreach(var module in modules)

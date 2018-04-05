@@ -58,5 +58,8 @@ namespace Frontline.Common
         public static int[] FactoryInitWorkersType = { 1, 1, 2, 2, 3 };//后勤基地初始普通工人类型
         public static int FactoryWorkerMarketLength = 5;//工人市场大小
         public static int FactoryTaskLength = 3;//两种类型的任务各有多少个
+
+        public static int MaxDiKangNumbOneDay = 1;//抵抗前线每日最大次数
+        public static int DiKangSweepGoldPrice = 100;//抵抗前线扫荡金币单价
     }
 }

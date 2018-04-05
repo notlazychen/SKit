@@ -76,6 +76,9 @@ namespace Frontline.GameDesign
         public DbSet<DQuestDailyReward> DQuestDailyRewards { get; set; }
 
         public DbSet<DResPrice> DResPrices { get; set; }
+        public DbSet<DDiKangQianXian> DDiKangQianXians { get; set; }
+        public DbSet<DDiKangQianXianBuilding> DDiKangQianXianBuildings { get; set; }
+        public DbSet<DDiKangQianXianBox> DDiKangQianXianBoxs { get; set; }
     }
 }
 

@@ -13,8 +13,8 @@ using System.Collections.Generic;
 namespace Frontline.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20180402051124_fac5")]
-    partial class fac5
+    [Migration("20180405122830_p1")]
+    partial class p1
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -246,7 +246,8 @@ namespace Frontline.Migrations
 
             modelBuilder.Entity("Frontline.Domain.FriendList", b =>
                 {
-                    b.Property<string>("PlayerId");
+                    b.Property<string>("PlayerId")
+                        .ValueGeneratedOnAdd();
 
                     b.Property<DateTime>("LastRefreshTime");
 
@@ -254,7 +255,9 @@ namespace Frontline.Migrations
 
                     b.HasKey("PlayerId");
 
-                    b.ToTable("FriendList");
+                    b.HasIndex("PlayerId");
+
+                    b.ToTable("FriendLists");
                 });
 
             modelBuilder.Entity("Frontline.Domain.Friendship", b =>
@@ -643,17 +646,11 @@ namespace Frontline.Migrations
 
                     b.Property<int>("Grade");
 
-                    b.Property<bool>("IsResting");
-
                     b.Property<int>("Level");
-
-                    b.Property<int>("Number");
 
                     b.Property<string>("PlayerId");
 
                     b.Property<int>("Power");
-
-                    b.Property<DateTime>("RestEndTime");
 
                     b.Property<int>("Tid");
 
@@ -751,14 +748,6 @@ namespace Frontline.Migrations
                     b.HasOne("Frontline.Domain.FriendList")
                         .WithMany("FriendApplications")
                         .HasForeignKey("FriendListId")
-                        .OnDelete(DeleteBehavior.Cascade);
-                });
-
-            modelBuilder.Entity("Frontline.Domain.FriendList", b =>
-                {
-                    b.HasOne("Frontline.Domain.Player")
-                        .WithOne("FriendList")
-                        .HasForeignKey("Frontline.Domain.FriendList", "PlayerId")
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 

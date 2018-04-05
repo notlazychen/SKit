@@ -93,6 +93,26 @@ namespace Frontline.Migrations
                     b.ToTable("ArenaCerts");
                 });
 
+            modelBuilder.Entity("Frontline.Domain.DiKang", b =>
+                {
+                    b.Property<string>("PlayerId")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<int>("Best");
+
+                    b.Property<int>("Current");
+
+                    b.Property<DateTime>("LastRefreshTime");
+
+                    b.Property<string>("RecvBox");
+
+                    b.Property<int>("ResetNumb");
+
+                    b.HasKey("PlayerId");
+
+                    b.ToTable("DiKangs");
+                });
+
             modelBuilder.Entity("Frontline.Domain.Dungeon", b =>
                 {
                     b.Property<string>("Id")
@@ -188,18 +208,16 @@ namespace Frontline.Migrations
 
             modelBuilder.Entity("Frontline.Domain.Factory", b =>
                 {
-                    b.Property<string>("Id")
+                    b.Property<string>("PlayerId")
                         .ValueGeneratedOnAdd();
 
                     b.Property<int>("HireWorkerNumb");
 
                     b.Property<DateTime>("LastRefreshDay");
 
-                    b.Property<string>("PlayerId");
-
                     b.Property<int>("TodayMarketRefreshTimes");
 
-                    b.HasKey("Id");
+                    b.HasKey("PlayerId");
 
                     b.HasIndex("PlayerId")
                         .IsUnique();

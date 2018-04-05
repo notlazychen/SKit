@@ -9,7 +9,6 @@ namespace Frontline.Domain
     public class Factory
     {
         [Key]
-        public string Id { get; set; }
         public string PlayerId { get; set; }
 
         /// <summary>

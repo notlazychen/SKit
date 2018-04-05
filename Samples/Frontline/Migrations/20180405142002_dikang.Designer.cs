@@ -13,8 +13,8 @@ using System.Collections.Generic;
 namespace Frontline.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20180403131849_friend3")]
-    partial class friend3
+    [Migration("20180405142002_dikang")]
+    partial class dikang
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
@@ -92,6 +92,26 @@ namespace Frontline.Migrations
                         .IsUnique();
 
                     b.ToTable("ArenaCerts");
+                });
+
+            modelBuilder.Entity("Frontline.Domain.DiKang", b =>
+                {
+                    b.Property<string>("PlayerId")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<int>("Best");
+
+                    b.Property<int>("Current");
+
+                    b.Property<DateTime>("LastRefreshTime");
+
+                    b.Property<string>("RecvBox");
+
+                    b.Property<int>("ResetNumb");
+
+                    b.HasKey("PlayerId");
+
+                    b.ToTable("DiKangs");
                 });
 
             modelBuilder.Entity("Frontline.Domain.Dungeon", b =>
@@ -189,18 +209,16 @@ namespace Frontline.Migrations
 
             modelBuilder.Entity("Frontline.Domain.Factory", b =>
                 {
-                    b.Property<string>("Id")
+                    b.Property<string>("PlayerId")
                         .ValueGeneratedOnAdd();
 
                     b.Property<int>("HireWorkerNumb");
 
                     b.Property<DateTime>("LastRefreshDay");
 
-                    b.Property<string>("PlayerId");
-
                     b.Property<int>("TodayMarketRefreshTimes");
 
-                    b.HasKey("Id");
+                    b.HasKey("PlayerId");
 
                     b.HasIndex("PlayerId")
                         .IsUnique();
@@ -646,17 +664,11 @@ namespace Frontline.Migrations
 
                     b.Property<int>("Grade");
 
-                    b.Property<bool>("IsResting");
-
                     b.Property<int>("Level");
-
-                    b.Property<int>("Number");
 
                     b.Property<string>("PlayerId");
 
                     b.Property<int>("Power");
-
-                    b.Property<DateTime>("RestEndTime");
 
                     b.Property<int>("Tid");
 

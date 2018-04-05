@@ -68,6 +68,7 @@ namespace Frontline.Data
 
             modelBuilder.Entity<Quest>().HasOne<PlayerQuestData>().WithMany(f => f.Quests).HasForeignKey(w => w.PlayerId);
             modelBuilder.Entity<QuestDaily>().HasOne<PlayerQuestData>().WithMany(f => f.QuestDailys).HasForeignKey(w => w.PlayerId);
+            
         }
 
         public DbSet<Player> Players { get; set; }
@@ -99,5 +100,7 @@ namespace Frontline.Data
         public DbSet<PlayerQuestData> PlayerQuestDatas { get; set; }
         public DbSet<Quest> Quests { get; set; }
         public DbSet<QuestDaily> QuestDailys { get; set; }
+
+        public DbSet<DiKang> DiKangs { get; set; }
     }
 }

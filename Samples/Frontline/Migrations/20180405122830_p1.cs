@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Frontline.Migrations
 {
-    public partial class init : Migration
+    public partial class p1 : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
@@ -21,6 +21,19 @@ namespace Frontline.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Factories", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "FriendLists",
+                columns: table => new
+                {
+                    PlayerId = table.Column<string>(nullable: false),
+                    LastRefreshTime = table.Column<DateTime>(nullable: false),
+                    RecvTimes = table.Column<int>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_FriendLists", x => x.PlayerId);
                 });
 
             migrationBuilder.CreateTable(
@@ -77,6 +90,21 @@ namespace Frontline.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Lotteries", x => x.PlayerId);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PlayerQuestDatas",
+                columns: table => new
+                {
+                    PlayerId = table.Column<string>(nullable: false),
+                    DailyPoint = table.Column<int>(nullable: false),
+                    DailyPointReward = table.Column<string>(nullable: true),
+                    LastRefreshDay = table.Column<DateTime>(nullable: false),
+                    RecvedDailyPointReward = table.Column<string>(nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PlayerQuestDatas", x => x.PlayerId);
                 });
 
             migrationBuilder.CreateTable(
@@ -149,6 +177,7 @@ namespace Frontline.Migrations
                 {
                     Id = table.Column<string>(nullable: false),
                     FacTaskId = table.Column<string>(nullable: true),
+                    InMarket = table.Column<bool>(nullable: false),
                     PlayerId = table.Column<string>(nullable: true),
                     State = table.Column<int>(nullable: false),
                     Tid = table.Column<int>(nullable: false)
@@ -162,6 +191,46 @@ namespace Frontline.Migrations
                         principalTable: "Factories",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "FriendApplications",
+                columns: table => new
+                {
+                    FriendListId = table.Column<string>(nullable: false),
+                    PlayerId = table.Column<string>(maxLength: 64, nullable: false),
+                    CreateTime = table.Column<DateTime>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_FriendApplications", x => new { x.FriendListId, x.PlayerId });
+                    table.ForeignKey(
+                        name: "FK_FriendApplications_FriendLists_FriendListId",
+                        column: x => x.FriendListId,
+                        principalTable: "FriendLists",
+                        principalColumn: "PlayerId",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Friendships",
+                columns: table => new
+                {
+                    FriendListId = table.Column<string>(nullable: false),
+                    PlayerId = table.Column<string>(maxLength: 64, nullable: false),
+                    CanRecvOil = table.Column<bool>(nullable: false),
+                    CanSendOil = table.Column<bool>(nullable: false),
+                    FromTime = table.Column<DateTime>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Friendships", x => new { x.FriendListId, x.PlayerId });
+                    table.ForeignKey(
+                        name: "FK_Friendships_FriendLists_FriendListId",
+                        column: x => x.FriendListId,
+                        principalTable: "FriendLists",
+                        principalColumn: "PlayerId",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -185,6 +254,48 @@ namespace Frontline.Migrations
                         column: x => x.LegionId,
                         principalTable: "Legions",
                         principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "QuestDailys",
+                columns: table => new
+                {
+                    Id = table.Column<string>(nullable: false),
+                    PlayerId = table.Column<string>(nullable: true),
+                    Progress = table.Column<int>(nullable: false),
+                    Status = table.Column<int>(nullable: false),
+                    Tid = table.Column<int>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_QuestDailys", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_QuestDailys_PlayerQuestDatas_PlayerId",
+                        column: x => x.PlayerId,
+                        principalTable: "PlayerQuestDatas",
+                        principalColumn: "PlayerId",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Quests",
+                columns: table => new
+                {
+                    Id = table.Column<string>(nullable: false),
+                    PlayerId = table.Column<string>(nullable: true),
+                    Progress = table.Column<int>(nullable: false),
+                    Status = table.Column<int>(nullable: false),
+                    Tid = table.Column<int>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Quests", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Quests_PlayerQuestDatas_PlayerId",
+                        column: x => x.PlayerId,
+                        principalTable: "PlayerQuestDatas",
+                        principalColumn: "PlayerId",
                         onDelete: ReferentialAction.Restrict);
                 });
 
@@ -235,25 +346,6 @@ namespace Frontline.Migrations
                         principalTable: "Players",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "FriendList",
-                columns: table => new
-                {
-                    PlayerId = table.Column<string>(nullable: false),
-                    LastRefreshTime = table.Column<DateTime>(nullable: false),
-                    RecvTimes = table.Column<int>(nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_FriendList", x => x.PlayerId);
-                    table.ForeignKey(
-                        name: "FK_FriendList_Players_PlayerId",
-                        column: x => x.PlayerId,
-                        principalTable: "Players",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -345,12 +437,9 @@ namespace Frontline.Migrations
                     Id = table.Column<string>(nullable: false),
                     Exp = table.Column<int>(nullable: false),
                     Grade = table.Column<int>(nullable: false),
-                    IsResting = table.Column<bool>(nullable: false),
                     Level = table.Column<int>(nullable: false),
-                    Number = table.Column<int>(nullable: false),
                     PlayerId = table.Column<string>(nullable: true),
                     Power = table.Column<int>(nullable: false),
-                    RestEndTime = table.Column<DateTime>(nullable: false),
                     Tid = table.Column<int>(nullable: false)
                 },
                 constraints: table =>
@@ -379,6 +468,10 @@ namespace Frontline.Migrations
                     SUPPLY = table.Column<int>(nullable: false),
                     TEC = table.Column<int>(nullable: false),
                     TOKEN = table.Column<int>(nullable: false),
+                    TodayBuyGold = table.Column<int>(nullable: false),
+                    TodayBuyIron = table.Column<int>(nullable: false),
+                    TodayBuyOil = table.Column<int>(nullable: false),
+                    TodayBuySupply = table.Column<int>(nullable: false),
                     WIPES = table.Column<int>(nullable: false)
                 },
                 constraints: table =>
@@ -416,46 +509,6 @@ namespace Frontline.Migrations
                         principalTable: "ArenaCerts",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "FriendApplications",
-                columns: table => new
-                {
-                    FriendListId = table.Column<string>(nullable: false),
-                    PlayerId = table.Column<string>(maxLength: 64, nullable: false),
-                    CreateTime = table.Column<DateTime>(nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_FriendApplications", x => new { x.FriendListId, x.PlayerId });
-                    table.ForeignKey(
-                        name: "FK_FriendApplications_FriendList_FriendListId",
-                        column: x => x.FriendListId,
-                        principalTable: "FriendList",
-                        principalColumn: "PlayerId",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Friendships",
-                columns: table => new
-                {
-                    FriendListId = table.Column<string>(nullable: false),
-                    PlayerId = table.Column<string>(maxLength: 64, nullable: false),
-                    CanRecvOil = table.Column<bool>(nullable: false),
-                    CanSendOil = table.Column<bool>(nullable: false),
-                    FromTime = table.Column<DateTime>(nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Friendships", x => new { x.FriendListId, x.PlayerId });
-                    table.ForeignKey(
-                        name: "FK_Friendships_FriendList_FriendListId",
-                        column: x => x.FriendListId,
-                        principalTable: "FriendList",
-                        principalColumn: "PlayerId",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -569,6 +622,11 @@ namespace Frontline.Migrations
                 column: "PlayerId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_FriendLists_PlayerId",
+                table: "FriendLists",
+                column: "PlayerId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Friendships_FriendListId",
                 table: "Friendships",
                 column: "FriendListId");
@@ -615,6 +673,16 @@ namespace Frontline.Migrations
                 name: "IX_Players_UserCode",
                 table: "Players",
                 column: "UserCode");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_QuestDailys_PlayerId",
+                table: "QuestDailys",
+                column: "PlayerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Quests_PlayerId",
+                table: "Quests",
+                column: "PlayerId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Sections_PlayerId",
@@ -671,6 +739,12 @@ namespace Frontline.Migrations
                 name: "PlayerOlReward");
 
             migrationBuilder.DropTable(
+                name: "QuestDailys");
+
+            migrationBuilder.DropTable(
+                name: "Quests");
+
+            migrationBuilder.DropTable(
                 name: "Teams");
 
             migrationBuilder.DropTable(
@@ -689,10 +763,13 @@ namespace Frontline.Migrations
                 name: "Factories");
 
             migrationBuilder.DropTable(
-                name: "FriendList");
+                name: "FriendLists");
 
             migrationBuilder.DropTable(
                 name: "Legions");
+
+            migrationBuilder.DropTable(
+                name: "PlayerQuestDatas");
 
             migrationBuilder.DropTable(
                 name: "Players");
