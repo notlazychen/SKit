@@ -246,7 +246,7 @@ namespace Frontline.Modules
                 du = DUnits[u.Tid];
             }
             info.id = u.Id;
-            //info.number = u.Number;
+            info.number = 99;// u.Number;
             info.tid = u.Tid;
             info.exp = u.Exp;
             info.level = u.Level;

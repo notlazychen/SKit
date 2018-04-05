@@ -6,7 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace SKit.Common.Utils
+namespace Frontline.Common
 {
     /// <summary> 
     /// DESEncrypt加密解密算法。 

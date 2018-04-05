@@ -39,11 +39,16 @@ namespace Frontline.Modules
             _settings = config.Value;
         }
 
+        public override void OnServerClosing()
+        {
+            _bus.Dispose();
+        }
+
         protected override void OnConfiguringModules()
         {
             _playerModule = Server.GetModule<PlayerModule>();
             _campModule = Server.GetModule<CampModule>();
-            _bus.Start(new PullAdapter(_settings.MyBusAddress));
+            _bus.Start(new PullAdapter(_settings.MyBusAddress), _settings.Secret);
             _matchServerSession = _bus.Connect(_settings.MatchServerAddress);
             _bus.ServerMessageReceived += _bus_ServerMessageReceived;
             _bus.RelayMessageReceived += _bus_RelayMessageReceived;

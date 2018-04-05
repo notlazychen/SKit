@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
 using System.Linq;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -31,7 +32,7 @@ namespace Frontline.MQ
         IServerSender MakeSender(string address);
     }
 
-    public class PushAdapter : IServerSender
+    public class PushAdapter : IServerSender, IDisposable
     {
         private readonly byte[] _buffer = new byte[8];
         private readonly NetMQSocket _socket;
@@ -42,13 +43,18 @@ namespace Frontline.MQ
             _socket.Connect(address);
         }
 
+        public void Dispose()
+        {
+            _socket.Dispose();
+        }
+
         public void Send(byte[] data)
         {
             _socket.SendFrame(data);
         }
     }
 
-    public class PullAdapter : IServerReceiver
+    public class PullAdapter : IServerReceiver, IDisposable
     {
         private readonly NetMQSocket _rep;
         private OnReceived onReceived;
@@ -58,7 +64,8 @@ namespace Frontline.MQ
         {
             _bindAddress = bindAddress;
             _rep = new PullSocket();
-            _rep.Bind(bindAddress);
+            
+            _rep.Bind(bindAddress);            
         }
 
         public string BindAddress
@@ -68,7 +75,8 @@ namespace Frontline.MQ
 
         public void Close()
         {
-            _rep.Close();
+            _rep.Unbind(BindAddress);
+            _rep.Dispose();
         }
 
         public void Receive(OnReceived callback)
@@ -86,9 +94,14 @@ namespace Frontline.MQ
             var sender = new PushAdapter(address);
             return sender;
         }
+
+        public void Dispose()
+        {
+            this.Close();
+        }
     }
 
-    public abstract class ServerBase
+    public abstract class ServerBase : IDisposable
     {
         protected virtual int MaxProcessCount
         {
@@ -110,9 +123,8 @@ namespace Frontline.MQ
         public event EventHandler<ServerMessageReceivedEventArgs> ServerMessageReceived;
         public event EventHandler<RelayMessageReceivedEventArgs> RelayMessageReceived;
 
-        public ServerBase(IOptions<GameServerSettings> config, bool refallModule = true)
+        public ServerBase(bool refallModule = true)
         {
-            _xorbytes = Encoding.UTF8.GetBytes(config.Value.Secret);
             CommandManager = new ModuleManager();
             if (refallModule)
             {
@@ -120,8 +132,9 @@ namespace Frontline.MQ
             }
         }
 
-        public void Start(IServerReceiver recvAdapter)
+        public void Start(IServerReceiver recvAdapter, string secret)
         {
+            _xorbytes = Encoding.UTF8.GetBytes(secret);
             _receiverAdapter = recvAdapter;
             LocalAddress = _receiverAdapter.BindAddress;
             _mainThreadToken = new CancellationTokenSource();
@@ -189,6 +202,19 @@ namespace Frontline.MQ
                             //}
                         });
                     }
+                    catch (ObjectDisposedException)
+                    {
+                        //ignore
+                    }
+                    catch (SocketException ex)
+                    {
+                        OnCatchUnhandledException(ex);
+                        //ignore
+                    }
+                    catch (NullReferenceException)
+                    {
+                        //ignore
+                    }
                     catch (Exception ex)
                     {
                         OnCatchUnhandledException(ex);
@@ -204,8 +230,15 @@ namespace Frontline.MQ
 
         public void Stop()
         {
+            try
+            {
+                _receiverAdapter.Close();
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
             _mainThreadToken.Cancel();
-            _receiverAdapter.Close();
             _mainThread.Join();
             OnStop();
         }
@@ -221,7 +254,6 @@ namespace Frontline.MQ
 
         public ServerSession Connect(string address)
         {
-            Console.WriteLine("create sender: {0}", address);
             var socket = _receiverAdapter.MakeSender(address);
             var session = new ServerSession(address, LocalAddress, socket);
             _sessions.TryAdd(address, session);
@@ -258,6 +290,11 @@ namespace Frontline.MQ
                 read += l;
             }
             return read;
+        }
+
+        public void Dispose()
+        {
+            this.Stop();
         }
     }
 }

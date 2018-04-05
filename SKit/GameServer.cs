@@ -240,8 +240,13 @@ namespace SKit
                 try
                 {
                     _logger.LogInformation($"Game Server [{Id}] Closing...");
-                    //_listenerTokenSource.Cancel();
-                    //_sendingTaskTokenSource.Cancel();
+                    //各模块自行qingli 
+                    foreach(var module in _modules.Values)
+                    {
+                        module.OnServerClosing();
+                    }
+
+
                     if(_acceptEventArg != null)
                     {
                         _acceptEventArg.Completed -= acceptEventArg_Completed;
@@ -273,8 +278,8 @@ namespace SKit
                     }
 
                     _workingTaskTokenSource.Cancel();
-                    _sendingTask.Join(10000);
-                    _workingTask.Join(10000);
+                    _sendingTask.Join();
+                    _workingTask.Join();
 
                     _users.Clear();
 

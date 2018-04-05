@@ -12,7 +12,7 @@ namespace Frontline.Services
     public class MessageBus : ServerBase
     {
         private ILogger _logger;
-        public MessageBus(IOptions<GameServerSettings> config, ILogger<MessageBus> logger): base(config)
+        public MessageBus(ILogger<MessageBus> logger): base()
         {
             _logger = logger;
             this.CatchUnhandledException += MessageBus_CatchUnhandledException;
