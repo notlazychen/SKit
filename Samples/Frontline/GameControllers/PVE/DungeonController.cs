@@ -138,6 +138,12 @@ namespace Frontline.Modules
             return dungeon;
         }
 
+        public MonsterInfo ToMonsterInfoByDungeonId(int mid, int dungeon_id)
+        {
+            var md = DMonsterInDungeons[dungeon_id][mid];
+            return ToMonsterInfo(mid, md.level);
+        }
+
         public MonsterInfo ToMonsterInfo(int mid, int lv)
         {
             var dm = DMonsters[mid];

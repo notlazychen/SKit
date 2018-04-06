@@ -61,5 +61,7 @@ namespace Frontline.Common
 
         public static int MaxDiKangNumbOneDay = 1;//抵抗前线每日最大次数
         public static int DiKangSweepGoldPrice = 100;//抵抗前线扫荡金币单价
+
+        public static int TransportMaxTimes = 3;//运输每日最大次数
     }
 }

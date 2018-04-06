@@ -66,6 +66,7 @@ namespace Frontline.Common
         雇佣人数已满,
 
         禁言中,
+        今天至少护送一次运输车,
 
     }
 

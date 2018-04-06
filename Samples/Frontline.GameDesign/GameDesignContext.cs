@@ -79,6 +79,7 @@ namespace Frontline.GameDesign
         public DbSet<DDiKangQianXian> DDiKangQianXians { get; set; }
         public DbSet<DDiKangQianXianBuilding> DDiKangQianXianBuildings { get; set; }
         public DbSet<DDiKangQianXianBox> DDiKangQianXianBoxs { get; set; }
+        public DbSet<DTransport> DTransports { get; set; }
     }
 }
 

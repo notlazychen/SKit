@@ -64,6 +64,8 @@ namespace Frontline.GameDesign
             //db.SaveChanges();
             //ReadConfigAndWriteToDB("抵抗前线配置表.xlsx", db.DDiKangQianXians);
             //ReadConfigAndWriteToDB("战斗系统——特殊建筑表.xlsx", db.DDiKangQianXianBuildings);
+
+            //ReadConfigAndWriteToDB("护送运输车关卡配置表.xlsx", db.DTransports);
             db.SaveChanges();
 
         }

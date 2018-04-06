@@ -118,13 +118,7 @@ namespace Frontline.Modules
             Session.SendAsync(response);
             return 0;
         }
-
-        public int Call_CMD_620(GetTransportInfoRequest request)
-        {
-            GetTransportInfoResponse response = JsonConvert.DeserializeObject<GetTransportInfoResponse>("{\"remainTimes\":3,\"success\":true,\"totalTimes\":3}");
-            Session.SendAsync(response); return 0;
-        }
-
+        
         public int Call_CMD_220(GetPatternInfoRequest request)
         {
             GetPatternInfoResponse response = JsonConvert.DeserializeObject<GetPatternInfoResponse>("{\"infos\":[{\"remainTimes\":3,\"type\":0,\"totalTimes\":3}],\"success\":true}");

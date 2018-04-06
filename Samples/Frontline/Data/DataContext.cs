@@ -102,5 +102,6 @@ namespace Frontline.Data
         public DbSet<QuestDaily> QuestDailys { get; set; }
 
         public DbSet<DiKang> DiKangs { get; set; }
+        public DbSet<Transport> Transports { get; set; }
     }
 }
