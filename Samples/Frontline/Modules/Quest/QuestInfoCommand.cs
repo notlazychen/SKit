@@ -38,7 +38,7 @@ namespace Frontline.Modules
             var data = _questModule.QueryPlayerQuestData(Session.PlayerId);
             foreach (Quest q in data.Quests)
             {
-                if (q.Status == QuestState.Completed || q.Status == QuestState.Waiting)
+                if (q.Status == QuestStatus.Completed || q.Status == QuestStatus.Waiting)
                 {
                     continue;
                 }
@@ -51,7 +51,7 @@ namespace Frontline.Modules
             }
             foreach (QuestDaily q in data.QuestDailys)
             {
-                if (q.Status == QuestState.Completed || q.Status == QuestState.Waiting)
+                if (q.Status == QuestStatus.Completed || q.Status == QuestStatus.Waiting)
                 {
                     continue;
                 }

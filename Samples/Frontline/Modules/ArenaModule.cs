@@ -333,11 +333,12 @@ namespace Frontline.Modules
             AddHistory(enemy.ArenaCert, player.Id, player.NickName, player.Icon, player.MaxPower, delta, battleId, resp.win ? -1 : 1);
 
             _db.SaveChanges();
-
             resp.currentRank = war.CurrentRank;
             resp.remainChallengeTimes = GameConfig.ArenaChallengeNumber - war.ChallengeTimes;
             resp.score = war.Score;
             Session.SendAsync(resp);
+
+            this.OnPlayerArenaBattleOver(war, request.win);
             return 0;
         }
 
@@ -404,6 +405,12 @@ namespace Frontline.Modules
             resp.success = true;
             Session.SendAsync(resp);
             return 0;
+        }
+
+        public event GamePlayerEventHandler<ArenaCert, bool> ArenaBattleOver;
+        public void OnPlayerArenaBattleOver(ArenaCert player, bool win)
+        {
+            ArenaBattleOver?.Invoke(player, win);
         }
     }
 }

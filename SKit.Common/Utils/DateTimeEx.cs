@@ -26,5 +26,26 @@ namespace SKit.Common.Utils
         {
             return UnixTime.AddMilliseconds(time);
         }
+
+        /// <summary>
+        /// 中国习惯同一周, 周日为一周之末
+        /// </summary>
+        public static bool IsSameWeek(this DateTime dt1, DateTime dt2)
+        {
+            int delta1 = dt1.DayOfWeek == DayOfWeek.Sunday ? 7 : (int)dt1.DayOfWeek;
+            int delta2 = dt2.DayOfWeek == DayOfWeek.Sunday ? 7 : (int)dt2.DayOfWeek;
+            DateTime temp1 = dt1.AddDays(-delta1).Date;
+            DateTime temp2 = dt2.AddDays(-delta2).Date;
+            bool result = temp1 == temp2;
+            return result;
+        }
+
+        /// <summary>
+        /// 中国习惯的周几, 周日为7
+        /// </summary>
+        public static int GetWeekDay(this DateTime dt)
+        {
+            return dt.DayOfWeek == DayOfWeek.Sunday ? 7 : (int)dt.DayOfWeek;
+        }
     }
 }

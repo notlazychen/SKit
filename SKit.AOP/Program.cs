@@ -6,6 +6,7 @@ using System.Text;
 using System.Dynamic;
 using System.Reflection;
 using System.Threading;
+using SKit.Common.Utils;
 
 namespace SKit.AOP
 {
@@ -99,7 +100,20 @@ namespace SKit.AOP
             //person.ID = 1;
             //Person p = person;
             //Console.WriteLine(p.Name);
-            MonitorSample();
+
+            //MonitorSample();
+
+            //检查是否同一周
+            DateTime dt1 = new DateTime(2018, 4, 11);
+            for(int i = -10; i < 20; i++)
+            {
+                DateTime dt2 = dt1.AddDays(i);
+                bool same = dt1.IsSameWeek(dt2);
+
+                Console.WriteLine($"{dt2}: {same}");
+            }
+
+            Console.ReadLine();
         }
 
         static void MonitorSample()

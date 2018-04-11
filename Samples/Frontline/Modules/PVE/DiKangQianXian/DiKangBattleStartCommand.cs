@@ -34,6 +34,8 @@ namespace Frontline.Modules
             var wave = _dikangModule.DDiKangQianXians[dikang.Current + 1];
             response.wave = _dikangModule.ToInfo(wave);
             Session.SendAsync(response);
+
+            _dikangModule.OnPlayerDiKangBegin(dikang, wave);
             return 0;
         }
     }

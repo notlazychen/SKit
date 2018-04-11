@@ -5,4 +5,8 @@
     <TargetFramework>netcoreapp2.0</TargetFramework>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\SKit.Common\SKit.Common.csproj" />
+  </ItemGroup>
+
 </Project>

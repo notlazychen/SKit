@@ -102,5 +102,17 @@ namespace Frontline.Modules
             return info;
         }
         #endregion
+
+        public event GamePlayerEventHandler<DiKang, DDiKangQianXian> DikangBegin;
+        public void OnPlayerDiKangBegin(DiKang player, DDiKangQianXian dungeon)
+        {
+            DikangBegin?.Invoke(player, dungeon);
+        }
+
+        public event GamePlayerEventHandler<DiKang, DDiKangQianXian> DikangPass;
+        public void OnPlayerPassDiKang(DiKang player, DDiKangQianXian dungeon)
+        {
+            DikangPass?.Invoke(player, dungeon);
+        }
     }
 }

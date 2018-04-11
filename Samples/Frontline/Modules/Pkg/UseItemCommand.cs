@@ -88,6 +88,8 @@ namespace Frontline.Modules
             _db.SaveChanges();
             response.lap = item.Count;
             Session.SendAsync(response);
+
+            _pkgModule.RaiseItemUsed(item);
             return 0;
         }
     }

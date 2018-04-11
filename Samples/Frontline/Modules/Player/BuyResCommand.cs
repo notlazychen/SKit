@@ -120,6 +120,7 @@ namespace Frontline.Modules
                     response.type = type;
                     response.timesRemain = maxTimes - boughtTimes;
                     response.costNext = nextCost;
+                    _playerModule.OnBuyRes(player, type);
                 }
                 else
                 {

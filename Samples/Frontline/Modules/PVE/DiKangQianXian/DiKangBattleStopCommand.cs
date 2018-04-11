@@ -59,6 +59,8 @@ namespace Frontline.Modules
 
                 _db.SaveChanges();
                 response.token = token;
+
+                _dikangModule.OnPlayerPassDiKang(dikang, wave);
             }
 
             Session.SendAsync(response);

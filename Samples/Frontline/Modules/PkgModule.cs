@@ -61,7 +61,7 @@ namespace Frontline.Modules
 
         #region 事件
         public event EventHandler<PlayerItem> ItemUsed;
-        private void RaiseItemUsed(PlayerItem item)
+        public void RaiseItemUsed(PlayerItem item)
         {
             ItemUsed?.Invoke(this, item);
         }

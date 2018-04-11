@@ -34,6 +34,7 @@ namespace Frontline.GameDesign
             modelBuilder.Entity<DUnitGradeUp>().HasKey(d => new { d.star, d.grade, d.type });
             modelBuilder.Entity<DDungeonStar>().HasKey(d => new { d.type, d.section, d.index });
             modelBuilder.Entity<DLegionScience>().HasKey(d => new { d.id, d.lv });
+            modelBuilder.Entity<DWeekBattle>().HasKey(d => new { d.mid, d.day });
         }
 
         public DbSet<DItem> DItem { get; set; }
@@ -86,6 +87,8 @@ namespace Frontline.GameDesign
         public DbSet<DRescue> DRescue { get; set; }
 
         public DbSet<DLegionScience> DLegionScience { get; set; }
+        public DbSet<DWeekBattle> DWeekBattle { get; set; }
+        public DbSet<DWeekBox> DWeekBox { get; set; }
     }
 }
 

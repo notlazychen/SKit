@@ -82,13 +82,46 @@ namespace Frontline.Modules
             var dl = _legionModule.DLegions[legion.Level];
             if (!legion.NeedCheck && dl.max > legion.Members.Count)
             {
-                //Session.SendAsync(new ApplyPartyResponse()
-                //{
-                //    id = id,
-                //    success = true
-                //});
                 //加入军团不需要审核
-                _legionModule.JoinLegion(legion, pm);
+                var app = legion.LegionApplications.FirstOrDefault(ap => ap.PlayerId == pm.PlayerId);
+                if (app != null)
+                {
+                    _db.LegionApplications.Remove(app);
+                }
+                pm.LegionId = legion.Id;
+                pm.IsTodayDonated = false;
+                pm.Career = LegionCareer.Member;
+                legion.Members.Add(pm);
+                _db.SaveChanges();
+                
+                //加入军团推送
+                PartyDetailResponse detail = new PartyDetailResponse();
+                detail.id = pm.PlayerId;
+                detail.pi = _legionModule.ToLegionInfo(legion);
+                List<PartyMemberInfo> pms = new List<PartyMemberInfo>();
+                foreach (var m in legion.Members)
+                {
+                    var p = _playerModule.QueryPlayerBaseInfo(m.PlayerId);
+                    var mi = new PartyMemberInfo()
+                    {
+                        id = m.PlayerId,
+                        camp = 0,
+                        career = (int)m.Career,
+                        contri = m.Contribution,
+                        icon = p.Icon,
+                        lastLoginTime = p.LastLoginTime.ToUnixTime(),
+                        level = p.Level,
+                        nickname = p.NickName,
+                        power = p.MaxPower,
+                        vip = p.VIP,
+                    };
+                    pms.Add(mi);
+                }
+                detail.members = pms;
+                detail.success = true;
+                Server.SendByUserNameAsync(pm.PlayerId, detail);
+                _legionModule.OnPlayerJoinLegion(pm, legion);
+
                 return 0;
             }
             var application = new LegionApplication();

@@ -77,6 +77,9 @@ namespace Frontline.Data
             modelBuilder.Entity<Mail>().HasIndex(m => m.PlayerId);
             modelBuilder.Entity<MailAttachment>().HasIndex(at => at.MailId);
             modelBuilder.Entity<MailAttachment>().HasOne<Mail>().WithMany(m=>m.MailAttachments).HasForeignKey(m=>m.MailId);
+
+            modelBuilder.Entity<WeekBattleData>().HasIndex(d => d.PlayerId).IsUnique();
+            modelBuilder.Entity<WeekBattleData>().HasIndex(d => d.Score);
         }
 
         public DbSet<Player> Players { get; set; }
@@ -118,5 +121,6 @@ namespace Frontline.Data
         public DbSet<Rescue> Rescues { get; set; }
 
         public DbSet<Mail> Mails { get; set; }
+        public DbSet<WeekBattleData> WeekBattleData { get; set; }
     }
 }

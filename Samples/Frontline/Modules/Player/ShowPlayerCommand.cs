@@ -17,13 +17,13 @@ namespace Frontline.Modules
     public class ShowPlayerCommand : GameCommand<ShowPlayerRequest>
     {
         PlayerModule _playerModule;
-        FriendController _friendModule;
+        FriendModule _friendModule;
         DataContext _db;
         GameServerSettings _config;
 
         protected override void OnInit()
         {
-            _friendModule = Server.GetModule<FriendController>();
+            _friendModule = Server.GetModule<FriendModule>();
             _playerModule = Server.GetModule<PlayerModule>();
             _db = Server.GetModule<GameSettingModule>().DataContext;
             _config = Server.GetModule<GameSettingModule>().Settings;

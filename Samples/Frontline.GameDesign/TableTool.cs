@@ -54,6 +54,8 @@ namespace Frontline.GameDesign
             Tables.Add("护送运输车关卡配置表.xlsx", "DTransport");
             Tables.Add("雪地营救战关卡配置表.xlsx", "DRescue");
             Tables.Add("军团科技表.xlsx", "DLegionScience");
+            Tables.Add("周常挑战-配置表.xlsx", "DWeekBattle");
+            Tables.Add("周常挑战-宝箱奖励.xlsx", "DWeekBox");            
         }
     }
 }

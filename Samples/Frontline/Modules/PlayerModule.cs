@@ -381,6 +381,8 @@ namespace Frontline.Modules
                 if (old != player.Level)
                 {
                     //任务
+                    this.OnPlayerLevelUp(player, player.Level);
+
                     //通知
                     LevelupNotify notify = new LevelupNotify();
                     notify.exp = player.Exp;
@@ -432,5 +434,17 @@ namespace Frontline.Modules
             PlayerEverydayRefresh?.Invoke(this, player);
         }
         #endregion
+
+        public event GamePlayerEventHandler<Player, int> PlayerLevelUp;
+        public void OnPlayerLevelUp(Player player, int level)
+        {
+            PlayerLevelUp?.Invoke(player, level);
+        }
+
+        public event GamePlayerEventHandler<Player, int> PlayerBuyRes;
+        public void OnBuyRes(Player player, int type)
+        {
+            PlayerBuyRes?.Invoke(player, type);
+        }
     }
 }

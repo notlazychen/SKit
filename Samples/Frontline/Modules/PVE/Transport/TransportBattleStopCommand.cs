@@ -85,6 +85,7 @@ namespace Frontline.Modules
             if (allLive)
             {
                 //任务
+                _tansportModule.OnTransportBattleAllLive(transport.PlayerId);
             }            
             transport.MissionBeginTime = DateTime.MinValue;
             transport.UseNumb++;
@@ -92,6 +93,7 @@ namespace Frontline.Modules
             _db.SaveChanges();
             response.rewardInfo = rewardInfo;
             //做任务
+            _tansportModule.OnTransportBattleOver(transport.PlayerId, Request.win);
             //todo: 记录日志
             Session.SendAsync(response);
             return 0;

@@ -12,9 +12,10 @@ using System.Collections.Generic;
 namespace Frontline.GameDesign.Core.Migrations
 {
     [DbContext(typeof(GameDesignContext))]
-    partial class GameDesignContextModelSnapshot : ModelSnapshot
+    [Migration("20180411124928_ww")]
+    partial class ww
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1052,20 +1053,6 @@ namespace Frontline.GameDesign.Core.Migrations
                     b.HasKey("mid", "day");
 
                     b.ToTable("DWeekBattle");
-                });
-
-            modelBuilder.Entity("Frontline.GameDesign.DWeekBox", b =>
-                {
-                    b.Property<int>("id")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<int>("count");
-
-                    b.Property<int>("item_id");
-
-                    b.HasKey("id");
-
-                    b.ToTable("DWeekBox");
                 });
 
             modelBuilder.Entity("Frontline.GameDesign.VIPPrivilege", b =>

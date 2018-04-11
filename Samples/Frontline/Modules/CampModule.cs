@@ -470,7 +470,7 @@ namespace Frontline.Modules
             player.Units.Add(unit);
 
             var unitInfo = this.ToUnitInfo(unit);
-            OnUnitUnlock(unitInfo);
+            OnUnitUnlock(player, unitInfo);
 
             UnlockUnitResponse response = new UnlockUnitResponse
             {
@@ -510,7 +510,7 @@ namespace Frontline.Modules
 
 
         #region 事件
-        public event EventHandler<UnitInfo> UnitUnlock;
+        public event GamePlayerEventHandler<Player, UnitInfo> UnitUnlock;
         public event EventHandler<UnitLevelUpEventArgs> UnitLevelUp;
         public event EventHandler<UnitGradeUpEventArgs> UnitGradeUp;
         public event EventHandler<EquipLevelUpEventArgs> EquipLevelUp;
@@ -539,9 +539,9 @@ namespace Frontline.Modules
         {
             TeamSettingChanged?.Invoke(this, e);
         }
-        public virtual void OnUnitUnlock(UnitInfo e)
+        public virtual void OnUnitUnlock(Player player, UnitInfo e)
         {
-            UnitUnlock?.Invoke(this, e);
+            UnitUnlock?.Invoke(player, e);
         }
         #endregion
 

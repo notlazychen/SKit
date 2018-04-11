@@ -50,11 +50,18 @@ namespace Frontline.Modules
                     return (int)GameErrorCode.军团人数已满;
                 }
                 var pmother = _legionModule.QueryLegionMember(app.PlayerId);
+                //判断该玩家是否已有军团
+                if (!string.IsNullOrEmpty(pmother.LegionId))
+                {
+                    return (int)GameErrorCode.该玩家已加入军团;
+                }
                 pmother.LegionId = legion.Id;
                 pmother.Career = LegionCareer.Member;
                 legion.Members.Add(pmother);
                 _db.LegionApplications.Remove(app);
                 _db.SaveChanges();
+
+                _legionModule.OnPlayerJoinLegion(pmother, legion);
             }
             else
             {

@@ -75,5 +75,17 @@ namespace Frontline.Modules
             return transport;
         }
         #endregion
+
+        public event GamePlayerEventHandler<string, bool> TransportBattleOver;
+        public void OnTransportBattleOver(string player, bool win)
+        {
+            TransportBattleOver?.Invoke(player, win);
+        }
+        public event GamePlayerEventHandler<string, bool> TransportBattleAllLive;
+        public void OnTransportBattleAllLive(string player)
+        {
+            TransportBattleAllLive?.Invoke(player, true);
+        }
+        
     }
 }

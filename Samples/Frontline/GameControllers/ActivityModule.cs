@@ -111,12 +111,5 @@ namespace Frontline.Modules
             Session.SendAsync(response);
             return 0;
         }
-
-        public int Call_CMD_910(GetWeekInfoRequest request)
-        {
-            GetWeekInfoResponse response = JsonConvert.DeserializeObject<GetWeekInfoResponse>("{\"score\":0,\"success\":true,\"rank\":1,\"day\":3,\"battleDays\":0,\"recevedBoxes\":[],\"numb\":1}");
-            Session.SendAsync(response);
-            return 0;
-        }
     }
 }

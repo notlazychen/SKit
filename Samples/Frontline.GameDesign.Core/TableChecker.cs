@@ -25,7 +25,7 @@ namespace Frontline.GameDesign.Core
                         .Any(dug => du.type == dug.type && dug.star == du.star && dug.grade == grade);
                     if (!ok)
                     {
-                        Console.WriteLine($"检查兵种[{du.name}]在<兵种升阶表>中缺少对应 [兵种类型{du.type}_兵种星级{du.star}_兵种升阶{grade}] 的配置");
+                        Console.WriteLine($"检查兵种[{du.tid}-{du.name}]在<兵种升阶表>中缺少对应 [兵种类型{du.type}_兵种星级{du.star}_兵种升阶{grade}] 的配置");
                     }
                 }                
             }
@@ -45,7 +45,7 @@ namespace Frontline.GameDesign.Core
             var darenaChallengeReward = db.DArenaChallengeReward.ToList();
             foreach (var dr in drs)
             {
-                if (dr.type == 1)
+                if (dr.type == 2)
                 {
                     bool ok = ditems.Any(d => d.tid == dr.tid);
                     if (!ok)
@@ -63,7 +63,7 @@ namespace Frontline.GameDesign.Core
                     bool ok = drs.Any(d => d.id == dd.random_id);
                     if (!ok)
                     {
-                        Console.WriteLine($"检查<关卡配置表>[id:{dd.id}]的随机库Id[{dd.random_id}]在<随机库表>中缺失");
+                        Console.WriteLine($"检查<关卡配置表>[id:{dd.id}-{dd.name}]的随机库Id[{dd.random_id}]在<随机库表>中缺失");
                     }
                 }
             }
@@ -76,7 +76,7 @@ namespace Frontline.GameDesign.Core
                     bool ok = drs.Any(d => d.id == ditem.breakRandomId);
                     if (!ok)
                     {
-                        Console.WriteLine($"检查<道具表>[id:{ditem.tid}]的随机库Id[{ditem.breakRandomId}]在<随机库表>中缺失");
+                        Console.WriteLine($"检查<道具表>[id:{ditem.tid}-{ditem.name}]的随机库Id[{ditem.breakRandomId}]在<随机库表>中缺失");
                     }
                 }
             }
@@ -89,7 +89,7 @@ namespace Frontline.GameDesign.Core
                     bool ok = drs.Any(d => d.id == dd.contri);
                     if (!ok)
                     {
-                        Console.WriteLine($"检查<军团捐献表>[id:{dd.id}]的随机库Id[{dd.contri}]在<随机库表>中缺失");
+                        Console.WriteLine($"检查<军团捐献表>[id:{dd.id}-{dd.name}]的随机库Id[{dd.contri}]在<随机库表>中缺失");
                     }
                 }
             }
@@ -107,8 +107,28 @@ namespace Frontline.GameDesign.Core
                 }
             }
 
-            //检查抵抗前线奖励
+            //检查抵抗前线宝箱奖励
+            var dikangs = db.DDiKangQianXianBox.ToList();
+            foreach(var box in dikangs)
+            {
+                bool ok = ditems.Any(item => item.tid == box.box);
+                if (!ok)
+                {
+                    Console.WriteLine($"检查<抵抗前线宝箱>[id:{box.id}]的道具Id[{box.box}]在<道具表>中缺失");
+                }
+            }
             //抵抗前线奖励在道具表中
+
+            //检查周常宝箱
+            var boxes = db.DWeekBox.ToList();
+            foreach(var box in boxes)
+            {
+                bool ok = ditems.Any(item => item.tid == box.item_id);
+                if (!ok)
+                {
+                    Console.WriteLine($"检查<周常挑战-宝箱奖励>[id:{box.id}]的道具Id[{box.item_id}]在<道具表>中缺失");
+                }
+            }
         }                
 
 

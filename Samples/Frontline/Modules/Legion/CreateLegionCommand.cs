@@ -100,6 +100,8 @@ namespace Frontline.Modules
             response.party = _legionModule.ToLegionInfo(legion);
 
             Session.SendAsync(response);
+
+            _legionModule.OnPlayerJoinLegion(member, legion);
             return 0;
         }
     }

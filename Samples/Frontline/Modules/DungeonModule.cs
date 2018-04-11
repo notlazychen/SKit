@@ -546,9 +546,9 @@ namespace Frontline.Modules
                 response.lv = player.Level;
                 response.exp = player.Exp;
                 response.star = dungeon.Star;
-
+                
                 _db.SaveChanges();
-
+                OnPlayerPassDungeon(player, dungeon);
             }
             else
             {
@@ -720,5 +720,12 @@ namespace Frontline.Modules
             return 0;
         }
         #endregion
+
+
+        public event GamePlayerEventHandler<Player, Dungeon> PassDungeon;
+        public void OnPlayerPassDungeon(Player player, Dungeon dungeon)
+        {
+            PassDungeon?.Invoke(player, dungeon);
+        }
     }
 }

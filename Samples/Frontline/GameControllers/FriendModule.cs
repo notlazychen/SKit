@@ -15,7 +15,7 @@ using System.Threading.Tasks;
 
 namespace Frontline.Modules
 {
-    public class FriendController : GameModule
+    public class FriendModule : GameModule
     {
         
         private DataContext _db;
@@ -23,7 +23,7 @@ namespace Frontline.Modules
 
         private PlayerModule _playerModule;
 
-        public FriendController(DataContext db, ILogger<FriendController> logger)
+        public FriendModule(DataContext db, ILogger<FriendModule> logger)
         {
             _db = db;
             _logger = logger;
@@ -278,6 +278,7 @@ namespace Frontline.Modules
 
             Server.SendByUserNameAsync(other.Id, notify);
 
+            this.OnRequestFriendApplication(myFl, hisfl);
             return 0;
         }
 
@@ -453,6 +454,8 @@ namespace Frontline.Modules
                             Server.SendByUserNameAsync(friend.FriendListId, notify);
                         }
                         change = true;
+
+                        this.OnSendFriendOil(friendlist.PlayerId, friend.PlayerId);
                     }
                 }
             }
@@ -473,6 +476,8 @@ namespace Frontline.Modules
                         Server.SendByUserNameAsync(friend.FriendListId, notify);
                     }
                     change = true;
+
+                    this.OnSendFriendOil(friendlist.PlayerId, friend.PlayerId);
                 }
             }
 
@@ -601,5 +606,17 @@ namespace Frontline.Modules
         }
 
         #endregion
+
+
+        public event GamePlayerEventHandler<FriendList, FriendList> SendFriendApplicationRequest;
+        public void OnRequestFriendApplication(FriendList player, FriendList other)
+        {
+            SendFriendApplicationRequest?.Invoke(player, other);
+        }
+        public event GamePlayerEventHandler<string, string> SendFriendOil;
+        public void OnSendFriendOil(string player, string other)
+        {
+            SendFriendOil?.Invoke(player, other);
+        }
     }
 }

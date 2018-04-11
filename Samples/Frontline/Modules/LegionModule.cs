@@ -155,50 +155,14 @@ namespace Frontline.Modules
                 leaderName = Server.GetModule<PlayerModule>().QueryPlayerBaseInfo(legion.LeaderId).NickName
             };
         }
-
-        public void JoinLegion(Legion legion, LegionMember lm)
-        {
-            var app = legion.LegionApplications.FirstOrDefault(ap => ap.PlayerId == lm.PlayerId);
-            if (app != null)
-            {
-                _db.LegionApplications.Remove(app);
-            }
-            lm.LegionId = legion.Id;
-            lm.IsTodayDonated = false;
-            lm.Career = LegionCareer.Member;
-            legion.Members.Add(lm);
-
-            _db.SaveChanges();
-
-            //加入军团推送
-            PartyDetailResponse detail = new PartyDetailResponse();
-            detail.id = lm.PlayerId;
-            detail.pi = this.ToLegionInfo(legion);
-            List<PartyMemberInfo> pms = new List<PartyMemberInfo>();
-            foreach (var m in legion.Members)
-            {
-                var p = _playerModule.QueryPlayerBaseInfo(m.PlayerId);
-                var mi = new PartyMemberInfo()
-                {
-                    id = m.PlayerId,
-                    camp = 0,
-                    career = (int)m.Career,
-                    contri = m.Contribution,
-                    icon = p.Icon,
-                    lastLoginTime = p.LastLoginTime.ToUnixTime(),
-                    level = p.Level,
-                    nickname = p.NickName,
-                    power = p.MaxPower,
-                    vip = p.VIP,
-                };
-                pms.Add(mi);
-            }
-            detail.members = pms;
-            detail.success = true;
-            Server.SendByUserNameAsync(lm.PlayerId, detail);
-        }
+        
         #endregion
 
+        public event GamePlayerEventHandler<LegionMember, Legion> PlayerJoinLegion;
+        public void OnPlayerJoinLegion(LegionMember member, Legion legion)
+        {
+            PlayerJoinLegion?.Invoke(member, legion);
+        }
     }
 }
 

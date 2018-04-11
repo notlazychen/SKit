@@ -71,5 +71,8 @@ namespace Frontline.Common
         public static int mail_collect_max = 100;//收藏的邮件数量上限
         public static int mail_title_length = 30;//邮件标题字数上限
         public static int mail_content_length = 200;//邮件正文字数上限
+
+        public static int week_challenge_number = 1;//周常挑战次数上限
+        public static int week_challenge_score = 10;//周常挑战每场胜利获得积分
     }
 }

@@ -15,6 +15,6 @@ namespace Frontline.Domain
 
         public int Tid { get; set; }//策划id
         public int Progress { get; set; }
-        public QuestState Status { get; set; }//状态0进行中，1已完成
+        public QuestStatus Status { get; set; }//状态0进行中，1已完成
     }
 }
