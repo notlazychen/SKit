@@ -17,13 +17,13 @@ namespace Frontline.Modules
 {
     public class TransportBattleStartCommand : GameCommand<StartTransportRequest>
     {
-        DungeonController _dungeonModule;
+        DungeonModule _dungeonModule;
         TransportModule _tansportModule;
         DataContext _db;
 
         protected override void OnInit()
         {
-            _dungeonModule = Server.GetModule<DungeonController>();
+            _dungeonModule = Server.GetModule<DungeonModule>();
             _tansportModule = Server.GetModule<TransportModule>();
             _db = Server.GetModule<GameSettingModule>().DataContext;
         }

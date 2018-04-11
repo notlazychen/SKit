@@ -21,7 +21,7 @@ namespace Frontline.Modules
 
         public Dictionary<int, DTransport> DTransports { get; private set; }//diff:x
 
-        private DungeonController _dungeonModule;
+        private DungeonModule _dungeonModule;
         public TransportModule(DataContext db, GameDesignContext design)
         {
             _db = db;
@@ -31,12 +31,12 @@ namespace Frontline.Modules
         {
             //事件注册
             var playerModule = this.Server.GetModule<PlayerModule>();
-            _dungeonModule = this.Server.GetModule<DungeonController>();
+            _dungeonModule = this.Server.GetModule<DungeonModule>();
 
             var design = Server.GetModule<DesignDataModule>();
             design.Register(this, designDb =>
             {
-                DTransports = designDb.DTransports.AsNoTracking().ToDictionary(x => x.diff, x => x);                
+                DTransports = designDb.DTransport.AsNoTracking().ToDictionary(x => x.diff, x => x);                
             });
         }
 
@@ -65,7 +65,7 @@ namespace Frontline.Modules
                 _transports.Add(pid, transport);
             }
 
-            if (transport.LastRefreshTime != DateTime.Today)
+            if (transport.LastRefreshTime.Date != DateTime.Today)
             {
                 transport.UseNumb = 0;
                 transport.LastTodayDiff = 0;

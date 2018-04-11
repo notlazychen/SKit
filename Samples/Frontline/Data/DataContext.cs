@@ -58,6 +58,11 @@ namespace Frontline.Data
             modelBuilder.Entity<Legion>().HasIndex(l => l.ShortName).IsUnique();
             //modelBuilder.Entity<LegionMember>().HasAlternateKey(l => l.PlayerId);
             modelBuilder.Entity<LegionMember>().HasOne<Legion>().WithMany(l=>l.Members).HasForeignKey(m=>m.LegionId);
+            modelBuilder.Entity<LegionScience>().HasOne<LegionMember>().WithMany(lm => lm.LegionSciences).HasForeignKey(s => s.PlayerId);
+            modelBuilder.Entity<LegionApplication>().HasIndex(l => l.LegionId);
+            modelBuilder.Entity<LegionApplication>().HasOne<Legion>().WithMany(l => l.LegionApplications).HasForeignKey(l=>l.LegionId);
+            modelBuilder.Entity<LegionBBS>().HasIndex(l => l.LegionId);
+            modelBuilder.Entity<LegionBBS>().HasOne<Legion>().WithMany(l => l.LegionBBS).HasForeignKey(l => l.LegionId);
 
             modelBuilder.Entity<Factory>().HasIndex(l => l.PlayerId).IsUnique();
             modelBuilder.Entity<FacWorker>().HasIndex(l => l.PlayerId);
@@ -68,7 +73,10 @@ namespace Frontline.Data
 
             modelBuilder.Entity<Quest>().HasOne<PlayerQuestData>().WithMany(f => f.Quests).HasForeignKey(w => w.PlayerId);
             modelBuilder.Entity<QuestDaily>().HasOne<PlayerQuestData>().WithMany(f => f.QuestDailys).HasForeignKey(w => w.PlayerId);
-            
+
+            modelBuilder.Entity<Mail>().HasIndex(m => m.PlayerId);
+            modelBuilder.Entity<MailAttachment>().HasIndex(at => at.MailId);
+            modelBuilder.Entity<MailAttachment>().HasOne<Mail>().WithMany(m=>m.MailAttachments).HasForeignKey(m=>m.MailId);
         }
 
         public DbSet<Player> Players { get; set; }
@@ -92,6 +100,10 @@ namespace Frontline.Data
 
         public DbSet<Legion> Legions { get; set; }
         public DbSet<LegionMember> LegionMembers { get; set; }
+        public DbSet<LegionScience> LegionSciences { get; set; }
+        public DbSet<LegionApplication> LegionApplications { get; set; }
+        public DbSet<LegionBBS> LegionBBS { get; set; }
+        
 
         public DbSet<Factory> Factories { get; set; }
         public DbSet<FacWorker> FacWorkers { get; set; }
@@ -103,5 +115,8 @@ namespace Frontline.Data
 
         public DbSet<DiKang> DiKangs { get; set; }
         public DbSet<Transport> Transports { get; set; }
+        public DbSet<Rescue> Rescues { get; set; }
+
+        public DbSet<Mail> Mails { get; set; }
     }
 }

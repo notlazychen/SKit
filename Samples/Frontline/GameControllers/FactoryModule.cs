@@ -44,11 +44,11 @@ namespace Frontline.Modules
             var designModule = Server.GetModule<DesignDataModule>();
             designModule.Register(this, designDb =>
             {
-                DFacWorkers = designDb.DFacWorkers.AsNoTracking().ToDictionary(x => x.id, x => x);
+                DFacWorkers = designDb.DFacWorker.AsNoTracking().ToDictionary(x => x.id, x => x);
                 DFacWorkersByTypeAndStar = DFacWorkers.Values.GroupBy(w => w.type).ToDictionary(x => x.Key, x => x.ToDictionary(y => y.star, y => y));
                 DFacTaskGroups = designDb.DFacTaskGroup.AsNoTracking().ToDictionary(x => x.id, x => x);
-                DFacTasks = designDb.DFacTasks.AsNoTracking().ToDictionary(x => x.id, x => x);
-                DFacTasksByGroup = DFacTasks.Values.GroupBy(y => y.group).ToDictionary(z => z.Key, z => z.ToList());
+                DFacTasks = designDb.DFacTask.AsNoTracking().ToDictionary(x => x.id, x => x);
+                DFacTasksByGroup = this.DFacTasks.Values.GroupBy(y => y.group).ToDictionary(z => z.Key, z => z.ToList());
             });
         }
 
@@ -94,7 +94,7 @@ namespace Frontline.Modules
             }
             if (!isnew)
             {
-                if (fac.LastRefreshDay != DateTime.Today)
+                if (fac.LastRefreshDay.Date != DateTime.Today)
                 {
                     needsave = true;
                     //刷新任务
@@ -121,7 +121,7 @@ namespace Frontline.Modules
             return new WorkerInfo() { Id = w.Id, State = (int)w.State, Tid = w.Tid };
         }
         public WorkTaskInfo ToWorkTaskInfo(FacTask t)
-        {
+        {  
             return new WorkTaskInfo()
             {
                 Id = t.Id,
@@ -299,14 +299,15 @@ namespace Frontline.Modules
         {
             var player = _playerModule.QueryPlayer(Session.PlayerId);
             var playercon = Server.GetModule<PlayerModule>();
+            var pkg = Server.GetModule<PkgModule>();
             var fac = this.QueryPlayerFactory(player);
             var task = fac.FacTasks.First(t => t.Id == request.taskid);
             var works = fac.FacWorkers.Where(w => request.workers.Contains(w.Id)).ToList();
             var dt = DFacTasks[task.Tid];
-            //判断体力是否足够
-            if(!playercon.IsCurrencyEnough(player, CurrencyType.OIL, dt.cost_oil))
+            //判断道具是否足够
+            if(!pkg.IsItemEnough(player, new[] { dt.cost_item_id }, new[] { dt.cost_item_cnt }))
             {
-                return (int)GameErrorCode.体力不足;
+                return (int)GameErrorCode.道具不足;
             }
             //判断工人是否符合
             bool can = works.Any(w => DFacWorkers[w.Tid].star >= dt.worker_q)
@@ -315,8 +316,12 @@ namespace Frontline.Modules
             {
                 return (int)GameErrorCode.工人品质未满足条件;
             }
+            if(works.Count < dt.worker_num)
+            {
+                return (int)GameErrorCode.工人人数不足;
+            }
             string reason = $"派遣任务{dt.id}";
-            playercon.AddCurrency(player, CurrencyType.OIL, -dt.cost_oil, reason);
+            pkg.TrySubItem(player,dt.cost_item_id, dt.cost_item_cnt, reason, out var item);
             task.State = FacTaskState.Doing;
             task.FacWorkers = works.ManyToString(w => w.Id.ToString());
             task.EndTime = DateTime.Now.AddSeconds(dt.cost_time);

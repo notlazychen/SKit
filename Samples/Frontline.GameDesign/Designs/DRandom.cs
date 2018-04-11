@@ -9,12 +9,12 @@ namespace Frontline.GameDesign
     {
         [Key]
         public int id { get; set; }
-        [MaxLength(32)]
-        public string desc { get; set; }
-        public JsonObject<int[]> gid { get; set; }
-        public JsonObject<int[]> count { get; set; }
-        public JsonObject<int[]> res_type { get; set; }
-        public JsonObject<int[]> res_count { get; set; }
-        public JsonObject<int[]> weight { get; set; }
+        public int random { get; set; }
+        public int group { get; set; }
+        public int w { get; set; }
+        public int type { get; set; }
+        public int tid { get; set; }
+        public int min { get; set; }
+        public int max { get; set; }
     }
 }

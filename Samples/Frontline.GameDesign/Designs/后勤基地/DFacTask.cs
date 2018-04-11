@@ -14,9 +14,11 @@ namespace Frontline.GameDesign
         public int type { get; set; }
         public int star { get; set; }
         //public string desc { get; set; }
-        public int cost_oil { get; set; }
+        public int cost_item_id { get; set; }
+        public int cost_item_cnt { get; set; }
         public int w { get; set; }
         public int worker_q { get; set; }
+        public int worker_num { get; set; }        
         public int cost_time { get; set; }//完成时间-秒
         public int res_type { get; set; }
         public int res_cnt { get; set; }

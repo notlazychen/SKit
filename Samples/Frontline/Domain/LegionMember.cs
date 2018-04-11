@@ -12,14 +12,16 @@ namespace Frontline.Domain
         public string PlayerId { get; set; }
         
         public long Contribution { get; set; }//贡献
-        public int ContriTimes { get; set; }//贡献次数
+        public bool IsTodayDonated { get; set; }//贡献次数
         public DateTime LastContriTime { get; set; }//上次交党费的时间 
 
         public LegionCareer Career { get; set; }
 
         public string LegionId { get; set; }
         public DateTime LastLeftTime { get; set; }//上次离开军团的时间
-        public DateTime LastRefreshTime { get; set; }   
+        public DateTime LastRefreshTime { get; set; }
+
+        public List<LegionScience> LegionSciences { get; set; } = new List<LegionScience>();
     }
 
     public enum LegionCareer

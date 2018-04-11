@@ -106,7 +106,7 @@ namespace SKit
         public event EventHandler<SessionCloseEventArgs> SessionClosed;
         private void OnSessionClosed(GameSession session, ClientCloseReason reason)
         {
-            SessionClosed?.Invoke(this, new SessionCloseEventArgs() { GameSession = session, Reason = reason});
+            SessionClosed?.Invoke(this, new SessionCloseEventArgs() { GameSession = session, Reason = reason });
         }
         /// <summary>
         /// 有新的连接建立
@@ -185,28 +185,28 @@ namespace SKit
         /// </summary>
         public void Start()
         {
-            //反射
-            this.ReflectProtocols();
-
-            if (!IsRunning)
+            try
             {
-                _logger.LogInformation($"启动工作线程...");
-                IsRunning = true;
-
-                //启动任务工作线程
-                _workingTaskTokenSource = new CancellationTokenSource();
-                _workingTask = new Thread(LoopWorking);
-                _workingTask.Name = MainWorldThreadName;
-                _workingTask.Start();
-
-                _logger.LogInformation($"启动序列化线程...");
-                //启动发送线程
-                //_sendingTaskTokenSource = new CancellationTokenSource();
-                _sendingTask = new Thread(LoopSending);
-                _sendingTask.Start();
-
-                try
+                if (!IsRunning)
                 {
+                    //反射
+                    this.ReflectProtocols();
+
+                    _logger.LogInformation($"启动工作线程...");
+                    IsRunning = true;
+
+                    //启动任务工作线程
+                    _workingTaskTokenSource = new CancellationTokenSource();
+                    _workingTask = new Thread(LoopWorking);
+                    _workingTask.Name = MainWorldThreadName;
+                    _workingTask.Start();
+
+                    _logger.LogInformation($"启动序列化线程...");
+                    //启动发送线程
+                    //_sendingTaskTokenSource = new CancellationTokenSource();
+                    _sendingTask = new Thread(LoopSending);
+                    _sendingTask.Start();
+
                     IPEndPoint endPoint = new IPEndPoint(IPAddress.Any, Config.Port);
                     _listener = new Socket(endPoint.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                     EnableRebinding(_listener);
@@ -216,7 +216,7 @@ namespace SKit
                     _logger.LogInformation($"绑定端口{Config.Port}");
                     _listener.Bind(endPoint);
                     _listener.Listen(Config.Backlog);
-                    
+
                     SocketAsyncEventArgs acceptEventArg = new SocketAsyncEventArgs();
                     _acceptEventArg = acceptEventArg;
                     acceptEventArg.Completed += acceptEventArg_Completed;
@@ -226,10 +226,10 @@ namespace SKit
                         ProcessAccept(acceptEventArg);
                     _logger.LogInformation($"服务器[{Id}]已启动");
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, ex.Message);
-                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, ex.Message);
             }
         }
 
@@ -241,13 +241,13 @@ namespace SKit
                 {
                     _logger.LogInformation($"Game Server [{Id}] Closing...");
                     //各模块自行qingli 
-                    foreach(var module in _modules.Values)
+                    foreach (var module in _modules.Values)
                     {
                         _logger.LogInformation($"Module [{module.GetType().Name}] Close");
                         module.OnServerClosing();
                     }
 
-                    if(_acceptEventArg != null)
+                    if (_acceptEventArg != null)
                     {
                         _acceptEventArg.Completed -= acceptEventArg_Completed;
                         _acceptEventArg.Dispose();
@@ -399,7 +399,7 @@ namespace SKit
                 return;
             foreach (var username in usersnames)
             {
-                if(_users.TryGetValue(username, out var session))
+                if (_users.TryGetValue(username, out var session))
                 {
                     session.Socket.Send(data, 0, data.Length, SocketFlags.None);
                 }
@@ -433,7 +433,7 @@ namespace SKit
             _sendingQueue.Enqueue(gmsg);
         }
         #endregion
-        
+
         #region 网络部分
         void acceptEventArg_Completed(object sender, SocketAsyncEventArgs e)
         {
@@ -447,8 +447,8 @@ namespace SKit
             if (e.SocketError != SocketError.Success)
             {
                 //The listen socket was closed
-                if (e.SocketError ==  SocketError.OperationAborted
-                    || e.SocketError ==  SocketError.Interrupted
+                if (e.SocketError == SocketError.OperationAborted
+                    || e.SocketError == SocketError.Interrupted
                     || e.SocketError == SocketError.InvalidArgument
                     || e.SocketError == SocketError.NotSocket)
                     return;
@@ -522,7 +522,7 @@ namespace SKit
             }
 
             if (!willRaiseEvent)
-                    ProcessAccept(e);
+                ProcessAccept(e);
         }
 
         /// <summary>
@@ -622,7 +622,7 @@ namespace SKit
                 // ignored
             }
 
-            if(_sessions.TryRemove(token.Id, out _))
+            if (_sessions.TryRemove(token.Id, out _))
             {
                 if (token.PlayerId != null && _users.TryRemove(token.PlayerId, out _))
                 {
@@ -766,7 +766,7 @@ namespace SKit
                                         break;
                                     case MessageType.ToMultiUsers:
                                         {
-                                            if(message.DestIds != null)
+                                            if (message.DestIds != null)
                                             {
                                                 var args = new SocketAsyncEventArgs();
                                                 args.Completed += IO_Completed;
@@ -841,7 +841,7 @@ namespace SKit
                         while (_workingQueue.TryDequeue(out var task))
                         {
                             var t = task as GamePlayerTask;
-                            if(t != null)
+                            if (t != null)
                             {
                                 CurrentWorkingSession = t.Session;
                                 int result = task.DoAction();
@@ -999,7 +999,8 @@ namespace SKit
                         {
                             CMD = cmd,
                             RequestType = requestType,
-                            Command = new GameMethodHandlerCommand() {
+                            Command = new GameMethodHandlerCommand()
+                            {
                                 MethodInfo = methodInfo,
                                 Module = module,
                                 ProcessAction = actionMethod,
@@ -1007,11 +1008,11 @@ namespace SKit
                                 Server = this,
                             }
                         };
-                        if(options != null)
+                        if (options != null)
                         {
                             commandInfo.AllowAnonymous = options.AllowAnonymous;
                             commandInfo.Asynchronous = options.Asynchronous;
-                            commandInfo.CMD = options.CMD ?? requestType.Name;                            
+                            commandInfo.CMD = options.CMD ?? requestType.Name;
                         }
                         if (!_commands.TryGetValue(commandInfo.CMD, out var old))
                         {
@@ -1031,7 +1032,7 @@ namespace SKit
             {
                 if (type.BaseType.IsGenericType)
                 {
-                    if(type.BaseType.BaseType == typeof(GameCommandBase))
+                    if (type.BaseType.BaseType == typeof(GameCommandBase))
                     {
                         var requestType = type.BaseType.GetGenericArguments()[0];
                         var options = type.GetCustomAttribute<GameCommandOptionsAttribute>();
@@ -1068,14 +1069,14 @@ namespace SKit
                 //_logger.LogInformation($"加载模块:{module.GetType().Name}");
                 module.ConfigureServices();
             }
-            foreach(var module in modules)
+            foreach (var module in modules)
             {
                 _logger.LogInformation($"配置模块:{module.GetType().Name}");
                 module.Configure();
             }
 
             //命令初始化
-            foreach(var command in _commands.Values)
+            foreach (var command in _commands.Values)
             {
                 command.Command.Init();
             }

@@ -48,22 +48,26 @@ namespace Frontline.Modules
             {
                 return (int)GameErrorCode.兵种已经最高阶;
             }
-            DUnitGradeUp dug = _campModule.DUnitGrades[du.star][unit.Grade + 1];
+            DUnitGradeUp dug = _campModule.DUnitGrades[du.star][du.type][unit.Grade + 1];
             if (unit.Level < dug.min_level)
             {
                 return (int)GameErrorCode.兵种不满足升阶等级; ;
             }
-            int itemCount = dug.item_cnt;
+            int itemCount = dug.grade_item_cnt;//碎片数量
 
             var pkgController = Server.GetModule<PkgModule>();
             var playerModule = Server.GetModule<PlayerModule>();
             string reason = $"兵种进阶{du.tid}";
             if (playerModule.IsCurrencyEnough(player, CurrencyType.GOLD, dug.gold))
             {
+                if(!pkgController.IsItemEnough(player, dug.cost_item_id.Object, dug.cost_item_cnt.Object))
+                {
+                    return (int)GameErrorCode.道具不足;
+                }
                 if (pkgController.TrySubItem(player, itemId, itemCount, reason, out var item))
                 {
+                    pkgController.SubItems(player, dug.cost_item_id.Object, dug.cost_item_cnt.Object, reason);
                     playerModule.AddCurrency(player, CurrencyType.GOLD, -dug.gold, reason);
-
                     unit.Grade += 1;
 
                     response.unitInfo = _campModule.ToUnitInfo(unit, du, true);

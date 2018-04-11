@@ -16,15 +16,15 @@ namespace protocol
         /// </summary>
 		[ProtoMember(3, IsRequired = false)]
 		public string battleId;
-        /// <summary>
-        ///  好友上阵单位
-        /// </summary>
-		[ProtoMember(4, IsRequired = false)]
-		public List<TeamPlaceInfo> friendTeam;
+  //      /// <summary>
+  //      ///  好友上阵单位
+  //      /// </summary>
+		//[ProtoMember(4, IsRequired = false)]
+		//public List<TeamPlaceInfo> friendTeam;
         /// <summary>
         ///  野怪列表
         /// </summary>
-		[ProtoMember(5, IsRequired = false)]
+		[ProtoMember(4, IsRequired = false)]
 		public List<MonsterInfo> monster;
         /// <summary>
         ///  是否成功

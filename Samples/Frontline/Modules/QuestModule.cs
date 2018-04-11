@@ -33,9 +33,9 @@ namespace Frontline.Modules
             var design = Server.GetModule<DesignDataModule>();
             design.Register(this, designDb =>
             {
-                DQuestDailyRewards = designDb.DQuestDailyRewards.AsNoTracking().ToDictionary(x => x.id, x => x);
-                DQuestDailys = designDb.DQuestDailys.AsNoTracking().ToDictionary(x => x.id, x => x);
-                DQuests = designDb.DQuests.AsNoTracking().ToDictionary(x => x.id, x => x);
+                DQuestDailyRewards = designDb.DQuestDailyReward.AsNoTracking().ToDictionary(x => x.id, x => x);
+                DQuestDailys = designDb.DQuestDaily.AsNoTracking().ToDictionary(x => x.id, x => x);
+                DQuests = designDb.DQuest.AsNoTracking().ToDictionary(x => x.id, x => x);
             });
         }
 
@@ -98,7 +98,7 @@ namespace Frontline.Modules
 
         private void TryRefershDailyQuest(Player player, PlayerQuestData data, bool force = false)
         {
-            if (force || data.LastRefreshDay != DateTime.Today)
+            if (force || data.LastRefreshDay.Date != DateTime.Today)
             {
                 var quests = data.QuestDailys;
                 _db.QuestDailys.RemoveRange(quests);

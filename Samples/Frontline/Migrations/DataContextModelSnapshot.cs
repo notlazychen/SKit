@@ -20,7 +20,7 @@ namespace Frontline.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn)
-                .HasAnnotation("ProductVersion", "2.0.1-rtm-125");
+                .HasAnnotation("ProductVersion", "2.0.2-rtm-10011");
 
             modelBuilder.Entity("Frontline.Domain.ArenaBattleHistory", b =>
                 {
@@ -357,6 +357,44 @@ namespace Frontline.Migrations
                     b.ToTable("Legions");
                 });
 
+            modelBuilder.Entity("Frontline.Domain.LegionApplication", b =>
+                {
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<string>("LegionId");
+
+                    b.Property<string>("PlayerId");
+
+                    b.Property<DateTime>("RequestTime");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LegionId");
+
+                    b.ToTable("LegionApplications");
+                });
+
+            modelBuilder.Entity("Frontline.Domain.LegionBBS", b =>
+                {
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<string>("Content");
+
+                    b.Property<string>("LegionId");
+
+                    b.Property<string>("PlayerId");
+
+                    b.Property<DateTime>("Time");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LegionId");
+
+                    b.ToTable("LegionBBS");
+                });
+
             modelBuilder.Entity("Frontline.Domain.LegionMember", b =>
                 {
                     b.Property<string>("PlayerId")
@@ -364,9 +402,9 @@ namespace Frontline.Migrations
 
                     b.Property<int>("Career");
 
-                    b.Property<int>("ContriTimes");
-
                     b.Property<long>("Contribution");
+
+                    b.Property<bool>("IsTodayDonated");
 
                     b.Property<DateTime>("LastContriTime");
 
@@ -381,6 +419,24 @@ namespace Frontline.Migrations
                     b.HasIndex("LegionId");
 
                     b.ToTable("LegionMembers");
+                });
+
+            modelBuilder.Entity("Frontline.Domain.LegionScience", b =>
+                {
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<int>("Level");
+
+                    b.Property<string>("PlayerId");
+
+                    b.Property<int>("Tid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlayerId");
+
+                    b.ToTable("LegionSciences");
                 });
 
             modelBuilder.Entity("Frontline.Domain.Lottery", b =>
@@ -417,6 +473,64 @@ namespace Frontline.Migrations
                     b.HasKey("PlayerId");
 
                     b.ToTable("Lotteries");
+                });
+
+            modelBuilder.Entity("Frontline.Domain.Mail", b =>
+                {
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<JsonObject<List<string>>>("Args");
+
+                    b.Property<string>("Content");
+
+                    b.Property<string>("From");
+
+                    b.Property<string>("Icon");
+
+                    b.Property<bool>("IsCollected");
+
+                    b.Property<bool>("IsLegionMail");
+
+                    b.Property<bool>("IsReaded");
+
+                    b.Property<bool>("IsRecved");
+
+                    b.Property<string>("LegionName");
+
+                    b.Property<string>("PlayerId");
+
+                    b.Property<DateTime>("Time");
+
+                    b.Property<string>("Title");
+
+                    b.Property<int>("Type");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlayerId");
+
+                    b.ToTable("Mails");
+                });
+
+            modelBuilder.Entity("Frontline.Domain.MailAttachment", b =>
+                {
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<int>("Count");
+
+                    b.Property<string>("MailId");
+
+                    b.Property<int>("Tid");
+
+                    b.Property<int>("Type");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MailId");
+
+                    b.ToTable("MailAttachment");
                 });
 
             modelBuilder.Entity("Frontline.Domain.Player", b =>
@@ -612,6 +726,22 @@ namespace Frontline.Migrations
                     b.ToTable("QuestDailys");
                 });
 
+            modelBuilder.Entity("Frontline.Domain.Rescue", b =>
+                {
+                    b.Property<string>("PlayerId")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<DateTime>("LastRefreshTime");
+
+                    b.Property<int>("LastTodayDiff");
+
+                    b.Property<int>("UseNumb");
+
+                    b.HasKey("PlayerId");
+
+                    b.ToTable("Rescues");
+                });
+
             modelBuilder.Entity("Frontline.Domain.Section", b =>
                 {
                     b.Property<string>("Id")
@@ -792,11 +922,39 @@ namespace Frontline.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
+            modelBuilder.Entity("Frontline.Domain.LegionApplication", b =>
+                {
+                    b.HasOne("Frontline.Domain.Legion")
+                        .WithMany("LegionApplications")
+                        .HasForeignKey("LegionId");
+                });
+
+            modelBuilder.Entity("Frontline.Domain.LegionBBS", b =>
+                {
+                    b.HasOne("Frontline.Domain.Legion")
+                        .WithMany("LegionBBS")
+                        .HasForeignKey("LegionId");
+                });
+
             modelBuilder.Entity("Frontline.Domain.LegionMember", b =>
                 {
                     b.HasOne("Frontline.Domain.Legion")
                         .WithMany("Members")
                         .HasForeignKey("LegionId");
+                });
+
+            modelBuilder.Entity("Frontline.Domain.LegionScience", b =>
+                {
+                    b.HasOne("Frontline.Domain.LegionMember")
+                        .WithMany("LegionSciences")
+                        .HasForeignKey("PlayerId");
+                });
+
+            modelBuilder.Entity("Frontline.Domain.MailAttachment", b =>
+                {
+                    b.HasOne("Frontline.Domain.Mail")
+                        .WithMany("MailAttachments")
+                        .HasForeignKey("MailId");
                 });
 
             modelBuilder.Entity("Frontline.Domain.PlayerItem", b =>

@@ -63,5 +63,13 @@ namespace Frontline.Common
         public static int DiKangSweepGoldPrice = 100;//抵抗前线扫荡金币单价
 
         public static int TransportMaxTimes = 3;//运输每日最大次数
+        public static int RescueMaxTimes = 3;//运输每日最大次数
+
+        public static int mail_max = 100;//邮件数量上限
+        public static int mail_idle = 15;//邮件过期时间（天）（针对不带附件的邮件）
+        public static int mail_pagecount = 5;//邮件一页显示多少封
+        public static int mail_collect_max = 100;//收藏的邮件数量上限
+        public static int mail_title_length = 30;//邮件标题字数上限
+        public static int mail_content_length = 200;//邮件正文字数上限
     }
 }

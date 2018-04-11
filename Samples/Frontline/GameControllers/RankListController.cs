@@ -27,7 +27,7 @@ namespace Frontline.Modules
         private DataContext _db;
         private ILogger _logger;
 
-        private LegionController _legionController;
+        private LegionModule _legionController;
         private PlayerModule _playerModule;
 
         public RankListController(DataContext db, ILogger<RankListController> logger)
@@ -41,7 +41,7 @@ namespace Frontline.Modules
             _playerModule = Server.GetModule<PlayerModule>();
 
             base.OnConfiguringModules();
-            _legionController = Server.GetModule<LegionController>();
+            _legionController = Server.GetModule<LegionModule>();
         }
 
         #region 客户端接口

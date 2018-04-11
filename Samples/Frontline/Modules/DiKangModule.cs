@@ -23,7 +23,7 @@ namespace Frontline.Modules
         public Dictionary<int, DDiKangQianXianBuilding> DDiKangQianXianBuildings { get; private set; }
         public Dictionary<int, DDiKangQianXianBox> DDiKangQianXianBoxs { get; private set; }
 
-        private DungeonController _dungeonModule;
+        private DungeonModule _dungeonModule;
         public DiKangModule(DataContext db, GameDesignContext design)
         {
             _db = db;
@@ -33,14 +33,14 @@ namespace Frontline.Modules
         {
             //事件注册
             var playerModule = this.Server.GetModule<PlayerModule>();
-            _dungeonModule = this.Server.GetModule<DungeonController>();
+            _dungeonModule = this.Server.GetModule<DungeonModule>();
 
             var design = Server.GetModule<DesignDataModule>();
             design.Register(this, designDb =>
             {
-                DDiKangQianXians = designDb.DDiKangQianXians.AsNoTracking().ToDictionary(x => x.wid, x => x);
-                DDiKangQianXianBuildings = designDb.DDiKangQianXianBuildings.AsNoTracking().ToDictionary(x => x.id, x => x);
-                DDiKangQianXianBoxs = designDb.DDiKangQianXianBoxs.AsNoTracking().ToDictionary(x=>x.id, x=>x);
+                DDiKangQianXians = designDb.DDiKangQianXian.AsNoTracking().ToDictionary(x => x.wid, x => x);
+                DDiKangQianXianBuildings = designDb.DDiKangQianXianBuilding.AsNoTracking().ToDictionary(x => x.id, x => x);
+                DDiKangQianXianBoxs = designDb.DDiKangQianXianBox.AsNoTracking().ToDictionary(x=>x.id, x=>x);
             });
         }
 
@@ -71,10 +71,11 @@ namespace Frontline.Modules
                 _dikangs.Add(pid, dikang);
             }
 
-            if (dikang.LastRefreshTime != DateTime.Today)
+            if (dikang.LastRefreshTime.Date != DateTime.Today)
             {
                 dikang.RecvBox = string.Empty;
                 dikang.ResetNumb = GameConfig.MaxDiKangNumbOneDay;
+                dikang.LastRefreshTime = DateTime.Now;
                 _db.SaveChanges();
             }
             return dikang;

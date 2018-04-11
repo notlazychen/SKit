@@ -11,15 +11,15 @@ namespace protocol
 	[ProtoContract]
 	public class StartRescueRequest
 	{
-        /// <summary>
-        ///  好友id
-        /// </summary>
-		[ProtoMember(1, IsRequired = false)]
-		public string friendId;
+  //      /// <summary>
+  //      ///  好友id
+  //      /// </summary>
+		//[ProtoMember(1, IsRequired = false)]
+		//public string friendId;
         /// <summary>
         ///  难度
         /// </summary>
-		[ProtoMember(2, IsRequired = false)]
+		[ProtoMember(1, IsRequired = false)]
 		public int difficulty;
 
 	}

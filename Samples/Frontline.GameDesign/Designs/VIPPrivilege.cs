@@ -7,13 +7,11 @@ namespace Frontline.GameDesign
 {
     public class VIPPrivilege
     {
+        [Key]
+        public int id { get; set; }
         /// <summary>
         /// VIP等级
         /// </summary>
-        [Key]
-        [Ignore]
-        public string id { get; set; }
-
         public int lv { get; set; }
         /// <summary>
         /// 可购买的工人数量

@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Folder Include="GameControllers\PVP\" />
     <Folder Include="wwwroot\" />
   </ItemGroup>
 
@@ -30,7 +31,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\SKit.AspNetCore\SKit.AspNetCore.csproj" />
     <ProjectReference Include="..\Frontline.Common\Frontline.Common.csproj" />
-    <ProjectReference Include="..\Frontline.GameDesign\Frontline.GameDesign.csproj" />
+    <ProjectReference Include="..\Frontline.GameDesign.Core\Frontline.GameDesign.Core.csproj" />
     <ProjectReference Include="..\Frontline.MQ\Frontline.MQ.csproj" />
   </ItemGroup>
 

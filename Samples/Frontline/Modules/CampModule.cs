@@ -18,9 +18,12 @@ namespace Frontline.Modules
     {
         private readonly DataContext _db;
 
+        private PlayerModule _playerModule;
+        private LegionModule _legionModule;
+
         public Dictionary<int, DUnit> DUnits { get; private set; }//tid:x
         public Dictionary<int, DUnitLevelUp> DUnitLevels { get; private set; }//level:x
-        public Dictionary<int, Dictionary<int, DUnitGradeUp>> DUnitGrades { get; private set; }//star:{grade:x}
+        public Dictionary<int, Dictionary<int, Dictionary<int, DUnitGradeUp>>> DUnitGrades { get; private set; }//star>type>{grade:x}
         public Dictionary<int, DUnitUnlock> DUnitUnlock { get; private set; }//tid:x
 
         public Dictionary<int, DEquip> DEquips { get; private set; }//equiptid:x
@@ -35,21 +38,23 @@ namespace Frontline.Modules
         protected override void OnConfiguringModules()
         {
             //事件注册
-            var playerModule = this.Server.GetModule<PlayerModule>();
-            playerModule.PlayerCreating += PlayerController_PlayerCreating;
-            playerModule.PlayerLoading += PlayerController_PlayerLoading;
-
+            _playerModule = this.Server.GetModule<PlayerModule>();
+            _playerModule.PlayerCreating += PlayerController_PlayerCreating;
+            _playerModule.PlayerLoading += PlayerController_PlayerLoading;
+            _legionModule = Server.GetModule<LegionModule>();
             var design = Server.GetModule<DesignDataModule>();
             design.Register(this, designDb =>
             {
-                DUnits = designDb.DUnits.AsNoTracking().ToDictionary(x => x.tid, x => x);
-                DUnitLevels = designDb.DUnitLevelUps.AsNoTracking().ToDictionary(x => x.level, x => x);
-                DUnitGrades = designDb.DUnitGradeUps.GroupBy(x => x.star).AsNoTracking().ToDictionary(x => x.Key, x => x.ToDictionary(y => y.grade, y => y));
-                DUnitUnlock = designDb.DUnitUnlocks.AsNoTracking().ToDictionary(x => x.tid, x => x);
+                DUnits = designDb.DUnit.AsNoTracking().ToDictionary(x => x.tid, x => x);
+                DUnitLevels = designDb.DUnitLevelUp.AsNoTracking().ToDictionary(x => x.level, x => x);
 
-                DEquips = designDb.DEquips.AsNoTracking().ToDictionary(x => x.id, x => x);
-                DequipLevels = designDb.DEquipLevelCosts.AsNoTracking().ToDictionary(x => x.level, x => x);
-                DEquipGrades = designDb.DEquipGrades.AsNoTracking().ToDictionary(x => x.id, x => x);
+                DUnitGrades = designDb.DUnitGradeUp.AsNoTracking().GroupBy(x => x.star).ToDictionary(x => x.Key, x => x.GroupBy(y => y.type).ToDictionary(z=>z.Key, z => z.ToDictionary(a=>a.grade, a=>a)));
+
+                DUnitUnlock = designDb.DUnitUnlock.AsNoTracking().ToDictionary(x => x.tid, x => x);
+
+                DEquips = designDb.DEquip.AsNoTracking().ToDictionary(x => x.id, x => x);
+                DequipLevels = designDb.DEquipLevelCost.AsNoTracking().ToDictionary(x => x.level, x => x);
+                DEquipGrades = designDb.DEquipGrade.AsNoTracking().ToDictionary(x => x.id, x => x);
             });
         }
 
@@ -161,7 +166,7 @@ namespace Frontline.Modules
                 return null;
             }
             int grade = unit.Grade == 0 ? 1 : unit.Grade;
-            DUnitGradeUp dug = DUnitGrades[du.star][grade];
+            DUnitGradeUp dug = DUnitGrades[du.star][du.type][grade];
             int oldlevel = unit.Level;
             int restype = du.type == 2 ? CurrencyType.IRON : CurrencyType.SUPPLY;
             var playerModule = this.Server.GetModule<PlayerModule>();
@@ -347,7 +352,7 @@ namespace Frontline.Modules
                 //进阶加成
                 if (u.Grade > 0)
                 {
-                    DUnitGradeUp dug = DUnitGrades[du.star][u.Grade];
+                    DUnitGradeUp dug = DUnitGrades[du.star][du.type][u.Grade];
 
                     info.att += (int)((du.prop_val.Object[0] + (100 - 1) * du.prop_grow_val.Object[0]) * dug.atk / 10000d);
                     info.defence += (int)((du.prop_val.Object[1] + (100 - 1) * du.prop_grow_val.Object[1]) * dug.defence / 10000d);
@@ -386,6 +391,25 @@ namespace Frontline.Modules
                             break;
                     }
                 }
+
+                //增加军团科技影响
+                var pm = _legionModule.QueryLegionMember(u.PlayerId);
+                if (pm != null)
+                {
+                    foreach (var s in pm.LegionSciences)
+                    {
+                        var ds = _legionModule.DLegionSciences[s.Tid][s.Level];
+                        if (ds.unit_scope.Object.Contains(du.type_detail))
+                        {
+                            info.hp += ds.hp;
+                            info.att += ds.atk;
+                            info.defence += ds.def;
+                            info.hurt_add += ds.damage;
+                            info.hurt_sub += ds.damage_del;
+                        }
+                    }
+                }
+
                 //战力计算
                 if (calcPower)
                 {
@@ -396,8 +420,8 @@ namespace Frontline.Modules
                 {
                     info.power = u.Power;
                 }
-
             }
+
 
             return info;
         }

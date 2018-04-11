@@ -11,6 +11,8 @@ namespace Frontline.GameDesign
         public int id { get; set; }
         public int grade { get; set; }
         public int max_level { get; set; }
+        public JsonObject<int[]> grade_res_type { get; set; }
+        public JsonObject<int[]> grade_res_cnt { get; set; }
         public JsonObject<int[]> grade_item_id { get; set; }
         public JsonObject<int[]> grade_item_cnt { get; set; }
         public float grade_grow { get; set; }

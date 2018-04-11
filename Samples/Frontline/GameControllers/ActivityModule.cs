@@ -118,11 +118,5 @@ namespace Frontline.Modules
             Session.SendAsync(response);
             return 0;
         }
-        
-        public int Call_CMD_220(GetPatternInfoRequest request)
-        {
-            GetPatternInfoResponse response = JsonConvert.DeserializeObject<GetPatternInfoResponse>("{\"infos\":[{\"remainTimes\":3,\"type\":0,\"totalTimes\":3}],\"success\":true}");
-            Session.SendAsync(response); return 0;
-        }
     }
 }

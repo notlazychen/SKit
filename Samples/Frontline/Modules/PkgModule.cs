@@ -16,11 +16,11 @@ namespace Frontline.Modules
 {
     public class PkgModule : GameModule
     {
-        
+
         private DataContext _db;
 
         public Dictionary<int, DItem> DItems { get; private set; }
-        public Dictionary<int, DRandom> DRandoms { get; private set; }
+        public Dictionary<int, Dictionary<int, List<DRandom>>> DRandoms { get; private set; }// randomid> group> xset
 
         public PkgModule(DataContext db, GameDesignContext design)
         {
@@ -37,8 +37,8 @@ namespace Frontline.Modules
             var design = Server.GetModule<DesignDataModule>();
             design.Register(this, designDb =>
             {
-                DItems = designDb.DItems.AsNoTracking().ToDictionary(x => x.tid, x => x);
-                DRandoms = designDb.DRandoms.AsNoTracking().ToDictionary(x => x.id, x => x);
+                DItems = designDb.DItem.AsNoTracking().ToDictionary(x => x.tid, x => x);
+                DRandoms = designDb.DRandom.AsNoTracking().GroupBy(x => x.random).ToDictionary(x => x.Key, x => x.GroupBy(g => g.group).ToDictionary(g => g.Key, g => g.ToList()));
             });
         }
 
@@ -187,7 +187,7 @@ namespace Frontline.Modules
                     id = itemId,
                     count = item.Count,
                     sid = item.Id
-                });                
+                });
             }
             Server.SendByUserNameAsync(player.Id, notify);
         }
@@ -233,88 +233,39 @@ namespace Frontline.Modules
 
         public RewardInfo RandomReward(Player player, int randomId, int times, string reason)
         {
-            DRandom di = DRandoms[randomId];
-            RewardInfo ri = new RewardInfo();
-            ri.items = new List<RewardItem>();
-            ri.res = new List<ResInfo>();
-            for (int t = 0; t < times; t++)
+            RewardInfo ri = new RewardInfo() { res = new List<ResInfo>(), items = new List<RewardItem>() };
+
+            if (DRandoms.TryGetValue(randomId, out var groups))
             {
-                if (di.weight.Object.Length <= 0)//必掉
+                foreach (var group in groups.Values)
                 {
-                    if (di.gid.Object.Length > 0)
+                    var rand = MathUtils.RandomElement(group, g => g.w);
+                    if (rand == null)
+                        continue;
+                    int cnt = MathUtils.RandomNumber(rand.min, rand.max + 1);
+                    if (rand.tid == 0)
+                        continue;
+                    if (rand.type <= 1)
                     {
-                        for (int i = 0; i < di.gid.Object.Length; i++)
-                        {
-                            DItem d = DItems[di.gid.Object[i]];
-                            RewardItem rii = new RewardItem();
-                            rii.count = di.count.Object[i];
-                            rii.icon = d.icon;
-                            rii.id = di.gid.Object[i];
-                            rii.name = d.name;
-                            rii.quality = d.quality;
-                            rii.type = d.type;
-                            ri.items.Add(rii);
-                        }
+                        ri.res.Add(new ResInfo { type = rand.tid, count = cnt });
                     }
-                    if (di.res_type.Object.Length > 0)
+                    else if (rand.type >= 2)
                     {
-                        for (int i = 0; i < di.res_type.Object.Length; i++)
-                        {
-                            ResInfo res = new ResInfo()
-                            {
-                                type = di.res_type.Object[i],
-                                count = di.res_count.Object[i]
-                            };
-                            ri.res.Add(res);
-                        }
+                        DItem ditem = this.DItems[rand.tid];
+                        ri.items.Add(new RewardItem { id = rand.tid, count = cnt, icon = ditem.icon, name = ditem.name, quality = ditem.quality, type = ditem.type });
                     }
                 }
-                else//随机一个
+
+                foreach (var element in ri.items.GroupBy(itm => itm.id))
                 {
-                    int index = MathUtils.RandomIndex(di.weight.Object);
-                    if (di.gid.Object.Length > 0)
-                    {
-                        //约定，如果随机的话，随机到小于等于0的id就是没随到东西
-                        int itemId = di.gid.Object[index];
-                        if (itemId > 0)
-                        {
-                            DItem d = DItems[di.gid.Object[index]];
-                            RewardItem rii = new RewardItem();
-                            rii.count = di.count.Object[index];
-                            rii.icon = d.icon;
-                            rii.id = di.gid.Object[index];
-                            rii.name = d.name;
-                            rii.quality = d.quality;
-                            rii.type = d.type;
-                            ri.items.Add(rii);
-                        }
-                    }
-                    else if (di.res_type.Object.Length > 0)
-                    {
-                        //约定，如果随机的话，随机到小于等于0的id就是没随到东西
-                        int resType = di.res_type.Object[index];
-                        if (resType > 0)
-                        {
-                            ResInfo res = new ResInfo()
-                            {
-                                type = di.res_type.Object[index],
-                                count = di.res_count.Object[index]
-                            };
-                            ri.res.Add(res);
-                        }
-                    }
+                    PlayerItem item = this.AddItem(player, element.Key, element.Sum(x => x.count), reason);
+                }
+                var playerModule = Server.GetModule<PlayerModule>();
+                foreach (var element in ri.res.GroupBy(itm => itm.type))
+                {
+                    playerModule.AddCurrency(player, element.Key, element.Sum(x => x.count), reason);
                 }
             }
-
-            foreach(var element in ri.items.GroupBy(itm => itm.id)){
-                PlayerItem item = this.AddItem(player, element.Key, element.Sum(x=>x.count), reason);
-            }
-            var playerModule = Server.GetModule<PlayerModule>();
-            foreach (var element in ri.res.GroupBy(itm => itm.type))
-            {
-                playerModule.AddCurrency(player, element.Key, element.Sum(x=>x.count), reason);
-            }
-
             return ri;
         }
 
@@ -328,7 +279,7 @@ namespace Frontline.Modules
             {
                 int itemid = itemids[i];
                 int itemcnt = itemcnts[i];
-                if(itemcnt == 0)
+                if (itemcnt == 0)
                 {
                     continue;
                 }

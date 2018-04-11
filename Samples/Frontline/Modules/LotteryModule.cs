@@ -35,9 +35,9 @@ namespace Frontline.Modules
             var design = Server.GetModule<DesignDataModule>();
             design.Register(this, designDb =>
             {
-                DLotteries = designDb.DLotteries.AsNoTracking().ToDictionary(x => x.id, x => x);
-                DLotteryGroups = designDb.DLotteryGroups.AsNoTracking().ToDictionary(x => x.id, x => x);
-                DLotteryRands = designDb.DLotteryRands.AsNoTracking().GroupBy(x => x.group).ToDictionary(x => x.Key, x => x.ToList());
+                DLotteries = designDb.DLottery.AsNoTracking().ToDictionary(x => x.id, x => x);
+                DLotteryGroups = designDb.DLotteryGroup.AsNoTracking().ToDictionary(x => x.id, x => x);
+                DLotteryRands = designDb.DLotteryRand.AsNoTracking().GroupBy(x => x.group).ToDictionary(x => x.Key, x => x.ToList());
             });
         }
 

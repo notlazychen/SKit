@@ -38,7 +38,7 @@ namespace Frontline.Modules
             var design = Server.GetModule<DesignDataModule>();
             design.Register(this, designDb =>
             {
-                DOlReward = designDb.DOlRewards.AsNoTracking().First();
+                DOlReward = designDb.DOlReward.AsNoTracking().First();
             });
         }
 

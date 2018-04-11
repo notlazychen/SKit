@@ -102,7 +102,7 @@ namespace Frontline.Modules
             {
                 var du = camp.DUnits[unit.Tid];
                 unit.Grade = du.grade_max;
-                var dug = camp.DUnitGrades[du.star][du.grade_max];
+                var dug = camp.DUnitGrades[du.star][du.type][du.grade_max];
                 unit.Level = dug.max_level;
                 //camp.OnUnitLevelUp(new UnitLevelUpEventArgs() { UnitInfo = camp.ToUnitInfo(unit), OldLevel = oldlevel });
                 //camp.OnUnitGradeUp(new UnitGradeUpEventArgs() { OldGrade = oldgrade, UnitInfo = camp.ToUnitInfo(unit) });
@@ -132,7 +132,7 @@ namespace Frontline.Modules
         private void Win(string[] args)
         {
             var player = _playerModule.QueryPlayer(Session.PlayerId);
-            var dc = this.Server.GetModule<DungeonController>();
+            var dc = this.Server.GetModule<DungeonModule>();
             int type = int.Parse(args[0]);
             int sectionIndex = int.Parse(args[1]);
             int missionIndex = int.Parse(args[2]);

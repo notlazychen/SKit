@@ -42,9 +42,19 @@ namespace Frontline.Modules
             bool itemenough = pkgController.IsItemEnough(player, deg.grade_item_id.Object, deg.grade_item_cnt.Object);
             if (!itemenough)
                 return (int)GameErrorCode.道具不足;
+            for(int i = 0; i< deg.grade_res_type.Object.Length; i++)
+            {
+                int type = deg.grade_res_type.Object[i];
+                int cnt = deg.grade_res_cnt.Object[i];
+                bool resenough = _playerModule.IsCurrencyEnough(player, type, cnt);
+                if (!resenough)
+                {
+                    return (int)GameErrorCode.资源不足;
+                }
+            }
             string reason = $"兵种装备进阶{unit.Tid}:{equip.Tid}";
             pkgController.SubItems(player, deg.grade_item_id.Object, deg.grade_item_cnt.Object, reason);
-
+            _playerModule.SubCurrencies(player, deg.grade_res_type.Object, deg.grade_res_cnt.Object, reason);
             DEquipGrade degNext = _campModule.DEquipGrades[deg.next_id];
             equip.GradeId = degNext.id;
             var unitInfo = _campModule.ToUnitInfo(unit, du, true);

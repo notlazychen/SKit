@@ -18,14 +18,14 @@ namespace Frontline.Modules
     public class TransportBattleStopCommand : GameCommand<EndTransportRequest>
     {
         PlayerModule _playerModule;
-        DungeonController _dungeonModule;
+        DungeonModule _dungeonModule;
         TransportModule _tansportModule;
         DataContext _db;
 
         protected override void OnInit()
         {
             _playerModule = Server.GetModule<PlayerModule>();
-            _dungeonModule = Server.GetModule<DungeonController>();
+            _dungeonModule = Server.GetModule<DungeonModule>();
             _tansportModule = Server.GetModule<TransportModule>();
             _db = Server.GetModule<GameSettingModule>().DataContext;
         }

@@ -2,7 +2,7 @@
 
 namespace Frontline.GameDesign
 {
-    internal class IgnoreAttribute : Attribute
+    public class IgnoreAttribute : Attribute
     {
     }
 }

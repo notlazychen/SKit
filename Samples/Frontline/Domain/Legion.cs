@@ -47,5 +47,8 @@ namespace Frontline.Domain
 
         public int GvgRank { get; set; }//上次公会战排名
         public int GvgMaxRank { get; set; }
+
+        public List<LegionApplication> LegionApplications { get; set; } = new List<LegionApplication>();
+        public List<LegionBBS> LegionBBS { get; set; } = new List<LegionBBS>();
     }
 }
