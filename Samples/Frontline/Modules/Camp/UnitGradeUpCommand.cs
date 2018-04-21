@@ -40,15 +40,15 @@ namespace Frontline.Modules
 
 
             DUnit du = _campModule.DUnits[unit.Tid];
-
-            int maxClaz = du.grade_max;
+            var dugs = _campModule.DUnitGrades[du.star][du.type];
+            int maxClaz = dugs.Max(d=>d.Value.grade);
             int itemId = du.grade_item_id;
 
-            if (unit.Grade >= du.grade_max)
+            if (unit.Grade >= maxClaz)
             {
                 return (int)GameErrorCode.兵种已经最高阶;
             }
-            DUnitGradeUp dug = _campModule.DUnitGrades[du.star][du.type][unit.Grade + 1];
+            DUnitGradeUp dug = dugs[unit.Grade + 1];
             if (unit.Level < dug.min_level)
             {
                 return (int)GameErrorCode.兵种不满足升阶等级; ;
@@ -73,7 +73,7 @@ namespace Frontline.Modules
                     response.unitInfo = _campModule.ToUnitInfo(unit, du, true);
                     response.gold = playerModule.GetCurrencyValue(player, CurrencyType.GOLD);
                     response.itemId = itemId;
-                    response.count = item.Count;
+                    response.count = item == null ? 0 : item.Count;
                     response.success = true;
 
                     _db.SaveChanges();
@@ -86,9 +86,17 @@ namespace Frontline.Modules
                         UnitInfo = response.unitInfo,
                         OldGrade = unit.Grade - 1
                     });
+                    return 0;
+                }
+                else
+                {
+                    return (int)GameErrorCode.道具不足;
                 }
             }
-            return 0;
+            else
+            {
+                return (int)GameErrorCode.资源不足;
+            }
         }
     }
 }

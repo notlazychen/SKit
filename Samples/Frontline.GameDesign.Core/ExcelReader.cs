@@ -154,7 +154,19 @@ namespace Frontline.GameDesign
                                 }
                                 else if (prop.Key.PropertyType == typeof(DateTime?))
                                 {
-                                    if (!string.IsNullOrEmpty(cell.StringCellValue))
+                                    if(cell.CellType == CellType.Blank)
+                                    {
+
+                                    }
+                                    else if(cell.CellType == CellType.Numeric)
+                                    {
+                                        if(cell.NumericCellValue != 0)
+                                        {
+                                            DateTime ts = cell.DateCellValue;
+                                            prop.Key.SetValue(ladderConfig, ts);
+                                        }
+                                    }
+                                    else if (!string.IsNullOrEmpty(cell.StringCellValue))
                                     {
                                         DateTime ts = DateTime.Parse(cell.StringCellValue);
                                         prop.Key.SetValue(ladderConfig, ts);

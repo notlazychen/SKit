@@ -550,6 +550,54 @@ namespace Frontline.GameDesign.Core.Migrations
                     b.ToTable("DLotteryRand");
                 });
 
+            modelBuilder.Entity("Frontline.GameDesign.DMallShop", b =>
+                {
+                    b.Property<int>("type")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<int>("diamond");
+
+                    b.Property<string>("name")
+                        .HasMaxLength(64);
+
+                    b.Property<bool>("refresh");
+
+                    b.Property<JsonObject<Int32[]>>("refresh_hour");
+
+                    b.Property<JsonObject<Int32[]>>("res_type");
+
+                    b.Property<int>("size");
+
+                    b.HasKey("type");
+
+                    b.ToTable("DMallShop");
+                });
+
+            modelBuilder.Entity("Frontline.GameDesign.DMallShopItem", b =>
+                {
+                    b.Property<int>("id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<int>("count");
+
+                    b.Property<string>("desc")
+                        .HasMaxLength(64);
+
+                    b.Property<int>("item_id");
+
+                    b.Property<int>("rate");
+
+                    b.Property<int>("res_cnt");
+
+                    b.Property<int>("res_type");
+
+                    b.Property<int>("type");
+
+                    b.HasKey("id");
+
+                    b.ToTable("DMallShopItem");
+                });
+
             modelBuilder.Entity("Frontline.GameDesign.DMonster", b =>
                 {
                     b.Property<int>("id")
@@ -765,6 +813,62 @@ namespace Frontline.GameDesign.Core.Migrations
                     b.ToTable("DQuestDailyReward");
                 });
 
+            modelBuilder.Entity("Frontline.GameDesign.DRaffle", b =>
+                {
+                    b.Property<int>("id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<int>("drop");
+
+                    b.Property<int>("item_cnt_max");
+
+                    b.Property<int>("item_cnt_min");
+
+                    b.Property<int>("item_id");
+
+                    b.Property<bool>("special");
+
+                    b.Property<int>("star");
+
+                    b.Property<int>("w_0");
+
+                    b.Property<int>("w_1");
+
+                    b.Property<int>("w_2");
+
+                    b.HasKey("id");
+
+                    b.ToTable("DRaffle");
+                });
+
+            modelBuilder.Entity("Frontline.GameDesign.DRaffleGroup", b =>
+                {
+                    b.Property<int>("type")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<int>("adv_drop");
+
+                    b.Property<int>("base_drop");
+
+                    b.Property<int>("base_numb");
+
+                    b.Property<int>("cost_item");
+
+                    b.Property<DateTime?>("endtime");
+
+                    b.Property<int>("first_drop");
+
+                    b.Property<int>("item_cnt_1");
+
+                    b.Property<int>("item_cnt_10");
+
+                    b.Property<int>("normal_drop");
+
+                    b.HasKey("type");
+
+                    b.ToTable("DRaffleGroup");
+                });
+
             modelBuilder.Entity("Frontline.GameDesign.DRandom", b =>
                 {
                     b.Property<int>("id")
@@ -833,6 +937,80 @@ namespace Frontline.GameDesign.Core.Migrations
                     b.ToTable("DResPrice");
                 });
 
+            modelBuilder.Entity("Frontline.GameDesign.DSecretShop", b =>
+                {
+                    b.Property<int>("vip");
+
+                    b.Property<int>("group");
+
+                    b.Property<int>("second");
+
+                    b.Property<int>("w");
+
+                    b.HasKey("vip", "group");
+
+                    b.ToTable("DSecretShop");
+                });
+
+            modelBuilder.Entity("Frontline.GameDesign.DSecretShopItem", b =>
+                {
+                    b.Property<int>("id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<int>("cur_price");
+
+                    b.Property<int>("group");
+
+                    b.Property<int>("item_cnt");
+
+                    b.Property<int>("item_id");
+
+                    b.Property<int>("limit_cnt");
+
+                    b.Property<int>("old_price");
+
+                    b.Property<int>("res_type");
+
+                    b.Property<int>("vip");
+
+                    b.Property<int>("w");
+
+                    b.HasKey("id");
+
+                    b.ToTable("DSecretShopItem");
+                });
+
+            modelBuilder.Entity("Frontline.GameDesign.DSecretShopProb", b =>
+                {
+                    b.Property<int>("mission_type")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<string>("desc")
+                        .HasMaxLength(32);
+
+                    b.Property<int>("prob");
+
+                    b.HasKey("mission_type");
+
+                    b.ToTable("DSecretShopProb");
+                });
+
+            modelBuilder.Entity("Frontline.GameDesign.DSkill", b =>
+                {
+                    b.Property<int>("id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<int>("lv");
+
+                    b.Property<string>("name");
+
+                    b.Property<int>("unit_grade");
+
+                    b.HasKey("id");
+
+                    b.ToTable("DSkill");
+                });
+
             modelBuilder.Entity("Frontline.GameDesign.DTransport", b =>
                 {
                     b.Property<int>("tid")
@@ -890,8 +1068,6 @@ namespace Frontline.GameDesign.Core.Migrations
                     b.Property<int>("exist");
 
                     b.Property<int>("grade_item_id");
-
-                    b.Property<int>("grade_max");
 
                     b.Property<int>("gvg_rest_diamond");
 

@@ -80,12 +80,26 @@ namespace Frontline.Data
 
             modelBuilder.Entity<WeekBattleData>().HasIndex(d => d.PlayerId).IsUnique();
             modelBuilder.Entity<WeekBattleData>().HasIndex(d => d.Score);
+
+            modelBuilder.Entity<MallShop>().HasKey(d => new { d.PlayerId, d.Type });
+            modelBuilder.Entity<MallShop>().HasIndex(d => new { d.PlayerId });
+            modelBuilder.Entity<MallShop>().HasOne<Mall>().WithMany(m => m.Shops).HasForeignKey(c => c.PlayerId);
+            
+            modelBuilder.Entity<MallShopCommodity>().HasIndex(d => new { d.PlayerId, d.Type });
+            modelBuilder.Entity<MallShopCommodity>().HasOne<MallShop>().WithMany(m=>m.ShopCommodities).HasForeignKey(c=>new { c.PlayerId, c.Type });
+
+            modelBuilder.Entity<SecretShopItem>().HasIndex(m=>m.PlayerId);
+            modelBuilder.Entity<SecretShopItem>().HasOne<SecretShop>().WithMany(s=>s.SecretShopItems).HasForeignKey(m=>m.PlayerId);
+
+            modelBuilder.Entity<Raffle>().HasKey(m => new { m.PlayerId, m.Type });
+            modelBuilder.Entity<Raffle>().HasIndex(m => m.PlayerId);
         }
 
         public DbSet<Player> Players { get; set; }
         public DbSet<Wallet> Wallets { get; set; }
 
         public DbSet<Lottery> Lotteries { get; set; }
+        public DbSet<Raffle> Raffles { get; set; }
 
         public DbSet<ArenaCert> ArenaCerts { get; set; }
         public DbSet<ArenaBattleHistory> ArenaBattleHistories { get; set; }
@@ -122,5 +136,11 @@ namespace Frontline.Data
 
         public DbSet<Mail> Mails { get; set; }
         public DbSet<WeekBattleData> WeekBattleData { get; set; }
+
+        public DbSet<Mall> Malls { get; set; }
+        public DbSet<MallShop> MallShops { get; set; }
+        public DbSet<MallShopCommodity> MallShopCommodities { get; set; }
+
+        public DbSet<SecretShop> SecretShops { get; set; }
     }
 }

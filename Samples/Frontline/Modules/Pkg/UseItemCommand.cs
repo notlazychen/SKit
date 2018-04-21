@@ -66,16 +66,17 @@ namespace Frontline.Modules
             }
             else if (di.breakRandomId > 0)//使用后可以获得随机库
             {
-                RewardInfo reward = _pkgModule.RandomReward(player, di.breakRandomId, 1, reason);
+                RewardInfo reward = _pkgModule.RandomReward(player, di.breakRandomId, itemCnt, reason);
                 response.rewardInfo = reward;
             }
             else if (di.breakCount > 0)//资源
             {
-                _playerModule.AddCurrency(player, di.type, di.breakCount, reason);
+                int rescnt = di.breakCount * itemCnt;
+                _playerModule.AddCurrency(player, di.type, rescnt, reason);
                 response.rewardInfo = new RewardInfo();
                 response.rewardInfo.res = new List<ResInfo>()
                 {
-                    new ResInfo(){type = di.type, count = di.breakCount}
+                    new ResInfo(){type = di.type, count = rescnt}
                 };
             }
 

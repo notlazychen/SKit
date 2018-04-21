@@ -103,16 +103,24 @@ namespace SKit.AOP
 
             //MonitorSample();
 
-            //检查是否同一周
-            DateTime dt1 = new DateTime(2018, 4, 11);
-            for(int i = -10; i < 20; i++)
-            {
-                DateTime dt2 = dt1.AddDays(i);
-                bool same = dt1.IsSameWeek(dt2);
+            //测试是否同一周
+            //DateTime dt1 = new DateTime(2018, 4, 11);
+            //for(int i = -10; i < 20; i++)
+            //{
+            //    DateTime dt2 = dt1.AddDays(i);
+            //    bool same = dt1.IsSameWeek(dt2);
 
-                Console.WriteLine($"{dt2}: {same}");
-            }
+            //    Console.WriteLine($"{dt2}: {same}");
+            //}
 
+            //测试是否经过这几个时间点
+            //int[] hours = new int[] { 4, 8, 12, 16, 24 };
+            //for (int h = -23; h < 30; h++)
+            //{
+            //    var dt = DateTime.Today.AddHours(h);
+            //    bool pass = DateTime.Now.IsPass(dt, hours);
+            //    Console.WriteLine($"{dt}: {pass}");
+            //}
             Console.ReadLine();
         }
 

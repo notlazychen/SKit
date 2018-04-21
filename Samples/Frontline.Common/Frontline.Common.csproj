@@ -10,6 +10,14 @@
 
   <ItemGroup>
     <Compile Remove="Protocols.cs" />
+    <Compile Remove="Protocols\Skill\CarrySkillRequest.cs" />
+    <Compile Remove="Protocols\Skill\CarrySkillResponse.cs" />
+    <Compile Remove="Protocols\Skill\SkillLevelUpRequest.cs" />
+    <Compile Remove="Protocols\Skill\SkillLevelUpResponse.cs" />
+    <Compile Remove="Protocols\Skill\SkillsInfoRequest.cs" />
+    <Compile Remove="Protocols\Skill\SkillsInfoResponse.cs" />
+    <Compile Remove="Protocols\Skill\UseSkillRequest.cs" />
+    <Compile Remove="Protocols\Skill\UseSkillResponse.cs" />
   </ItemGroup>
 
   <ItemGroup>

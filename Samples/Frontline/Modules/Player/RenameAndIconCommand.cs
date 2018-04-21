@@ -62,6 +62,8 @@ namespace Frontline.Modules
                 {
                     return (int)GameErrorCode.资源不足;
                 }
+                string reason = "改名字";
+                _playerModule.AddCurrency(player, CurrencyType.DIAMOND, -cost, reason);
                 player.NickName = Request.nickyName;
                 player.RenameNumb++;
                 var dname = _playerModule.DNames.FirstOrDefault(dn => player.NickName.StartsWith(dn.Name));

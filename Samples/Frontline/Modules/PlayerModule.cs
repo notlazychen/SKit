@@ -161,6 +161,7 @@ namespace Frontline.Modules
         {
             if (string.IsNullOrEmpty(pid))
                 return null;
+            bool needsave = false;
             if (!_players.TryGetValue(pid, out var player))
             {
                 var queryPlayer = _db.Players
@@ -174,9 +175,21 @@ namespace Frontline.Modules
                 if (player != null)
                 {
                     OnPlayerLoaded(player);
-                    //check new day refresh
-                    _db.SaveChanges();
                     _players.Add(pid, player);
+                    needsave = true;
+                }
+            }
+            
+            //原油回复
+            if(player.Wallet.OIL < GameConfig.OilMaxValue)
+            {
+                int deltaMinutes = (int)(DateTime.Now - player.Wallet.OilLastReplyTime).TotalMinutes;
+                int deltavalue = deltaMinutes / GameConfig.OilReplyMinutes;
+                if (deltavalue > 0)
+                {
+                    player.Wallet.AddCurrency(CurrencyType.OIL, deltavalue);
+                    player.Wallet.OilLastReplyTime = player.Wallet.OilLastReplyTime.AddMinutes(deltavalue * GameConfig.OilReplyMinutes);
+                    needsave = true;
                 }
             }
 
@@ -190,6 +203,10 @@ namespace Frontline.Modules
                 player.Wallet.TodayBuyOil = 0;
                 player.Wallet.TodayBuySupply = 0;
                 player.LastDayRefreshTime = DateTime.Today;
+                needsave = true;
+            }
+            if (needsave)
+            {
                 _db.SaveChanges();
             }
             return player;
@@ -235,11 +252,11 @@ namespace Frontline.Modules
                 PlayerId = player.Id,
             };
             //初始化资源
-            player.Wallet.AddCurrency(CurrencyType.GOLD, 300000);
-            player.Wallet.AddCurrency(CurrencyType.DIAMOND, 12888);
-            player.Wallet.AddCurrency(CurrencyType.IRON, 10000);
-            player.Wallet.AddCurrency(CurrencyType.SUPPLY, 10000);
-            player.Wallet.AddCurrency(CurrencyType.OIL, 300);
+            player.Wallet.AddCurrency(CurrencyType.GOLD, 0);
+            player.Wallet.AddCurrency(CurrencyType.DIAMOND, 0);
+            player.Wallet.AddCurrency(CurrencyType.IRON, 0);
+            player.Wallet.AddCurrency(CurrencyType.SUPPLY, 0);
+            player.Wallet.AddCurrency(CurrencyType.OIL, 200);
 
             _db.Players.Add(player);
             this.OnPlayerCreating(player);

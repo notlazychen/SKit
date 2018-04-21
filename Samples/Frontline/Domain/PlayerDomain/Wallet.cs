@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Frontline.Common;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -29,6 +30,8 @@ namespace Frontline.Domain
         public int TodayBuyIron { get; set; }
         public int TodayBuySupply { get; set; }
 
+        public DateTime OilLastReplyTime { get; set; }
+
         public int AddCurrency(int type, int value)
         {
             switch (type)
@@ -37,7 +40,14 @@ namespace Frontline.Domain
                 case 2: return IRON += value;
                 case 3: return DIAMOND += value;
                 case 4: return GOLD += value;
-                case 5: return OIL += value;
+                case 5:
+                    {
+                        if (value < 0 && OIL >= GameConfig.OilMaxValue && (OIL + value) < GameConfig.OilMaxValue)
+                        {
+                            OilLastReplyTime = DateTime.Now;
+                        }
+                        return OIL += value;
+                    }
                 case 6: return WIPES += value;
                 case 8: return HORN += value;
                 case 9: return TOKEN += value;

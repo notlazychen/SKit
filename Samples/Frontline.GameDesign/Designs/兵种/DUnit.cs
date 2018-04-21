@@ -58,7 +58,6 @@ namespace Frontline.GameDesign
         public JsonObject<int[]> equip { get; set; }
         public int ww_type { get; set; }
         public int grade_item_id { get; set; }
-        public int grade_max { get; set; }
         public JsonObject<List<int>> skills { get; set; }
     }
 }

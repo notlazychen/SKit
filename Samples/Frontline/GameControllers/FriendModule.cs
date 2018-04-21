@@ -123,42 +123,20 @@ namespace Frontline.Modules
             response.oilTimes = fl.RecvTimes;
             response.maxOilTimes = GameConfig.FriendMaxOilTimes;
             response.friends = new List<FriendInfo>();
-
-            var friendsId = fl.Friends.Select(x => x.PlayerId).ToList();
-            var friends = _db.Players
-                .Where(p => friendsId.Contains(p.Id))
-                .Select(p => new FriendInfo()
-                {
-                    id = p.Id,
-                    icon = p.Icon,
-                    level = p.Level,
-                    nickyName = p.NickName,
-                    power = (int)p.MaxPower,
-                    vip = p.VIP,
-                }).AsNoTracking().ToList();
-            List<Friendship> notfriends = null;
+            
             foreach (var f in fl.Friends)
             {
-                FriendInfo fi = friends.FirstOrDefault(p => p.id == f.PlayerId);
-                if (fi != null)
-                {
-                    fi.canGetOil = f.CanRecvOil;
-                    fi.canGiveOil = f.CanSendOil;
-                    response.friends.Add(fi);
-                }
-                else
-                {
-                    if (notfriends == null)
-                    {
-                        notfriends = new List<Friendship>();
-                    }
-                    notfriends.Add(f);
-                }
-            }
-            if (notfriends != null)
-            {
-                _db.Friendships.RemoveRange(notfriends);
-                _db.SaveChanges();
+                FriendInfo fi = new FriendInfo();
+                fi.canGetOil = f.CanRecvOil;
+                fi.canGiveOil = f.CanSendOil;
+                var p = _playerModule.QueryPlayerBaseInfo(f.PlayerId);
+                fi.id = p.Id;
+                fi.icon = p.Icon;
+                fi.level = p.Level;
+                fi.nickyName = p.NickName;
+                fi.power = (int)p.MaxPower;
+                fi.vip = p.VIP;
+                response.friends.Add(fi);
             }
 
             Session.SendAsync(response);
@@ -173,26 +151,22 @@ namespace Frontline.Modules
             response.ps = new List<FriendInfo>();
 
             var player = _playerModule.QueryPlayer(Session.PlayerId);
-            FriendList fl = this.QueryPlayerFriendList(player.Id);
-
-            var friendsId = fl.FriendApplications.Select(x => x.PlayerId).ToList();
-            var friends = _db.Players
-                .Where(p => friendsId.Contains(p.Id))
-                .Select(p => new FriendInfo()
-                {
-                    id = p.Id,
-                    icon = p.Icon,
-                    level = p.Level,
-                    nickyName = p.NickName,
-                    power = (int)p.MaxPower,
-                    vip = p.VIP,
-                }).AsNoTracking().ToList();
+            FriendList fl = this.QueryPlayerFriendList(player.Id);            
             List<FriendApplication> notfriends = null;
             foreach (FriendApplication f in fl.FriendApplications)
             {
-                FriendInfo fi = friends.FirstOrDefault(p => p.id == f.PlayerId);
-                if (fi != null)
+                var p = _playerModule.QueryPlayerBaseInfo(f.PlayerId);
+                if(p != null)
                 {
+                    FriendInfo fi = new FriendInfo
+                    {
+                        id = p.Id,
+                        icon = p.Icon,
+                        level = p.Level,
+                        nickyName = p.NickName,
+                        power = (int)p.MaxPower,
+                        vip = p.VIP,
+                    };
                     response.ps.Add(fi);
                 }
                 else
@@ -409,21 +383,25 @@ namespace Frontline.Modules
                 .Include(p => p.FriendApplications)
                 .Where(p => !p.FriendApplications.Any(f => f.PlayerId == player.Id))
                 .Take(5)
-                .AsNoTracking().ToList();
-            response.friends = fsl.Select(f =>
+                .AsNoTracking().ToListAsync();
+            fsl.ContinueWith( result =>
             {
-                var p = _playerModule.QueryPlayerBaseInfo(f.PlayerId);
-                return new FriendInfo()
+                response.friends = result.Result.Select(f =>
                 {
-                    id = p.Id,
-                    icon = p.Icon,
-                    level = p.Level,
-                    nickyName = p.NickName,
-                    power = p.MaxPower,
-                    vip = p.VIP,
-                };
-            }).ToList();
-            Session.SendAsync(response);
+                    var p = _playerModule.QueryPlayerBaseInfo(f.PlayerId);
+                    return new FriendInfo()
+                    {
+                        id = p.Id,
+                        icon = p.Icon,
+                        level = p.Level,
+                        nickyName = p.NickName,
+                        power = p.MaxPower,
+                        vip = p.VIP,
+                    };
+                }).ToList();
+                Server.SendByUserNameAsync(player.Id, response); 
+            });
+            
             return 0;
         }
 

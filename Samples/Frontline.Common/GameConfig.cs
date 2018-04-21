@@ -11,6 +11,9 @@ namespace Frontline.Common
         public static readonly int TYPE_INDUSTRY = 3;
         public static readonly int TYPE_UNITREST = 4;//兵种休整
 
+        public static int OilMaxValue = 200;
+        public static int OilReplyMinutes = 5;//每x分钟回复1点体力
+
         public static int MaxBuyResNumb = 1;//购买资源最大次数
 
         public static int BASE_ATK = 276;

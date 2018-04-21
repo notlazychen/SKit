@@ -36,7 +36,7 @@ namespace Frontline.Modules
             var equip = unit.Equips.First(e => e.Pos == Request.position);
             DEquip de = _campModule.DEquips[equip.Tid];
             DEquipGrade deg = _campModule.DEquipGrades[equip.GradeId];
-            if (deg.next_id == 0)
+            if (deg.next_id == 0 || !_campModule.DEquipGrades.ContainsKey(deg.next_id))
                 return (int)GameErrorCode.装备已经最高阶;
             var pkgController = this.Server.GetModule<PkgModule>();
             bool itemenough = pkgController.IsItemEnough(player, deg.grade_item_id.Object, deg.grade_item_cnt.Object);

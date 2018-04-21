@@ -533,8 +533,9 @@ namespace Frontline.Modules
                 int costoil = ddungeon.oil_cost;
                 int addexp = ddungeon.exp;
                 int addunitexp = ddungeon.exp_element;
+                
                 //扣体力
-                playerModule.AddCurrency(player, CurrencyType.OIL, -costoil, reason);
+                playerModule.AddCurrencies(player, new[] { CurrencyType.OIL, CurrencyType.GOLD }, new int[] { -costoil , ddungeon.gold }, reason);
                 playerModule.AddExp(player, addexp, reason);
                 //发放兵种经验
                 var campController = this.Server.GetModule<CampModule>();
@@ -542,6 +543,7 @@ namespace Frontline.Modules
                 var pkgController = this.Server.GetModule<PkgModule>();
 
                 response.reward = pkgController.RandomReward(player, ddungeon.random_id, 1, reason);
+                response.reward.res.Add(new ResInfo { type = CurrencyType.GOLD, count = ddungeon.gold});
                 response.reward.exp = ddungeon.exp;
                 response.lv = player.Level;
                 response.exp = player.Exp;

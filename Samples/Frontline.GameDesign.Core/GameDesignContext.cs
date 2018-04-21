@@ -35,6 +35,8 @@ namespace Frontline.GameDesign
             modelBuilder.Entity<DDungeonStar>().HasKey(d => new { d.type, d.section, d.index });
             modelBuilder.Entity<DLegionScience>().HasKey(d => new { d.id, d.lv });
             modelBuilder.Entity<DWeekBattle>().HasKey(d => new { d.mid, d.day });
+
+            modelBuilder.Entity<DSecretShop>().HasKey(d => new { d.vip, d.group });
         }
 
         public DbSet<DItem> DItem { get; set; }
@@ -89,6 +91,18 @@ namespace Frontline.GameDesign
         public DbSet<DLegionScience> DLegionScience { get; set; }
         public DbSet<DWeekBattle> DWeekBattle { get; set; }
         public DbSet<DWeekBox> DWeekBox { get; set; }
+
+        public DbSet<DMallShopItem> DMallShopItem { get; set; }
+        public DbSet<DMallShop> DMallShop { get; set; }
+
+        public DbSet<DSecretShop> DSecretShop { get; set; }
+        public DbSet<DSecretShopItem> DSecretShopItem { get; set; }
+        public DbSet<DSecretShopProb> DSecretShopProb { get; set; }      
+        
+        public DbSet<DSkill> DSkill { get; set; }
+
+        public DbSet<DRaffle> DRaffle { get; set; }
+        public DbSet<DRaffleGroup> DRaffleGroup { get; set; }
     }
 }
 

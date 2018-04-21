@@ -92,6 +92,9 @@ namespace Frontline.Common
         任务不存在,
         任务已经提交,
         任务还未完成,
+
+        已售罄,
+        此商店不可手动刷新,
     }
 
     //public enum GG : GameErrorCode

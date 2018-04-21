@@ -112,6 +112,10 @@ namespace Frontline.Modules
         public bool TrySubItem(Player player, int itemId, int count, string reason, out PlayerItem item)
         {
             item = player.Items.FirstOrDefault(x => x.Tid == itemId);
+            if (count == 0)
+            {
+                return true;
+            }
             if (item == null)
             {
                 return false;
@@ -237,22 +241,25 @@ namespace Frontline.Modules
 
             if (DRandoms.TryGetValue(randomId, out var groups))
             {
-                foreach (var group in groups.Values)
+                for(int i = 0; i< times; i++)
                 {
-                    var rand = MathUtils.RandomElement(group, g => g.w);
-                    if (rand == null)
-                        continue;
-                    int cnt = MathUtils.RandomNumber(rand.min, rand.max + 1);
-                    if (rand.tid == 0)
-                        continue;
-                    if (rand.type <= 1)
+                    foreach (var group in groups.Values)
                     {
-                        ri.res.Add(new ResInfo { type = rand.tid, count = cnt });
-                    }
-                    else if (rand.type >= 2)
-                    {
-                        DItem ditem = this.DItems[rand.tid];
-                        ri.items.Add(new RewardItem { id = rand.tid, count = cnt, icon = ditem.icon, name = ditem.name, quality = ditem.quality, type = ditem.type });
+                        var rand = MathUtils.RandomElement(group, g => g.w);
+                        if (rand == null)
+                            continue;
+                        int cnt = MathUtils.RandomNumber(rand.min, rand.max + 1);
+                        if (rand.tid == 0)
+                            continue;
+                        if (rand.type <= 1)
+                        {
+                            ri.res.Add(new ResInfo { type = rand.tid, count = cnt });
+                        }
+                        else if (rand.type >= 2)
+                        {
+                            DItem ditem = this.DItems[rand.tid];
+                            ri.items.Add(new RewardItem { id = rand.tid, count = cnt, icon = ditem.icon, name = ditem.name, quality = ditem.quality, type = ditem.type });
+                        }
                     }
                 }
 

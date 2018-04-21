@@ -533,6 +533,51 @@ namespace Frontline.Migrations
                     b.ToTable("MailAttachment");
                 });
 
+            modelBuilder.Entity("Frontline.Domain.Mall", b =>
+                {
+                    b.Property<string>("PlayerId")
+                        .ValueGeneratedOnAdd();
+
+                    b.HasKey("PlayerId");
+
+                    b.ToTable("Malls");
+                });
+
+            modelBuilder.Entity("Frontline.Domain.MallShop", b =>
+                {
+                    b.Property<string>("PlayerId");
+
+                    b.Property<int>("Type");
+
+                    b.Property<DateTime>("LastRefreshTime");
+
+                    b.HasKey("PlayerId", "Type");
+
+                    b.HasIndex("PlayerId");
+
+                    b.ToTable("MallShops");
+                });
+
+            modelBuilder.Entity("Frontline.Domain.MallShopCommodity", b =>
+                {
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<int>("CommodityId");
+
+                    b.Property<string>("PlayerId");
+
+                    b.Property<int>("SoldCount");
+
+                    b.Property<int>("Type");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlayerId", "Type");
+
+                    b.ToTable("MallShopCommodities");
+                });
+
             modelBuilder.Entity("Frontline.Domain.Player", b =>
                 {
                     b.Property<string>("Id")
@@ -742,6 +787,38 @@ namespace Frontline.Migrations
                     b.ToTable("Rescues");
                 });
 
+            modelBuilder.Entity("Frontline.Domain.SecretShop", b =>
+                {
+                    b.Property<string>("PlayerId")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<DateTime>("CloseTime");
+
+                    b.Property<DateTime>("OpenTime");
+
+                    b.HasKey("PlayerId");
+
+                    b.ToTable("SecretShops");
+                });
+
+            modelBuilder.Entity("Frontline.Domain.SecretShopItem", b =>
+                {
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<string>("PlayerId");
+
+                    b.Property<int>("SoldCount");
+
+                    b.Property<int>("Tid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlayerId");
+
+                    b.ToTable("SecretShopItem");
+                });
+
             modelBuilder.Entity("Frontline.Domain.Section", b =>
                 {
                     b.Property<string>("Id")
@@ -839,6 +916,8 @@ namespace Frontline.Migrations
                     b.Property<int>("LEGIONCOIN");
 
                     b.Property<int>("OIL");
+
+                    b.Property<DateTime>("OilLastReplyTime");
 
                     b.Property<int>("SMOKE");
 
@@ -985,6 +1064,21 @@ namespace Frontline.Migrations
                         .HasForeignKey("MailId");
                 });
 
+            modelBuilder.Entity("Frontline.Domain.MallShop", b =>
+                {
+                    b.HasOne("Frontline.Domain.Mall")
+                        .WithMany("Shops")
+                        .HasForeignKey("PlayerId")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("Frontline.Domain.MallShopCommodity", b =>
+                {
+                    b.HasOne("Frontline.Domain.MallShop")
+                        .WithMany("ShopCommodities")
+                        .HasForeignKey("PlayerId", "Type");
+                });
+
             modelBuilder.Entity("Frontline.Domain.PlayerItem", b =>
                 {
                     b.HasOne("Frontline.Domain.Player")
@@ -1018,6 +1112,13 @@ namespace Frontline.Migrations
                 {
                     b.HasOne("Frontline.Domain.PlayerQuestData")
                         .WithMany("QuestDailys")
+                        .HasForeignKey("PlayerId");
+                });
+
+            modelBuilder.Entity("Frontline.Domain.SecretShopItem", b =>
+                {
+                    b.HasOne("Frontline.Domain.SecretShop")
+                        .WithMany("SecretShopItems")
                         .HasForeignKey("PlayerId");
                 });
 

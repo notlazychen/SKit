@@ -296,7 +296,9 @@ namespace protocol
         ///  兵种技能
         /// </summary>
 		[ProtoMember(58, IsRequired = false)]
-		public List<int> unitSkills;
+        public List<SkillInfo> unitSkills;
+        //[ProtoMember(58, IsRequired = false)]
+        //public List<int> unitSkills;
         /// <summary>
         ///  生命加成值
         /// </summary>

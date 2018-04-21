@@ -101,11 +101,12 @@ namespace Frontline.Modules
             foreach (var unit in player.Units)
             {
                 var du = camp.DUnits[unit.Tid];
-                unit.Grade = du.grade_max;
-                var dug = camp.DUnitGrades[du.star][du.type][du.grade_max];
+                var dugs = camp.DUnitGrades[du.star][du.type];
+                var dug = dugs[dugs.Max(d=>d.Value.grade)];
                 unit.Level = dug.max_level;
-                //camp.OnUnitLevelUp(new UnitLevelUpEventArgs() { UnitInfo = camp.ToUnitInfo(unit), OldLevel = oldlevel });
-                //camp.OnUnitGradeUp(new UnitGradeUpEventArgs() { OldGrade = oldgrade, UnitInfo = camp.ToUnitInfo(unit) });
+                unit.Grade = dug.grade;
+                camp.OnUnitLevelUp(new UnitLevelUpEventArgs() { UnitInfo = camp.ToUnitInfo(unit), OldLevel = 1 });
+                camp.OnUnitGradeUp(new UnitGradeUpEventArgs() { OldGrade = 0, UnitInfo = camp.ToUnitInfo(unit) });
                 foreach (var equip in unit.Equips)
                 {
                     DEquip de = camp.DEquips[equip.Tid];
@@ -115,13 +116,27 @@ namespace Frontline.Modules
                     DEquipGrade deg = camp.DEquipGrades[de.gradeid];
                     while (true)
                     {
-                        if (deg.next_id == 0)
+                        if (deg.next_id == 0 || !camp.DEquipGrades.ContainsKey(deg.next_id))
                         {
                             equip.GradeId = deg.id;
                             break;
                         }
                         deg = camp.DEquipGrades[deg.next_id];
                     }
+                    var ui = camp.ToUnitInfo(unit, du);
+                    var equipInfo = new EquipInfo()
+                    {
+                        grade = equip.GradeId,
+                        equipId = equip.Tid,
+                        level = equip.Level
+                    };
+                    camp.OnEquipLevelUp(new EquipLevelUpEventArgs()
+                    {
+                        EquipInfo = equipInfo,
+                        UnitInfo = ui,
+                        OldLevel = 1,
+                    });
+                    camp.OnEquipGradeUp(new EquipGradeUpEventArgs() { EquipInfo = equipInfo, OldGrade = 0, UnitInfo = ui });
                 }
                 camp.ToUnitInfo(unit, du, true);
             }

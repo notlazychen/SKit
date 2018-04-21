@@ -15,20 +15,20 @@ namespace Frontline.GameDesign.Core
         /// <param name="db"></param>
         public static void CheckUnitGrade(this GameDesignContext db)
         {
-            var dus = db.DUnit.ToList();
-            var dugs = db.DUnitGradeUp.ToList();
-            foreach (var du in dus)
-            {
-                for(int grade = 1; grade <= du.grade_max; grade++)
-                {
-                    bool ok = dugs
-                        .Any(dug => du.type == dug.type && dug.star == du.star && dug.grade == grade);
-                    if (!ok)
-                    {
-                        Console.WriteLine($"检查兵种[{du.tid}-{du.name}]在<兵种升阶表>中缺少对应 [兵种类型{du.type}_兵种星级{du.star}_兵种升阶{grade}] 的配置");
-                    }
-                }                
-            }
+            //var dus = db.DUnit.ToList();
+            //var dugs = db.DUnitGradeUp.ToList();
+            //foreach (var du in dus)
+            //{
+            //    for(int grade = 1; grade <= du.grade_max; grade++)
+            //    {
+            //        bool ok = dugs
+            //            .Any(dug => du.type == dug.type && dug.star == du.star && dug.grade == grade);
+            //        if (!ok)
+            //        {
+            //            Console.WriteLine($"检查兵种[{du.tid}-{du.name}]在<兵种升阶表>中缺少对应 [兵种类型{du.type}_兵种星级{du.star}_兵种升阶{grade}] 的配置");
+            //        }
+            //    }                
+            //}
         }
 
         /// <summary>

@@ -30,6 +30,8 @@ namespace Frontline.Modules
         public Dictionary<int, DEquipLevelCost> DequipLevels { get; private set; }//level:x
         public Dictionary<int, DEquipGrade> DEquipGrades { get; private set; }//grade_id:x
 
+        public Dictionary<int, Dictionary<int, DSkill>> DSkills { get; private set; }//tid>lv>x
+        
         public CampModule(DataContext db)
         {
             _db = db;
@@ -55,6 +57,8 @@ namespace Frontline.Modules
                 DEquips = designDb.DEquip.AsNoTracking().ToDictionary(x => x.id, x => x);
                 DequipLevels = designDb.DEquipLevelCost.AsNoTracking().ToDictionary(x => x.level, x => x);
                 DEquipGrades = designDb.DEquipGrade.AsNoTracking().ToDictionary(x => x.id, x => x);
+
+                DSkills = designDb.DSkill.AsNoTracking().GroupBy(g => g.id).ToDictionary(g => g.Key, g => g.ToDictionary(x => x.lv, x => x));
             });
         }
 
@@ -165,12 +169,14 @@ namespace Frontline.Modules
             {
                 return null;
             }
-            int grade = unit.Grade == 0 ? 1 : unit.Grade;
-            DUnitGradeUp dug = DUnitGrades[du.star][du.type][grade];
+            var dugs = DUnitGrades[du.star][du.type];
+            DUnitGradeUp dug = dugs.ContainsKey(unit.Grade + 1) ? dugs[unit.Grade + 1] : dugs[unit.Grade];
+            int maxlevel = dug.max_level;
             int oldlevel = unit.Level;
             int restype = du.type == 2 ? CurrencyType.IRON : CurrencyType.SUPPLY;
             var playerModule = this.Server.GetModule<PlayerModule>();
-            while (unit.Level < player.Level && dug.max_level >= unit.Level)
+            int totalexp = unit.Exp + exp;
+            while (unit.Level <= player.Level && unit.Level <= maxlevel)
             {
                 DUnitLevelUp dul = DUnitLevels[unit.Level];
                 int costExp = 0;
@@ -192,7 +198,19 @@ namespace Frontline.Modules
                         costExp = dul.star5;
                         break;
                 }
-                unit.Exp += exp;
+                if (unit.Level == maxlevel || unit.Level >= player.Level)
+                {
+                    if (totalexp > costExp)
+                    {
+                        unit.Exp = costExp;
+                    }
+                    else
+                    {
+                        unit.Exp = totalexp;
+                    }
+                    break;
+                }
+                unit.Exp = totalexp;
                 if (unit.Exp < costExp)
                 {
                     if (usecurrency)
@@ -219,8 +237,7 @@ namespace Frontline.Modules
                 {
                     unit.Exp = costExp;
                 }
-                //Spring.bean(QuestService.class).onUnitLvUp(u.getPid(), u.getUid(), u.getLevel());
-                if (usecurrency && !once)
+                if (!once)
                 {
                     break;
                 }
@@ -229,7 +246,6 @@ namespace Frontline.Modules
             if (oldlevel != unit.Level)
             {
                 UnitInfo ui = this.ToUnitInfo(unit, du, true);
-
                 OnUnitLevelUp(new UnitLevelUpEventArgs()
                 {
                     UnitInfo = ui,
@@ -331,7 +347,33 @@ namespace Frontline.Modules
                 info.pvp_point = du.pvp_point;
                 info.pvp_dec_score = du.pvp_dec_score;
                 info.max_energy = du.max_energy;
-                info.unitSkills = du.skills.Object;
+                //info.unitSkills = du.skills.Object;
+                info.unitSkills = new List<SkillInfo>();
+                foreach (int sid in du.skills.Object)
+                {
+                    var dsg = this.DSkills[sid].Values;
+                    int lv = 0;
+                    foreach (var ds in dsg)
+                    {
+                        if(ds.unit_grade > info.claz)
+                        {
+                            continue;
+                        }
+                        if(ds.lv > lv)
+                        {
+                            lv = ds.lv;
+                        }
+                    }
+
+                    if(lv != 0)
+                    {
+                        var skillInfo = new SkillInfo();
+                        skillInfo.sid = sid;
+                        skillInfo.lv = lv;
+                        info.unitSkills.Add(skillInfo);
+                    }
+                }
+                //du.skills.Object.Select(x => new SkillInfo { sid = x, lv = 1 }).ToList();
                 //info.hp_ex = du.hp_add;
                 //info.att_ex = ;
                 //info.def_ex = ;
@@ -448,6 +490,7 @@ namespace Frontline.Modules
             {
                 Id = Guid.NewGuid().ToString("D"),
                 Level = 1,
+                PlayerId = player.Id,
                 //Number = du.max_energy,
                 Tid = uid,
                 Equips = new List<Equip>()
@@ -469,7 +512,7 @@ namespace Frontline.Modules
             }
             player.Units.Add(unit);
 
-            var unitInfo = this.ToUnitInfo(unit);
+            var unitInfo = this.ToUnitInfo(unit, du, true);
             OnUnitUnlock(player, unitInfo);
 
             UnlockUnitResponse response = new UnlockUnitResponse

@@ -47,5 +47,18 @@ namespace SKit.Common.Utils
         {
             return dt.DayOfWeek == DayOfWeek.Sunday ? 7 : (int)dt.DayOfWeek;
         }
+
+        public static bool IsPass(this DateTime now, DateTime lastTime, int[] hours)
+        {
+            foreach (int hour in hours)
+            {
+                DateTime time = hour == 24 ? DateTime.Today : DateTime.Today.AddHours(hour);
+                if (lastTime <= time && now >= time)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
     }
 }

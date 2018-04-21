@@ -46,7 +46,10 @@ namespace Frontline.Modules
                 {
                     break;
                 }
-
+                if (equip.Level >= unit.Level)
+                {
+                    break;
+                }
                 if (equip.Level >= deg.max_level)
                 {
                     break;
@@ -63,7 +66,7 @@ namespace Frontline.Modules
                     break;
                 }
 
-                playerModule.AddCurrency(player, CurrencyType.GOLD, rescont, reason);
+                playerModule.AddCurrency(player, CurrencyType.GOLD, -rescont, reason);
                 equip.Level += 1;
 
                 if (!Request.multy)

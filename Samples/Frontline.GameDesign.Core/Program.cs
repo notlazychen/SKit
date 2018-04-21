@@ -23,13 +23,13 @@ namespace Frontline.GameDesign.Core
 
         static void Main(string[] args)
         {
-            bool import = false;
-            if(args.Length != 0)
+            bool import = true;
+            if (args.Length != 0)
             {
                 rootPath = args[0];
             }
-            if(args.Any(a=>a == "-a")
-                || args.Any(a=>a == "-p"))
+            if (args.Any(a => a == "-a")
+                || args.Any(a => a == "-p"))
             {
                 import = true;
             }
@@ -72,18 +72,30 @@ namespace Frontline.GameDesign.Core
         {
             //try
             //{
-                var property = db.GetType().GetProperties().FirstOrDefault(x => x.PropertyType == typeof(DbSet<T>));
-                string tableName = property.Name.ToString();
-                string sql = $"truncate table {tableName}";
+            var property = db.GetType().GetProperties().FirstOrDefault(x => x.PropertyType == typeof(DbSet<T>));
+            string tableName = property.Name.ToString();
+            string sql = $"truncate table {tableName}";
 
-                Console.WriteLine("[{0}]清空对应数据库表{1}", path, tableName);
-                db.Database.ExecuteSqlCommand(sql);
+            Console.WriteLine("[{0}]清空对应数据库表{1}", path, tableName);
+            db.Database.ExecuteSqlCommand(sql);
 
-                Console.WriteLine("[{0}]读取表格: {0}", path, tableName);
-                var dds = ExcelReader.ReadFromFile<T>(Path.Combine(rootPath, path));
-                Console.WriteLine("[{0}]导入数据库表中: {1}", path, tableName);
-                set.AddRange(dds);
-                db.SaveChanges();
+            Console.WriteLine("[{0}]读取表格: {0}", path, tableName);
+            var dds = ExcelReader.ReadFromFile<T>(Path.Combine(rootPath, path));
+            Console.WriteLine("[{0}]导入数据库表中: {1}", path, tableName);
+
+            //set.AddRange(dds);
+            foreach (var dd in dds)
+            {
+                try
+                {
+                    //检查ID是否有重复
+                    set.Add(dd);
+                }catch(Exception)
+                {
+                    Console.WriteLine("[主键重复]{0}", JsonConvert.SerializeObject(dd));
+                }
+            }
+            db.SaveChanges();
             //}catch(Exception ex)
             //{
             //    Console.WriteLine(ex.Message);

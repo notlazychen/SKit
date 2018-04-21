@@ -13,15 +13,15 @@ using System.Collections.Generic;
 namespace Frontline.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20180406050202_tran")]
-    partial class tran
+    [Migration("20180418054833_secretshop")]
+    partial class secretshop
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
                 .HasAnnotation("MySql:ValueGenerationStrategy", MySqlValueGenerationStrategy.IdentityColumn)
-                .HasAnnotation("ProductVersion", "2.0.1-rtm-125");
+                .HasAnnotation("ProductVersion", "2.0.2-rtm-10011");
 
             modelBuilder.Entity("Frontline.Domain.ArenaBattleHistory", b =>
                 {
@@ -358,6 +358,44 @@ namespace Frontline.Migrations
                     b.ToTable("Legions");
                 });
 
+            modelBuilder.Entity("Frontline.Domain.LegionApplication", b =>
+                {
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<string>("LegionId");
+
+                    b.Property<string>("PlayerId");
+
+                    b.Property<DateTime>("RequestTime");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LegionId");
+
+                    b.ToTable("LegionApplications");
+                });
+
+            modelBuilder.Entity("Frontline.Domain.LegionBBS", b =>
+                {
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<string>("Content");
+
+                    b.Property<string>("LegionId");
+
+                    b.Property<string>("PlayerId");
+
+                    b.Property<DateTime>("Time");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LegionId");
+
+                    b.ToTable("LegionBBS");
+                });
+
             modelBuilder.Entity("Frontline.Domain.LegionMember", b =>
                 {
                     b.Property<string>("PlayerId")
@@ -365,9 +403,9 @@ namespace Frontline.Migrations
 
                     b.Property<int>("Career");
 
-                    b.Property<int>("ContriTimes");
-
                     b.Property<long>("Contribution");
+
+                    b.Property<bool>("IsTodayDonated");
 
                     b.Property<DateTime>("LastContriTime");
 
@@ -382,6 +420,24 @@ namespace Frontline.Migrations
                     b.HasIndex("LegionId");
 
                     b.ToTable("LegionMembers");
+                });
+
+            modelBuilder.Entity("Frontline.Domain.LegionScience", b =>
+                {
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<int>("Level");
+
+                    b.Property<string>("PlayerId");
+
+                    b.Property<int>("Tid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlayerId");
+
+                    b.ToTable("LegionSciences");
                 });
 
             modelBuilder.Entity("Frontline.Domain.Lottery", b =>
@@ -418,6 +474,109 @@ namespace Frontline.Migrations
                     b.HasKey("PlayerId");
 
                     b.ToTable("Lotteries");
+                });
+
+            modelBuilder.Entity("Frontline.Domain.Mail", b =>
+                {
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<JsonObject<List<string>>>("Args");
+
+                    b.Property<string>("Content");
+
+                    b.Property<string>("From");
+
+                    b.Property<string>("Icon");
+
+                    b.Property<bool>("IsCollected");
+
+                    b.Property<bool>("IsLegionMail");
+
+                    b.Property<bool>("IsReaded");
+
+                    b.Property<bool>("IsRecved");
+
+                    b.Property<string>("LegionName");
+
+                    b.Property<string>("PlayerId");
+
+                    b.Property<DateTime>("Time");
+
+                    b.Property<string>("Title");
+
+                    b.Property<int>("Type");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlayerId");
+
+                    b.ToTable("Mails");
+                });
+
+            modelBuilder.Entity("Frontline.Domain.MailAttachment", b =>
+                {
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<int>("Count");
+
+                    b.Property<string>("MailId");
+
+                    b.Property<int>("Tid");
+
+                    b.Property<int>("Type");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MailId");
+
+                    b.ToTable("MailAttachment");
+                });
+
+            modelBuilder.Entity("Frontline.Domain.Mall", b =>
+                {
+                    b.Property<string>("PlayerId")
+                        .ValueGeneratedOnAdd();
+
+                    b.HasKey("PlayerId");
+
+                    b.ToTable("Malls");
+                });
+
+            modelBuilder.Entity("Frontline.Domain.MallShop", b =>
+                {
+                    b.Property<string>("PlayerId");
+
+                    b.Property<int>("Type");
+
+                    b.Property<DateTime>("LastRefreshTime");
+
+                    b.HasKey("PlayerId", "Type");
+
+                    b.HasIndex("PlayerId");
+
+                    b.ToTable("MallShops");
+                });
+
+            modelBuilder.Entity("Frontline.Domain.MallShopCommodity", b =>
+                {
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<int>("CommodityId");
+
+                    b.Property<string>("PlayerId");
+
+                    b.Property<int>("SoldCount");
+
+                    b.Property<int>("Type");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlayerId", "Type");
+
+                    b.ToTable("MallShopCommodities");
                 });
 
             modelBuilder.Entity("Frontline.Domain.Player", b =>
@@ -613,6 +772,54 @@ namespace Frontline.Migrations
                     b.ToTable("QuestDailys");
                 });
 
+            modelBuilder.Entity("Frontline.Domain.Rescue", b =>
+                {
+                    b.Property<string>("PlayerId")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<DateTime>("LastRefreshTime");
+
+                    b.Property<int>("LastTodayDiff");
+
+                    b.Property<int>("UseNumb");
+
+                    b.HasKey("PlayerId");
+
+                    b.ToTable("Rescues");
+                });
+
+            modelBuilder.Entity("Frontline.Domain.SecretShop", b =>
+                {
+                    b.Property<string>("PlayerId")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<DateTime>("CloseTime");
+
+                    b.Property<DateTime>("OpenTime");
+
+                    b.HasKey("PlayerId");
+
+                    b.ToTable("SecretShops");
+                });
+
+            modelBuilder.Entity("Frontline.Domain.SecretShopItem", b =>
+                {
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<string>("PlayerId");
+
+                    b.Property<int>("SoldCount");
+
+                    b.Property<int>("Tid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlayerId");
+
+                    b.ToTable("SecretShopItem");
+                });
+
             modelBuilder.Entity("Frontline.Domain.Section", b =>
                 {
                     b.Property<string>("Id")
@@ -711,6 +918,8 @@ namespace Frontline.Migrations
 
                     b.Property<int>("OIL");
 
+                    b.Property<DateTime>("OilLastReplyTime");
+
                     b.Property<int>("SMOKE");
 
                     b.Property<int>("SUPPLY");
@@ -732,6 +941,34 @@ namespace Frontline.Migrations
                     b.HasKey("PlayerId");
 
                     b.ToTable("Wallets");
+                });
+
+            modelBuilder.Entity("Frontline.Domain.WeekBattleData", b =>
+                {
+                    b.Property<string>("PlayerId")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<int>("DaysInWeek");
+
+                    b.Property<DateTime>("LastRefreshDay");
+
+                    b.Property<DateTime>("LastRefreshWeek");
+
+                    b.Property<string>("RecvBoxes")
+                        .HasMaxLength(1024);
+
+                    b.Property<int>("Score");
+
+                    b.Property<int>("UseNumb");
+
+                    b.HasKey("PlayerId");
+
+                    b.HasIndex("PlayerId")
+                        .IsUnique();
+
+                    b.HasIndex("Score");
+
+                    b.ToTable("WeekBattleData");
                 });
 
             modelBuilder.Entity("Frontline.Domain.ArenaBattleHistory", b =>
@@ -793,11 +1030,54 @@ namespace Frontline.Migrations
                         .OnDelete(DeleteBehavior.Cascade);
                 });
 
+            modelBuilder.Entity("Frontline.Domain.LegionApplication", b =>
+                {
+                    b.HasOne("Frontline.Domain.Legion")
+                        .WithMany("LegionApplications")
+                        .HasForeignKey("LegionId");
+                });
+
+            modelBuilder.Entity("Frontline.Domain.LegionBBS", b =>
+                {
+                    b.HasOne("Frontline.Domain.Legion")
+                        .WithMany("LegionBBS")
+                        .HasForeignKey("LegionId");
+                });
+
             modelBuilder.Entity("Frontline.Domain.LegionMember", b =>
                 {
                     b.HasOne("Frontline.Domain.Legion")
                         .WithMany("Members")
                         .HasForeignKey("LegionId");
+                });
+
+            modelBuilder.Entity("Frontline.Domain.LegionScience", b =>
+                {
+                    b.HasOne("Frontline.Domain.LegionMember")
+                        .WithMany("LegionSciences")
+                        .HasForeignKey("PlayerId");
+                });
+
+            modelBuilder.Entity("Frontline.Domain.MailAttachment", b =>
+                {
+                    b.HasOne("Frontline.Domain.Mail")
+                        .WithMany("MailAttachments")
+                        .HasForeignKey("MailId");
+                });
+
+            modelBuilder.Entity("Frontline.Domain.MallShop", b =>
+                {
+                    b.HasOne("Frontline.Domain.Mall")
+                        .WithMany("Shops")
+                        .HasForeignKey("PlayerId")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("Frontline.Domain.MallShopCommodity", b =>
+                {
+                    b.HasOne("Frontline.Domain.MallShop")
+                        .WithMany("ShopCommodities")
+                        .HasForeignKey("PlayerId", "Type");
                 });
 
             modelBuilder.Entity("Frontline.Domain.PlayerItem", b =>
@@ -833,6 +1113,13 @@ namespace Frontline.Migrations
                 {
                     b.HasOne("Frontline.Domain.PlayerQuestData")
                         .WithMany("QuestDailys")
+                        .HasForeignKey("PlayerId");
+                });
+
+            modelBuilder.Entity("Frontline.Domain.SecretShopItem", b =>
+                {
+                    b.HasOne("Frontline.Domain.SecretShop")
+                        .WithMany("SecretShopItems")
                         .HasForeignKey("PlayerId");
                 });
 

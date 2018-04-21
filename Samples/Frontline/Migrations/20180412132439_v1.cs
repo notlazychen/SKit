@@ -4,23 +4,38 @@ using System.Collections.Generic;
 
 namespace Frontline.Migrations
 {
-    public partial class p1 : Migration
+    public partial class v1 : Migration
     {
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "DiKangs",
+                columns: table => new
+                {
+                    PlayerId = table.Column<string>(nullable: false),
+                    Best = table.Column<int>(nullable: false),
+                    Current = table.Column<int>(nullable: false),
+                    LastRefreshTime = table.Column<DateTime>(nullable: false),
+                    RecvBox = table.Column<string>(nullable: true),
+                    ResetNumb = table.Column<int>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_DiKangs", x => x.PlayerId);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Factories",
                 columns: table => new
                 {
-                    Id = table.Column<string>(nullable: false),
+                    PlayerId = table.Column<string>(nullable: false),
                     HireWorkerNumb = table.Column<int>(nullable: false),
                     LastRefreshDay = table.Column<DateTime>(nullable: false),
-                    PlayerId = table.Column<string>(nullable: true),
                     TodayMarketRefreshTimes = table.Column<int>(nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Factories", x => x.Id);
+                    table.PrimaryKey("PK_Factories", x => x.PlayerId);
                 });
 
             migrationBuilder.CreateTable(
@@ -93,6 +108,41 @@ namespace Frontline.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Mails",
+                columns: table => new
+                {
+                    Id = table.Column<string>(nullable: false),
+                    Args = table.Column<JsonObject<List<string>>>(nullable: true),
+                    Content = table.Column<string>(nullable: true),
+                    From = table.Column<string>(nullable: true),
+                    Icon = table.Column<string>(nullable: true),
+                    IsCollected = table.Column<bool>(nullable: false),
+                    IsLegionMail = table.Column<bool>(nullable: false),
+                    IsReaded = table.Column<bool>(nullable: false),
+                    IsRecved = table.Column<bool>(nullable: false),
+                    LegionName = table.Column<string>(nullable: true),
+                    PlayerId = table.Column<string>(nullable: true),
+                    Time = table.Column<DateTime>(nullable: false),
+                    Title = table.Column<string>(nullable: true),
+                    Type = table.Column<int>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Mails", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Malls",
+                columns: table => new
+                {
+                    PlayerId = table.Column<string>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Malls", x => x.PlayerId);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "PlayerQuestDatas",
                 columns: table => new
                 {
@@ -148,6 +198,51 @@ namespace Frontline.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Rescues",
+                columns: table => new
+                {
+                    PlayerId = table.Column<string>(nullable: false),
+                    LastRefreshTime = table.Column<DateTime>(nullable: false),
+                    LastTodayDiff = table.Column<int>(nullable: false),
+                    UseNumb = table.Column<int>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Rescues", x => x.PlayerId);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Transports",
+                columns: table => new
+                {
+                    PlayerId = table.Column<string>(nullable: false),
+                    LastRefreshTime = table.Column<DateTime>(nullable: false),
+                    LastTodayDiff = table.Column<int>(nullable: false),
+                    UseNumb = table.Column<int>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Transports", x => x.PlayerId);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "WeekBattleData",
+                columns: table => new
+                {
+                    PlayerId = table.Column<string>(nullable: false),
+                    DaysInWeek = table.Column<int>(nullable: false),
+                    LastRefreshDay = table.Column<DateTime>(nullable: false),
+                    LastRefreshWeek = table.Column<DateTime>(nullable: false),
+                    RecvBoxes = table.Column<string>(maxLength: 1024, nullable: true),
+                    Score = table.Column<int>(nullable: false),
+                    UseNumb = table.Column<int>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_WeekBattleData", x => x.PlayerId);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "FacTasks",
                 columns: table => new
                 {
@@ -167,7 +262,7 @@ namespace Frontline.Migrations
                         name: "FK_FacTasks_Factories_PlayerId",
                         column: x => x.PlayerId,
                         principalTable: "Factories",
-                        principalColumn: "Id",
+                        principalColumn: "PlayerId",
                         onDelete: ReferentialAction.Restrict);
                 });
 
@@ -189,7 +284,7 @@ namespace Frontline.Migrations
                         name: "FK_FacWorkers_Factories_PlayerId",
                         column: x => x.PlayerId,
                         principalTable: "Factories",
-                        principalColumn: "Id",
+                        principalColumn: "PlayerId",
                         onDelete: ReferentialAction.Restrict);
                 });
 
@@ -234,13 +329,54 @@ namespace Frontline.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "LegionApplications",
+                columns: table => new
+                {
+                    Id = table.Column<string>(nullable: false),
+                    LegionId = table.Column<string>(nullable: true),
+                    PlayerId = table.Column<string>(nullable: true),
+                    RequestTime = table.Column<DateTime>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LegionApplications", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_LegionApplications_Legions_LegionId",
+                        column: x => x.LegionId,
+                        principalTable: "Legions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "LegionBBS",
+                columns: table => new
+                {
+                    Id = table.Column<string>(nullable: false),
+                    Content = table.Column<string>(nullable: true),
+                    LegionId = table.Column<string>(nullable: true),
+                    PlayerId = table.Column<string>(nullable: true),
+                    Time = table.Column<DateTime>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LegionBBS", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_LegionBBS_Legions_LegionId",
+                        column: x => x.LegionId,
+                        principalTable: "Legions",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "LegionMembers",
                 columns: table => new
                 {
                     PlayerId = table.Column<string>(nullable: false),
                     Career = table.Column<int>(nullable: false),
-                    ContriTimes = table.Column<int>(nullable: false),
                     Contribution = table.Column<long>(nullable: false),
+                    IsTodayDonated = table.Column<bool>(nullable: false),
                     LastContriTime = table.Column<DateTime>(nullable: false),
                     LastLeftTime = table.Column<DateTime>(nullable: false),
                     LastRefreshTime = table.Column<DateTime>(nullable: false),
@@ -255,6 +391,46 @@ namespace Frontline.Migrations
                         principalTable: "Legions",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "MailAttachment",
+                columns: table => new
+                {
+                    Id = table.Column<string>(nullable: false),
+                    Count = table.Column<int>(nullable: false),
+                    MailId = table.Column<string>(nullable: true),
+                    Tid = table.Column<int>(nullable: false),
+                    Type = table.Column<int>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MailAttachment", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_MailAttachment_Mails_MailId",
+                        column: x => x.MailId,
+                        principalTable: "Mails",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "MallShops",
+                columns: table => new
+                {
+                    PlayerId = table.Column<string>(nullable: false),
+                    Type = table.Column<int>(nullable: false),
+                    LastRefreshTime = table.Column<DateTime>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MallShops", x => new { x.PlayerId, x.Type });
+                    table.ForeignKey(
+                        name: "FK_MallShops_Malls_PlayerId",
+                        column: x => x.PlayerId,
+                        principalTable: "Malls",
+                        principalColumn: "PlayerId",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -486,6 +662,47 @@ namespace Frontline.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "LegionSciences",
+                columns: table => new
+                {
+                    Id = table.Column<string>(nullable: false),
+                    Level = table.Column<int>(nullable: false),
+                    PlayerId = table.Column<string>(nullable: true),
+                    Tid = table.Column<int>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_LegionSciences", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_LegionSciences_LegionMembers_PlayerId",
+                        column: x => x.PlayerId,
+                        principalTable: "LegionMembers",
+                        principalColumn: "PlayerId",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "MallShopCommodities",
+                columns: table => new
+                {
+                    Id = table.Column<string>(nullable: false),
+                    CommodityId = table.Column<int>(nullable: false),
+                    PlayerId = table.Column<string>(nullable: true),
+                    SoldCount = table.Column<int>(nullable: false),
+                    Type = table.Column<int>(nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_MallShopCommodities", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_MallShopCommodities_MallShops_PlayerId_Type",
+                        columns: x => new { x.PlayerId, x.Type },
+                        principalTable: "MallShops",
+                        principalColumns: new[] { "PlayerId", "Type" },
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "ArenaBattleHistories",
                 columns: table => new
                 {
@@ -637,6 +854,16 @@ namespace Frontline.Migrations
                 column: "PlayerId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_LegionApplications_LegionId",
+                table: "LegionApplications",
+                column: "LegionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LegionBBS_LegionId",
+                table: "LegionBBS",
+                column: "LegionId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_LegionMembers_LegionId",
                 table: "LegionMembers",
                 column: "LegionId");
@@ -657,6 +884,31 @@ namespace Frontline.Migrations
                 table: "Legions",
                 column: "ShortName",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_LegionSciences_PlayerId",
+                table: "LegionSciences",
+                column: "PlayerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MailAttachment_MailId",
+                table: "MailAttachment",
+                column: "MailId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Mails_PlayerId",
+                table: "Mails",
+                column: "PlayerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MallShopCommodities_PlayerId_Type",
+                table: "MallShopCommodities",
+                columns: new[] { "PlayerId", "Type" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_MallShops_PlayerId",
+                table: "MallShops",
+                column: "PlayerId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Players_NickName",
@@ -698,12 +950,26 @@ namespace Frontline.Migrations
                 name: "IX_Units_PlayerId",
                 table: "Units",
                 column: "PlayerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WeekBattleData_PlayerId",
+                table: "WeekBattleData",
+                column: "PlayerId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_WeekBattleData_Score",
+                table: "WeekBattleData",
+                column: "Score");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
                 name: "ArenaBattleHistories");
+
+            migrationBuilder.DropTable(
+                name: "DiKangs");
 
             migrationBuilder.DropTable(
                 name: "Dungeon");
@@ -730,10 +996,22 @@ namespace Frontline.Migrations
                 name: "Items");
 
             migrationBuilder.DropTable(
-                name: "LegionMembers");
+                name: "LegionApplications");
+
+            migrationBuilder.DropTable(
+                name: "LegionBBS");
+
+            migrationBuilder.DropTable(
+                name: "LegionSciences");
 
             migrationBuilder.DropTable(
                 name: "Lotteries");
+
+            migrationBuilder.DropTable(
+                name: "MailAttachment");
+
+            migrationBuilder.DropTable(
+                name: "MallShopCommodities");
 
             migrationBuilder.DropTable(
                 name: "PlayerOlReward");
@@ -745,10 +1023,19 @@ namespace Frontline.Migrations
                 name: "Quests");
 
             migrationBuilder.DropTable(
+                name: "Rescues");
+
+            migrationBuilder.DropTable(
                 name: "Teams");
 
             migrationBuilder.DropTable(
+                name: "Transports");
+
+            migrationBuilder.DropTable(
                 name: "Wallets");
+
+            migrationBuilder.DropTable(
+                name: "WeekBattleData");
 
             migrationBuilder.DropTable(
                 name: "ArenaCerts");
@@ -766,13 +1053,25 @@ namespace Frontline.Migrations
                 name: "FriendLists");
 
             migrationBuilder.DropTable(
-                name: "Legions");
+                name: "LegionMembers");
+
+            migrationBuilder.DropTable(
+                name: "Mails");
+
+            migrationBuilder.DropTable(
+                name: "MallShops");
 
             migrationBuilder.DropTable(
                 name: "PlayerQuestDatas");
 
             migrationBuilder.DropTable(
                 name: "Players");
+
+            migrationBuilder.DropTable(
+                name: "Legions");
+
+            migrationBuilder.DropTable(
+                name: "Malls");
         }
     }
 }
