@@ -31,5 +31,10 @@ namespace protocol
         /// </summary>
 		[ProtoMember(4, IsRequired = false)]
         public long nextFreeTime;
+        /// <summary>
+        /// 
+        /// </summary>
+        [ProtoMember(5, IsRequired = false)]
+        public int baseNumb;
     }
 }

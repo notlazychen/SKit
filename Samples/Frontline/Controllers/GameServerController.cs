@@ -1,5 +1,6 @@
 ﻿using Frontline.Common;
 using Frontline.Common.Reflection;
+using Frontline.Modules;
 using Microsoft.AspNetCore.Mvc;
 using protocol;
 using SKit;
@@ -51,6 +52,16 @@ namespace Frontline.Controllers
             string text = ProtocolMinFileHelper.ToFileContent();
             var data = Encoding.UTF8.GetBytes(text);
             return File(data, "text/html", "Protocols.cs");
+        }
+
+        public bool ReloadTable()
+        {
+            _server.InvokeGameTask(()=> {
+                var ddm = _server.GetModule<DesignDataModule>();
+                ddm.LoadGameConfig();
+                ddm.LoadTables(null);
+            }, true);
+            return true;
         }
     }
 }

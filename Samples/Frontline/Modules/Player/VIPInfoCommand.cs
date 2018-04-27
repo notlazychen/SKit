@@ -31,11 +31,11 @@ namespace Frontline.Modules
         {
             var player = _playerModule.QueryPlayer(Session.PlayerId);
             VIPInfoResponse response = new VIPInfoResponse();
-            response.success = true;
-            response.vipExp = player.VIPExp;
-            response.vipLevel = player.VIP;
-            response.nextLvExp = 0;
-            response.receivedGifts = new List<int>();
+            //response.success = true;
+            //response.vipExp = player.VIPExp;
+            response.vip = player.VIP;
+            response.endTime = player.VIPEndTime.ToUnixTime();
+            response.recved = player.VIPGiftReceved != 0;
             Session.SendAsync(response);
             return 0;
         }

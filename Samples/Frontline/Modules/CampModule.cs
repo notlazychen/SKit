@@ -231,7 +231,9 @@ namespace Frontline.Modules
                 }
                 if (unit.Level < DUnitLevels.Count)
                 {
+                    //升级
                     unit.Level += 1;
+                    unit.Exp -= costExp;
                 }
                 else
                 {
@@ -351,6 +353,10 @@ namespace Frontline.Modules
                 info.unitSkills = new List<SkillInfo>();
                 foreach (int sid in du.skills.Object)
                 {
+                    if (!this.DSkills.ContainsKey(sid))
+                    {
+                        continue;
+                    }
                     var dsg = this.DSkills[sid].Values;
                     int lv = 0;
                     foreach (var ds in dsg)
@@ -515,15 +521,7 @@ namespace Frontline.Modules
             var unitInfo = this.ToUnitInfo(unit, du, true);
             OnUnitUnlock(player, unitInfo);
 
-            UnlockUnitResponse response = new UnlockUnitResponse
-            {
-                success = true,
-                unitId = uid,
-                unitInfo = unitInfo
-            };
-            Server.SendByUserNameAsync(player.Id, response);
-
-            _db.SaveChanges();
+            //_db.SaveChanges();
             return unitInfo;
         }
 

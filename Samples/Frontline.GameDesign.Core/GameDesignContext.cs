@@ -38,6 +38,7 @@ namespace Frontline.GameDesign
 
             modelBuilder.Entity<DSecretShop>().HasKey(d => new { d.vip, d.group });
         }
+        public DbSet<DGameConfig> DGameConfig { get; set; }
 
         public DbSet<DItem> DItem { get; set; }
         public DbSet<DLevel> DLevel { get; set; }

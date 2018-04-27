@@ -632,7 +632,8 @@ namespace Frontline.Modules
                 return (int)GameErrorCode.副本挑战次数不足;
             }
             var playercon = Server.GetModule<PlayerModule>();
-            if (!playercon.IsCurrencyEnough(player, CurrencyType.OIL, df.oil_cost))
+            int costoil = df.oil_cost * request.count;
+            if (!playercon.IsCurrencyEnough(player, CurrencyType.OIL, costoil))
             {
                 return (int)GameErrorCode.体力不足;
             }
@@ -642,7 +643,6 @@ namespace Frontline.Modules
             //派发奖励
             var playerModule = this.Server.GetModule<PlayerModule>();
 
-            int costoil = df.oil_cost * request.count;
             int addexp = df.exp * request.count;
             int addunitexp = df.exp_element * request.count;
             //扣体力
@@ -657,8 +657,10 @@ namespace Frontline.Modules
             {
                 RewardInfo reward = pkgController.RandomReward(player, df.random_id, 1, reason);
                 reward.exp = df.exp;
+                reward.res.Add(new ResInfo { type = CurrencyType.GOLD, count = df.gold });
                 response.rewards.Add(reward);
             }
+            playerModule.AddCurrency(player, CurrencyType.GOLD, df.gold * request.count, reason);
             dungeon.FightTimes += request.count;
             _db.SaveChanges();
 

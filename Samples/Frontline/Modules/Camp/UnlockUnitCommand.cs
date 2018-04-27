@@ -40,8 +40,15 @@ namespace Frontline.Modules
             var pkgController = Server.GetModule<PkgModule>();
             if (pkgController.TrySubItem(player, duc.item_id, duc.item_cnt, reason, out var item))
             {
-                _campModule.UnlockUnit(player, uid);
+                var unitInfo = _campModule.UnlockUnit(player, uid);
                 _db.SaveChanges();
+                UnlockUnitResponse response = new UnlockUnitResponse
+                {
+                    success = true,
+                    unitId = uid,
+                    unitInfo = unitInfo
+                };
+                Server.SendByUserNameAsync(player.Id, response);
                 return 0;
             }
             else

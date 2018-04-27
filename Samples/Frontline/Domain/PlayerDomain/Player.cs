@@ -42,7 +42,8 @@ namespace Frontline.Domain
         /// <summary>
         /// VIP经验
         /// </summary>
-        public int VIPExp { get; set; }
+        public DateTime VIPEndTime { get; set; }
+        public int VIPGiftReceved { get; set; }
         /// <summary>
         /// 是否已经废弃
         /// </summary>

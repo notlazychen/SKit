@@ -32,6 +32,12 @@ namespace protocol
         /// </summary>
 		[ProtoMember(5, IsRequired = false)]
 		public bool needBind;
+        /// <summary>
+        /// hurtValue
+        /// </summary>
+        [ProtoMember(6, IsRequired = false)]
+        public int hurtValue;
+        
 
-	}
+    }
 }

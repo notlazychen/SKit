@@ -18,6 +18,7 @@ namespace Frontline.Modules
     {
         PlayerModule _playerModule;
         FriendModule _friendModule;
+        LegionModule _legionModule;
         DataContext _db;
         GameServerSettings _config;
 
@@ -25,6 +26,7 @@ namespace Frontline.Modules
         {
             _friendModule = Server.GetModule<FriendModule>();
             _playerModule = Server.GetModule<PlayerModule>();
+            _legionModule = Server.GetModule<LegionModule>();
             _db = Server.GetModule<GameSettingModule>().DataContext;
             _config = Server.GetModule<GameSettingModule>().Settings;
         }
@@ -48,7 +50,7 @@ namespace Frontline.Modules
             response.icon = other.Icon;
             response.name = other.NickName;
             response.level = other.Level;
-
+            response.legionName = _legionModule.QueryLegion(other.LegionId)?.Name;
             Session.SendAsync(response);
             return 0;
         }

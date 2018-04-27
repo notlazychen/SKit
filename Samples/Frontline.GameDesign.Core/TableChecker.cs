@@ -9,13 +9,44 @@ namespace Frontline.GameDesign.Core
 {
     public static class TableChecker
     {
+
+        public static void CheckFactory(this GameDesignContext db)
+        {
+            var dt = db.DFacTaskGroup.ToList();
+            var dds = db.DFacTask.GroupBy(y => y.group).ToDictionary(z => z.Key, z => z.ToList());
+            foreach (var d in dt)
+            {
+                if (!dds.ContainsKey(d.gourp_supply))
+                {
+                    Console.WriteLine($"检查<后勤基地-派遣任务分组>[id:{d.id}]的军需工厂分组[{d.gourp_supply}]在<技能表>中缺失");
+                }
+                if (!dds.ContainsKey(d.group_iron))
+                {
+                    Console.WriteLine($"检查<后勤基地-派遣任务>[id:{d.id}]的钢铁工厂分组[{d.group_iron}]在<技能表>中缺失");
+                }
+            }
+        }
+
+
         /// <summary>
         /// 检查兵种升阶表和兵种属性表
         /// </summary>
         /// <param name="db"></param>
         public static void CheckUnitGrade(this GameDesignContext db)
         {
-            //var dus = db.DUnit.ToList();
+            var dus = db.DUnit.ToList();
+            var dskills = db.DSkill.AsNoTracking().GroupBy(g => g.id).ToDictionary(g => g.Key, g => g.ToDictionary(x => x.lv, x => x));
+            foreach (var du in dus)
+            {
+                foreach(var s in du.skills.Object)
+                {
+                    if (s != 0 && !dskills.ContainsKey(s))
+                    {
+                        Console.WriteLine($"检查<兵种属性表>[id:{du.tid}]的技能[{s}]在<技能表>中缺失");
+                    }
+                }
+            }
+
             //var dugs = db.DUnitGradeUp.ToList();
             //foreach (var du in dus)
             //{

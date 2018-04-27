@@ -53,7 +53,7 @@ namespace Frontline.Modules
             var shop = this.QuerySecretShop(who.Id);
             var now = DateTime.Now;
             bool isOpen = shop.OpenTime <= now && shop.CloseTime >= now;
-            if (!isOpen)
+            if (!isOpen && shop.TriggerCD <= now)
             {
                 var dg = DSecretShopProbs[args.Type];
                 int cur = MathUtils.RandomNumber(0, 10000);
@@ -64,7 +64,8 @@ namespace Frontline.Modules
 
                     DSecretShop ds = MathUtils.RandomElement(group, g => g.w);
                     shop.OpenTime = now;
-                    shop.CloseTime = now.AddSeconds(ds.second);
+                    shop.CloseTime = now.AddSeconds(ds.duration_second);
+                    shop.TriggerCD = now.AddSeconds(ds.interval_second);
                     var list = this.DSecretShopItemsByGroup[ds.group].Values.ToList();
                     if (shop.SecretShopItems.Any())
                     {

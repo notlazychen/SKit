@@ -14,33 +14,17 @@ namespace protocol
         /// <summary>
         ///  当前VIP等级
         /// </summary>
-		[ProtoMember(3, IsRequired = false)]
-		public int vipLevel;
-        /// <summary>
-        ///  当前VIP经验
-        /// </summary>
-		[ProtoMember(4, IsRequired = false)]
-		public int vipExp;
-        /// <summary>
-        ///  VIP升级所需经验
-        /// </summary>
-		[ProtoMember(5, IsRequired = false)]
-		public int nextLvExp;
-        /// <summary>
-        ///  已领取的VIP礼包
-        /// </summary>
-		[ProtoMember(6, IsRequired = false)]
-		public List<int> receivedGifts;
-        /// <summary>
-        ///  是否成功
-        /// </summary>
 		[ProtoMember(1, IsRequired = false)]
-		public bool success;
+		public int vip;
         /// <summary>
-        ///  错误码
+        ///  到期时间
         /// </summary>
 		[ProtoMember(2, IsRequired = false)]
-		public string info;
-
-	}
+        public long endTime;
+        /// <summary>
+        ///  今日是否领取过金币钻石
+        /// </summary>
+		[ProtoMember(3, IsRequired = false)]
+        public bool recved;
+    }
 }

@@ -30,8 +30,8 @@ namespace Frontline.Modules
         public override int ExecuteCommand()
         {
             var response = new LotteryInfoResponse();
-
-            foreach(var g in _lotteryModule.DRaffleGroups.Values)
+            response.LotteryInfos = new List<LotteryInfo>();
+            foreach (var g in _lotteryModule.DRaffleGroups.Values)
             {
                 var lottery = _lotteryModule.QueryRaffle(Session.PlayerId, g.type);
                 var info = new LotteryInfo()
@@ -40,6 +40,8 @@ namespace Frontline.Modules
                     endTime = g.endtime == null ? 0 : g.endtime.Value.ToUnixTime(),
                     itemId = g.cost_item,
                     nextFreeTime = lottery.FreeNextTime.ToUnixTime(),
+                    type = g.type,
+                    theme_unit_id = g.theme_unit_id?.Object,
                 };
                 response.LotteryInfos.Add(info);
             }

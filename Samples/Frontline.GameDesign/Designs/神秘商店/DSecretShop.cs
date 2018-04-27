@@ -10,6 +10,7 @@ namespace Frontline.GameDesign
         public int vip { get; set; }
         public int group { get; set; }
         public int w { get; set; }
-        public int second { get; set; }
+        public int interval_second { get; set; }
+        public int duration_second { get; set; }
     }
 }

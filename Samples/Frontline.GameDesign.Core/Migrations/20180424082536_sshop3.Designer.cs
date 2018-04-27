@@ -12,9 +12,10 @@ using System.Collections.Generic;
 namespace Frontline.GameDesign.Core.Migrations
 {
     [DbContext(typeof(GameDesignContext))]
-    partial class GameDesignContextModelSnapshot : ModelSnapshot
+    [Migration("20180424082536_sshop3")]
+    partial class sshop3
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -341,22 +342,6 @@ namespace Frontline.GameDesign.Core.Migrations
                     b.HasKey("id");
 
                     b.ToTable("DFacWorker");
-                });
-
-            modelBuilder.Entity("Frontline.GameDesign.DGameConfig", b =>
-                {
-                    b.Property<string>("field_name")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<string>("desc")
-                        .HasMaxLength(64);
-
-                    b.Property<string>("field_value")
-                        .HasMaxLength(1024);
-
-                    b.HasKey("field_name");
-
-                    b.ToTable("DGameConfig");
                 });
 
             modelBuilder.Entity("Frontline.GameDesign.DItem", b =>

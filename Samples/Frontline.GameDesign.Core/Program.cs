@@ -23,7 +23,11 @@ namespace Frontline.GameDesign.Core
 
         static void Main(string[] args)
         {
+#if DEBUG
             bool import = true;
+#else
+            bool import = false;
+#endif
             if (args.Length != 0)
             {
                 rootPath = args[0];
@@ -61,6 +65,7 @@ namespace Frontline.GameDesign.Core
                 Console.ReadLine();
             }
             Console.WriteLine("开始进行数据表关联检查");
+            db.CheckFactory();
             db.CheckUnitGrade();
             db.CheckRandom();
             Console.WriteLine("数值表检查结束");

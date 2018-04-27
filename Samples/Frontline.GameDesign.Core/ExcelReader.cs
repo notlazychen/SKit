@@ -113,7 +113,18 @@ namespace Frontline.GameDesign
                                 //}
                                 else if (prop.Key.PropertyType == typeof(string))
                                 {
-                                    prop.Key.SetValue(ladderConfig, cell.StringCellValue);
+                                    if(cell.CellType == CellType.Numeric)
+                                    {
+                                        prop.Key.SetValue(ladderConfig, cell.NumericCellValue.ToString());
+                                    }
+                                    else if (cell.CellType == CellType.String)
+                                    {
+                                        prop.Key.SetValue(ladderConfig, cell.StringCellValue);
+                                    }
+                                    else if (cell.CellType == CellType.Blank)
+                                    {
+                                        prop.Key.SetValue(ladderConfig, "");
+                                    }
                                 }
                                 else if (prop.Key.PropertyType == typeof(TimeSpan))
                                 {

@@ -9,6 +9,17 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Modules\Lottery\**" />
+    <Content Remove="Modules\Lottery\**" />
+    <EmbeddedResource Remove="Modules\Lottery\**" />
+    <None Remove="Modules\Lottery\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Modules\LotteryModule.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Folder Include="GameControllers\PVP\" />
     <Folder Include="wwwroot\" />
   </ItemGroup>

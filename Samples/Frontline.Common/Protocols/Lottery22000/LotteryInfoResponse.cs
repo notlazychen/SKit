@@ -44,5 +44,15 @@ namespace protocol
         /// </summary>
 		[ProtoMember(4, IsRequired = false)]
         public int baseNumb;
+        /// <summary>
+        /// 
+        /// </summary>
+        [ProtoMember(5, IsRequired = false)]
+        public int type;
+        /// <summary>
+        /// 主打兵种
+        /// </summary>
+        [ProtoMember(6, IsRequired = false)]
+        public List<int> theme_unit_id;
     }
 }

@@ -15,6 +15,8 @@ namespace Frontline.Domain
         public DateTime OpenTime { get; set; }
         public DateTime CloseTime { get; set; }
 
+        public DateTime TriggerCD { get; set; }
+
         public List<SecretShopItem> SecretShopItems { get; set; } = new List<SecretShopItem>();
     }
 }

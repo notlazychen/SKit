@@ -390,7 +390,7 @@ namespace Frontline.Modules
             GrabFlagBattleHistoryResponse resp = new GrabFlagBattleHistoryResponse();
             resp.histories = new List<GrabFlagBattleHistoryInfo>();
             var player = Server.GetModule<PlayerModule>().QueryPlayer(Session.PlayerId);
-            foreach (ArenaBattleHistory history in player.ArenaCert.ArenaBattleHistories)
+            foreach (ArenaBattleHistory history in player.ArenaCert.ArenaBattleHistories.OrderByDescending(a=>a.BattleTime))
             {
                 GrabFlagBattleHistoryInfo h = new GrabFlagBattleHistoryInfo();
                 h.icon=history.Icon;

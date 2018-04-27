@@ -187,8 +187,11 @@ namespace Frontline.Modules
                 {
                     if (task.State == FacTaskState.Waiting)
                     {
-                        var dt = MathUtils.RandomElement(DFacTasksByGroup[task.Type == 1 ? group.gourp_supply : group.group_iron], t => t.w);
-                        task.Tid = dt.id;
+                        if(DFacTasksByGroup.TryGetValue(task.Type == 1 ? group.gourp_supply : group.group_iron, out var tfg))
+                        {
+                            var dt = MathUtils.RandomElement(tfg, t => t.w);
+                            task.Tid = dt.id;
+                        }
                     }
                 }
             }
@@ -257,7 +260,7 @@ namespace Frontline.Modules
             }
             //判断工人总数
             var canbuy = _playerModule.VIP[player.VIP].work_total_hire_n;
-            if(fac.HireWorkerNumb >= canbuy)
+            if(fac.FacWorkers.Count >= canbuy + 5)
             {
                 return (int)GameErrorCode.雇佣人数已满;
             }
