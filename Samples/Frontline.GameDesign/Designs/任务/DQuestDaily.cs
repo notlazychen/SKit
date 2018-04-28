@@ -19,7 +19,9 @@ namespace Frontline.GameDesign
         public int max_progress { get; set; }
         //public int jump_panel{get;set;} 
         public int res_exp { get; set; }
-        public int res_oil { get; set; }
+        public int reward_type { get; set; }
+        public int reward_ID { get; set; }
+        public int reward_num { get; set; }
         public int quest_point { get; set; }
     }
 }

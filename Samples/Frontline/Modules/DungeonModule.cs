@@ -550,7 +550,7 @@ namespace Frontline.Modules
                 response.star = dungeon.Star;
                 
                 _db.SaveChanges();
-                OnPlayerPassDungeon(player, dungeon);
+                OnPlayerPassDungeon(player, dungeon, 1);
             }
             else
             {
@@ -669,6 +669,8 @@ namespace Frontline.Modules
             response.count = request.count;
             Session.SendAsync(response);
 
+            OnPlayerPassDungeon(player, dungeon, request.count);
+
             return 0;
         }
 
@@ -724,12 +726,11 @@ namespace Frontline.Modules
             return 0;
         }
         #endregion
-
-
-        public event GamePlayerEventHandler<Player, Dungeon> PassDungeon;
-        public void OnPlayerPassDungeon(Player player, Dungeon dungeon)
+        
+        public event GamePlayerEventHandler<Player, DungeonPassEventArgs> PassDungeon;
+        public void OnPlayerPassDungeon(Player player, Dungeon dungeon, int numb)
         {
-            PassDungeon?.Invoke(player, dungeon);
+            PassDungeon?.Invoke(player, new DungeonPassEventArgs { Dungeon = dungeon, Number = numb});
         }
     }
 }

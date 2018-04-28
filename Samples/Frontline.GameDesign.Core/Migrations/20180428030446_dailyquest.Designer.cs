@@ -12,9 +12,10 @@ using System.Collections.Generic;
 namespace Frontline.GameDesign.Core.Migrations
 {
     [DbContext(typeof(GameDesignContext))]
-    partial class GameDesignContextModelSnapshot : ModelSnapshot
+    [Migration("20180428030446_dailyquest")]
+    partial class dailyquest
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

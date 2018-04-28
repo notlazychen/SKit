@@ -48,16 +48,16 @@ namespace Frontline.Modules
             _dungeonModule.PassDungeon += _dungeonModule_PassDungeon;
         }
 
-        private void _dungeonModule_PassDungeon(Player who, Dungeon args)
+        private void _dungeonModule_PassDungeon(Player who, DungeonPassEventArgs args)
         {
             var shop = this.QuerySecretShop(who.Id);
             var now = DateTime.Now;
             bool isOpen = shop.OpenTime <= now && shop.CloseTime >= now;
             if (!isOpen && shop.TriggerCD <= now)
             {
-                var dg = DSecretShopProbs[args.Type];
+                var dg = DSecretShopProbs[args.Dungeon.Type];
                 int cur = MathUtils.RandomNumber(0, 10000);
-                if(cur <= dg.prob)
+                if(cur <= dg.prob * args.Number)
                 {
                     //命中, 开店
                     var group = this.DSecretShops[who.VIP].Values;

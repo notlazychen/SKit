@@ -1,4 +1,5 @@
-﻿using protocol;
+﻿using Frontline.Domain;
+using protocol;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,5 +32,10 @@ namespace Frontline.Modules
         public EquipInfo EquipInfo { get; set; }
         public int OldGrade { get; set; }
     }
-    
+
+    public class DungeonPassEventArgs : EventArgs
+    {
+        public Dungeon Dungeon { get; set; }
+        public int Number { get; set; }
+    }
 }

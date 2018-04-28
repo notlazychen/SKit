@@ -168,17 +168,17 @@ namespace Frontline.Modules
             UpdateQuestProgress(e.UnitInfo.pid, ConditionType.EquipmentMaxLevel, e.EquipInfo.equipId, UpdateMethod.Override, e.EquipInfo.level);
         }
 
-        private void _dungeonModule_PassDungeon(Player who, Dungeon args)
+        private void _dungeonModule_PassDungeon(Player who, DungeonPassEventArgs args)
         {
-            if (args.Type == 1)
+            if (args.Dungeon.Type == 1)
             {
-                UpdateQuestProgress(who.Id, ConditionType.NormalMissionAccomplishTimes, args.Tid, UpdateMethod.Increase, 1);
-                UpdateQuestProgress(who.Id, ConditionType.NormalMissionAccomplished, args.Tid, UpdateMethod.Override, 1);
+                UpdateQuestProgress(who.Id, ConditionType.NormalMissionAccomplishTimes, args.Dungeon.Tid, UpdateMethod.Increase, args.Number);
+                UpdateQuestProgress(who.Id, ConditionType.NormalMissionAccomplished, args.Dungeon.Tid, UpdateMethod.Override, 1);
             }
             else
             {
-                UpdateQuestProgress(who.Id, ConditionType.AdvancedMissionAccomplishTimes, args.Tid, UpdateMethod.Increase, 1);
-                UpdateQuestProgress(who.Id, ConditionType.AdvancedMissionAccomplished, args.Tid, UpdateMethod.Override, 1);
+                UpdateQuestProgress(who.Id, ConditionType.AdvancedMissionAccomplishTimes, args.Dungeon.Tid, UpdateMethod.Increase, args.Number);
+                UpdateQuestProgress(who.Id, ConditionType.AdvancedMissionAccomplished, args.Dungeon.Tid, UpdateMethod.Override, 1);
             }
         }
 

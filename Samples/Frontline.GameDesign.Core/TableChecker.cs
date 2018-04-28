@@ -9,6 +9,18 @@ namespace Frontline.GameDesign.Core
 {
     public static class TableChecker
     {
+        public static void CheckMall(this GameDesignContext db)
+        {
+            var dds = db.DMallShopItem.ToList();
+            var ditems = db.DItem.ToDictionary(x=>x.tid, x=>x);
+            foreach (var dd in dds)
+            {
+                if (!ditems.ContainsKey(dd.item_id))
+                {
+                    Console.WriteLine($"检查<商店商品表>[id:{dd.id}]道具[{dd.item_id}]在<道具表>中缺失");
+                }
+            }
+        }
 
         public static void CheckFactory(this GameDesignContext db)
         {

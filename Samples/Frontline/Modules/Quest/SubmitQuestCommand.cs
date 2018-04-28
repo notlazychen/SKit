@@ -104,7 +104,15 @@ namespace Frontline.Modules
 
                 string reason = $"提交每日任务{questPrototype.id}";
                 //派发奖励
-                _playerModule.AddCurrency(player, CurrencyType.OIL, questPrototype.res_oil, reason);
+                if(questPrototype.reward_type == 1)
+                {
+                    _playerModule.AddCurrency(player, questPrototype.reward_ID, questPrototype.reward_num, reason);
+                }
+                else
+                {
+                    _pkgModule.AddItem(player, questPrototype.reward_ID, questPrototype.reward_num, reason);
+                }
+
                 _playerModule.AddExp(player, questPrototype.res_exp, reason);
                 //每日任务无需尝试开启下一级任务  
                 _db.SaveChanges();

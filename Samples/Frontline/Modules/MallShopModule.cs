@@ -93,6 +93,10 @@ namespace Frontline.Modules
 
         public MallShopInfo ToInfo(MallShopCommodity c)
         {
+            if (!this.DMallShopItems[c.Type].ContainsKey(c.CommodityId))
+            {
+                return null;
+            }
             var dc = this.DMallShopItems[c.Type][c.CommodityId];
             MallShopInfo info = new MallShopInfo
             {
