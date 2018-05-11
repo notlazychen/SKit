@@ -54,8 +54,8 @@ namespace ChatRoomClientSample
             GameClient client = new GameClient(new StringSerializer());
             //string ip = "192.168.1.5";
             //string ip = "139.196.21.206";
-            string ip = "101.132.118.172";
-            
+            string ip = "127.0.0.1";
+
             //注册接收
             client.Register<String>();
             client.MessageReceived += Client_MessageReceived;

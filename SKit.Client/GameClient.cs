@@ -27,6 +27,7 @@ namespace SKit.Client
         public void Start(string ip, int port)
         {
             _tcpClient = new TcpClient();
+            _tcpClient.NoDelay = true;
             _tcpClient.Connect(ip, port);
             
             _stream = _tcpClient.GetStream();            

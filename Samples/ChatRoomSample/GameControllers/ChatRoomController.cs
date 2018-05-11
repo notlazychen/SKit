@@ -19,7 +19,7 @@ namespace ChatRoomSample.GameControllers
         }
 
         [GameCommandOptions(allowAnonymous:true, asynchronous:true)]
-        public void Call_Chat(string msg)
+        public int Call_Chat(string msg)
         {
             string str;
             //if (s.IsAuthorized)
@@ -33,6 +33,7 @@ namespace ChatRoomSample.GameControllers
             str = msg;
             _server.BroadcastAllSessionAsync(str);
             _logger.LogDebug(str);
+            return 0;
         }
     }
 }
