@@ -32,7 +32,7 @@ namespace Frontline.Modules
             GuideInfoResponse response = new GuideInfoResponse();
             response.success = true;
             response.id = player.Id;
-            response.guide = 1000;// player.Guide;
+            response.guide = player.Guide;
             Session.SendAsync(response);
             return 0;
         }

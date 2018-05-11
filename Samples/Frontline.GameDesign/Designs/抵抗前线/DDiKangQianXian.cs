@@ -9,7 +9,7 @@ namespace Frontline.GameDesign
     {
         [Key]
         public int wid { get; set; }
-        public JsonObject<int[]> monsters { get; set; }
+        public int dungeon_id { get; set; }
         public int token { get; set; }
         public int command { get; set; }
     }

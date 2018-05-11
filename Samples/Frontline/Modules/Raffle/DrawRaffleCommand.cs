@@ -96,10 +96,9 @@ namespace Frontline.Modules
                 }
                 l.LastTime = now;
                 l.UsedNumb++;
-                int itemcnt = MathUtils.RandomNumber(r.item_cnt_min, r.item_cnt_max + 1);
                 //判断是否兵种
                 DItem ditem = _pkgModule.DItems[r.item_id];
-                if(ditem.type == 11)
+                if(ditem.breakUnitId != 0)// && (ditem.type == 11 || ditem.type == 17)
                 {      
                     //判断兵种是否已有
                     var unit = p.Units.FirstOrDefault(u => u.Tid == ditem.breakUnitId);
@@ -111,13 +110,19 @@ namespace Frontline.Modules
                     else
                     {
                         uinfo = _campModule.ToUnitInfo(unit);
-                        response.rewardInfo.items.Add(new RewardItem { id = r.item_id, count = itemcnt });
-                        _pkgModule.AddItem(p, r.item_id, itemcnt, reason);
+                        //转化碎片
+                        if(_campModule.DUnitUnlock.TryGetValue(ditem.breakUnitId, out var duu))
+                        {
+                            int itemcnt = (int)(duu.item_cnt * GameConfig.unit_to_item_rate);
+                            response.rewardInfo.items.Add(new RewardItem { id = duu.item_id, count = itemcnt });
+                            _pkgModule.AddItem(p, duu.item_id, itemcnt, reason);
+                        }
                     }
                     response.rewardInfo.units.Add(uinfo);
                 }
                 else
                 {
+                    int itemcnt = MathUtils.RandomNumber(r.item_cnt_min, r.item_cnt_max + 1);
                     response.rewardInfo.items.Add(new RewardItem { id = r.item_id, count = itemcnt });
                     _pkgModule.AddItem(p, r.item_id, itemcnt, reason);
                 }
@@ -133,10 +138,14 @@ namespace Frontline.Modules
                     return (int)GameErrorCode.道具不足;
                 }
 
+                bool hadunit = false;
+                bool hadnec = false;
                 //发奖励
-                for(int i = 0; i< 10; i++)
+                int numb = 0;
+                int numbTotal = 0;
+                while (numb < 10 && numbTotal < 50)
                 {
-                    l.BaseNumb--;
+                    numbTotal++;
                     DRaffle r = null;
                     // 发奖励
                     if(l.UsedNumb == 0 && dg.first_drop != 0)
@@ -147,16 +156,31 @@ namespace Frontline.Modules
                     {
                         r = this.Rand(dg.base_drop, p.VIP);
                         l.BaseNumb = dg.base_numb;
+                        hadnec = true;
                     }
                     else
                     {
-                        r = this.Rand(dg.normal_drop, p.VIP);
+                        if (hadnec)
+                        {
+                            r = this.Rand(dg.normal_drop, p.VIP);
+                        }
+                        else
+                        {
+                            //10连必掉组
+                            r = this.Rand(dg.nec_drop, p.VIP);
+                            hadnec = true;
+                        }
                     }
-                    l.UsedNumb++;
-                    int itemcnt = MathUtils.RandomNumber(r.item_cnt_min, r.item_cnt_max + 1);
                     //判断是否兵种
                     DItem ditem = _pkgModule.DItems[r.item_id];
-                    if (ditem.type == 11)
+                    if(ditem.breakUnitId != 0 && hadunit)
+                    {
+                        continue;
+                    }
+                    numb++;
+                    l.BaseNumb--;
+                    l.UsedNumb++;
+                    if (ditem.breakUnitId != 0)// && (ditem.type == 11 || ditem.type == 17)
                     {
                         //判断兵种是否已有
                         var unit = p.Units.FirstOrDefault(u => u.Tid == ditem.breakUnitId);
@@ -168,13 +192,19 @@ namespace Frontline.Modules
                         else
                         {
                             uinfo = _campModule.ToUnitInfo(unit);
-                            response.rewardInfo.items.Add(new RewardItem { id = r.item_id, count = itemcnt });
-                            _pkgModule.AddItem(p, r.item_id, itemcnt, reason);
+                            if (_campModule.DUnitUnlock.TryGetValue(ditem.breakUnitId, out var duu))
+                            {
+                                int itemcnt = (int)(duu.item_cnt * GameConfig.unit_to_item_rate);
+                                response.rewardInfo.items.Add(new RewardItem { id = duu.item_id, count = itemcnt });
+                                _pkgModule.AddItem(p, duu.item_id, itemcnt, reason);
+                            }
                         }
                         response.rewardInfo.units.Add(uinfo);
+                        hadunit = true;
                     }
                     else
                     {
+                        int itemcnt = MathUtils.RandomNumber(r.item_cnt_min, r.item_cnt_max + 1);
                         response.rewardInfo.items.Add(new RewardItem { id = r.item_id, count = itemcnt });
                         _pkgModule.AddItem(p, r.item_id, itemcnt, reason);
                     }

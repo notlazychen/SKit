@@ -34,14 +34,12 @@ namespace Frontline.Modules
             MallInfoResponse response = new MallInfoResponse();
             response.success = true;
             response.items = new List<MallShopInfo>();
-            var mall = _mallModule.QueryMall(Session.PlayerId);
+
+            var player = _playerModule.QueryPlayer(Session.PlayerId);
+            var mall = _mallModule.QueryMall(player);
             foreach(var shop in mall.Shops)
             {
-                foreach(var c in shop.ShopCommodities)
-                {
-                    MallShopInfo info = _mallModule.ToInfo(c);
-                    response.items.Add(info);
-                }
+                response.items.AddRange(shop.ShopCommodities.Where(c=>!c.IsOut).Select(c=> _mallModule.ToInfo(c)).OrderBy(c=>c.order));
             }
             Session.SendAsync(response);
             return 0;

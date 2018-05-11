@@ -9,8 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using SKit.AspNetCore;
-using SKit.Common.Packagers;
-using SKit.Common.Serialization;
+using SKit.Common;
 
 namespace ChatRoomSample
 {
@@ -26,7 +25,7 @@ namespace ChatRoomSample
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddSKit<StringMessagePackager, StringSerializer>();      
+            services.AddSKit<StringSerializer>();      
             services.AddMvc();
         }
 

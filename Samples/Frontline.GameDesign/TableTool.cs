@@ -16,7 +16,9 @@ namespace Frontline.GameDesign
 
         public TableTool()
         {
-            Tables.Add("服务器端-游戏数值配置.xlsx", "DGameConfig");
+            Tables.Add("军团商店表.xlsx", "DLegionShopItem");
+            Tables.Add("VIP配置表.xlsx", "DVIP");
+            Tables.Add("固定数值表-服务器端.xlsx", "DGameConfig");
             Tables.Add("军团捐献表.xlsx", "DLegionDonate");
             Tables.Add("道具表.xlsx", "DItem");
             Tables.Add("玩家等级表.xlsx", "DLevel");
@@ -44,7 +46,6 @@ namespace Frontline.GameDesign
             Tables.Add("后勤基地-工人表.xlsx", "DFacWorker");
             Tables.Add("后勤基地-派遣任务.xlsx", "DFacTask");
             Tables.Add("后勤基地-派遣任务分组.xlsx", "DFacTaskGroup");
-            Tables.Add("VIP特权.xlsx", "VIPPrivilege");
             Tables.Add("任务系统-每日任务表.xlsx", "DQuestDaily");
             Tables.Add("任务系统-主线任务表.xlsx", "DQuest");
             Tables.Add("每日任务活跃度奖励.xlsx", "DQuestDailyReward");
@@ -62,7 +63,6 @@ namespace Frontline.GameDesign
             Tables.Add("商店商品表.xlsx", "DMallShopItem");
             Tables.Add("神秘商店-商店分组.xlsx", "DSecretShop");
             Tables.Add("神秘商店-商品表.xlsx", "DSecretShopItem");
-            Tables.Add("神秘商店-触发.xlsx", "DSecretShopProb");
             Tables.Add("技能表.xlsx", "DSkill");
 
             Tables.Add("摇奖-掉落库.xlsx", "DRaffle");

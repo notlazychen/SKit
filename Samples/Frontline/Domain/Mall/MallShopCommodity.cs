@@ -19,5 +19,9 @@ namespace Frontline.Domain
         /// 已卖出
         /// </summary>
         public int SoldCount { get; set; }
+        /// <summary>
+        /// 是否已过期
+        /// </summary>
+        public bool IsOut { get; set; }
     }
 }

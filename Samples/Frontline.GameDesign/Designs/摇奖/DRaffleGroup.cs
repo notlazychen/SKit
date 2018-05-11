@@ -17,6 +17,7 @@ namespace Frontline.GameDesign
         public int normal_drop { get; set; }//单抽掉落组
         public int adv_drop { get; set; }//10连掉落组
         public int base_drop { get; set; }//保底掉落组
+        public int nec_drop { get; set; }//10连必掉组
         public int base_numb { get; set; }//保底次数
         public DateTime? endtime { get; set; }//持续时间/秒
         public JsonObject<List<int>> theme_unit_id { get; set; }//

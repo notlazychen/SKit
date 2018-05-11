@@ -29,7 +29,13 @@ namespace Frontline.Domain
     {
         Idle = 0,
         Working,
+        /// <summary>
+        /// 2未雇佣
+        /// </summary>
         Free,
+        /// <summary>
+        /// 3已解雇
+        /// </summary>
         Fired,
     }
 }

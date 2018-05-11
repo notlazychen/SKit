@@ -33,6 +33,10 @@ namespace Frontline.Modules
 
         public Legion FreeLegion { get; private set; }//那些没有入团的成员信息统统丢入此内
         private Dictionary<string, Legion> _legions = new Dictionary<string, Legion>();
+        public IEnumerable<Legion> AllLegions
+        {
+            get { return _legions.Values; }
+        }
 
         public LegionModule(DataContext db, ILogger<LegionModule> logger)
         {
@@ -68,9 +72,24 @@ namespace Frontline.Modules
                 _db.Legions.Add(FreeLegion);
                 _db.SaveChanges();
             }
+            //预加载所有军团数据
+            var legions = _db.Legions
+                   .Include(l => l.LegionApplications)
+                   .Include(l => l.LegionBBS).ToList();
+            foreach (var legion in legions)
+            {
+                if (legion.Id == string.Empty)
+                    continue;
+                _legions.Add(legion.Id, legion);
+            }
         }
 
         #region 事件
+        public event GamePlayerEventHandler<Player, DLegionScience> LegionScienceLevelUp;
+        public virtual void OnLegionScienceLevelUp(Player player, DLegionScience e)
+        {
+            LegionScienceLevelUp?.Invoke(player, e);
+        }
         #endregion
 
         #region 辅助方法

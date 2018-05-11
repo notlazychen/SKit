@@ -95,6 +95,10 @@ namespace Frontline.Common
 
         已售罄,
         此商店不可手动刷新,
+
+        已领取VIP每日奖励 = 73,
+        无可领取VIP每日奖励,
+        不能购买低于当前的VIP卡,
     }
 
     //public enum GG : GameErrorCode

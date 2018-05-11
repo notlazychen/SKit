@@ -9,11 +9,15 @@ namespace Frontline.Common
         /// <summary>
         /// 体力最大值
         /// </summary>
-        public static int OilMaxValue = 200;
+        public static int OilMaxValue = 400;
         /// <summary>
         /// 每x分钟回复1点体力
         /// </summary>
         public static int OilReplyMinutes = 5;
+        /// <summary>
+        /// 单次购买体力数量
+        /// </summary>
+        public static int OilNumBuyOnce = 200;
         /// <summary>
         /// 购买资源最大次数
         /// </summary>
@@ -21,15 +25,15 @@ namespace Frontline.Common
         /// <summary>
         /// 标准攻击
         /// </summary>
-        public static int BASE_ATK = 276;
+        public static double BASE_ATK = 276;
         /// <summary>
         /// 标准防御
         /// </summary>
-        public static int BASE_DEF = 276;
+        public static double BASE_DEF = 276;
         /// <summary>
         /// 标准回合数
         /// </summary>
-        public static int BASE_ROUND = 5;
+        public static double BASE_ROUND = 5;
         /// <summary>
         /// 标准系数
         /// </summary>
@@ -209,5 +213,9 @@ namespace Frontline.Common
         /// 周常挑战每场胜利获得积分
         /// </summary>
         public static int week_challenge_score = 10;
+        /// <summary>
+        /// 兵种转碎片转化率
+        /// </summary>
+        public static float unit_to_item_rate = 1.0f;
     }
 }

@@ -93,10 +93,9 @@ namespace Frontline.Modules
             List<MonsterInfo> ms = new List<MonsterInfo>();
             info.monsters = new List<MonsterInfo>();
 
-            foreach (int mid in w.monsters.Object)
+            foreach (var dmd in _dungeonModule.DMonsterInDungeons[w.dungeon_id])
             {
-                var dm = _dungeonModule.DMonsters[mid];
-                MonsterInfo mi = _dungeonModule.ToMonsterInfo(mid, 1);
+                MonsterInfo mi = _dungeonModule.ToMonsterInfo(dmd.mid, dmd.level);
                 info.monsters.Add(mi);
             }
             return info;

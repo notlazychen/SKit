@@ -36,6 +36,7 @@ namespace Frontline.Modules
             response.vip = player.VIP;
             response.endTime = player.VIPEndTime.ToUnixTime();
             response.recved = player.VIPGiftReceved != 0;
+            response.boughtVIP = player.VIPCards.Select(v => v.VIPLevel).Distinct().ToList();
             Session.SendAsync(response);
             return 0;
         }

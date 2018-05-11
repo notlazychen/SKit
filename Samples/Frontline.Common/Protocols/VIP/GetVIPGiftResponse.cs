@@ -14,7 +14,7 @@ namespace protocol
         /// <summary>
         ///  领取得到的奖励
         /// </summary>
-		[ProtoMember(4, IsRequired = false)]
+		[ProtoMember(1, IsRequired = false)]
         public RewardInfo rewardInfo;
     }
 }

@@ -14,15 +14,13 @@ namespace SKit.Client
         private byte[] _recvbuffer = new byte[10240];
         private byte[] _sendbuffer = new byte[10240];
         private int _cursor;
-        private Packager _packager;
         private Serializer _serializable;
         private Dictionary<string, Type> _actions = new Dictionary<string, Type>();
 
         public event EventHandler<Object> MessageReceived;
 
-        public GameClient(Packager packager, Serializer serializable)
+        public GameClient(Serializer serializable)
         {
-            _packager = packager;
             _serializable = serializable;
         }
 
@@ -42,9 +40,8 @@ namespace SKit.Client
 
         public void Send(Object msg)
         {
-            var body = _serializable.Serialize(msg);
-            var data = _packager.Pack(body, _sendbuffer, 0, _sendbuffer.Length);           
-            _stream.Write(data.Array, data.Offset, data.Count);
+            var size = _serializable.Serialize(msg, _sendbuffer, _sendbuffer.Length);  
+            _stream.Write(_sendbuffer, 0, size);
         }
 
         /// <summary>
@@ -58,7 +55,7 @@ namespace SKit.Client
             while (true)
             {
                 var readlength = 0;
-                ArraySegment<byte> data = _packager.UnPack(_recvbuffer, from, _cursor, ref readlength);
+                ArraySegment<byte> data = _serializable.UnPack(_recvbuffer, from, _cursor, ref readlength);
                 if (readlength != 0)
                 {
                     yield return data;

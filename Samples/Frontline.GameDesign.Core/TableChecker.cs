@@ -9,6 +9,19 @@ namespace Frontline.GameDesign.Core
 {
     public static class TableChecker
     {
+        public static void CheckDiKang(this GameDesignContext db)
+        {
+            var dds = db.DDiKangQianXian.ToList();
+            var ditems = db.DMonsterInDungeon.ToList();
+            foreach (var dd in dds)
+            {
+                if (!ditems.Any(d=>d.dungeon_id == dd.dungeon_id))
+                {
+                    Console.WriteLine($"检查<抵抗前线配置表>[id:{dd.wid}]关卡[{dd.dungeon_id}]在<关卡对应怪物表>中缺失");
+                }
+            }
+        }
+
         public static void CheckMall(this GameDesignContext db)
         {
             var dds = db.DMallShopItem.ToList();

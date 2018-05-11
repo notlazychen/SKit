@@ -13,9 +13,13 @@ namespace Frontline.GameDesign
         [MaxLength(64)]
         public string desc { get; set; }
         public int item_id { get; set; }
-        public int count { get; set; }
-        public int res_type { get; set; }
-        public int res_cnt { get; set; }
-        public int rate { get; set; }
+        public int item_cnt { get; set; }
+        public int commodity_stock { get; set; }
+        public int cost_res_type { get; set; }
+        public int cost_res_cnt { get; set; }
+
+        public int level_min { get; set; }
+        public int level_max { get; set; }
+        public int order { get; set; }
     }
 }

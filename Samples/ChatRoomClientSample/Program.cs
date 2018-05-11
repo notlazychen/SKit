@@ -1,6 +1,5 @@
 ﻿using SKit.Client;
-using SKit.Common.Packagers;
-using SKit.Common.Serialization;
+using SKit.Common;
 using System;
 using System.Diagnostics;
 using System.Net;
@@ -52,7 +51,7 @@ namespace ChatRoomClientSample
         private static GameClient CreateClient()
         {
             //1 创建客户端
-            GameClient client = new GameClient(new StringMessagePackager(), new StringSerializer());
+            GameClient client = new GameClient(new StringSerializer());
             //string ip = "192.168.1.5";
             //string ip = "139.196.21.206";
             string ip = "101.132.118.172";

@@ -50,7 +50,7 @@ namespace Frontline.Modules
             response.icon = other.Icon;
             response.name = other.NickName;
             response.level = other.Level;
-            response.legionName = _legionModule.QueryLegion(other.LegionId)?.Name;
+            response.legionName = _legionModule.QueryLegion(_legionModule.QueryLegionMember(other.Id)?.LegionId)?.Name;
             Session.SendAsync(response);
             return 0;
         }

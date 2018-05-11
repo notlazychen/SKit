@@ -68,7 +68,7 @@ namespace Frontline.Modules
             response.vip = p.VIP;
             response.nickyName = p.NickName;
             var legionController = Server.GetModule<LegionModule>();
-            var legion = legionController.QueryLegion(p.LegionId);
+            var legion = legionController.QueryLegion(legionController.QueryLegionMember(p.Id)?.LegionId);
             response.partyName = legion?.Name;
             response.success = true;
 

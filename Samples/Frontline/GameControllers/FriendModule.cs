@@ -85,6 +85,7 @@ namespace Frontline.Modules
                     };
                     _db.FriendLists.Add(friendList);
                 }
+                _friendlists.Add(playerId, friendList);
             }
             if (friendList.LastRefreshTime.Date != DateTime.Today)
             {

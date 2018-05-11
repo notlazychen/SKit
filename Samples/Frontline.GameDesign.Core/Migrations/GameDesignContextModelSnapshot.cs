@@ -60,7 +60,7 @@ namespace Frontline.GameDesign.Core.Migrations
 
                     b.Property<int>("command");
 
-                    b.Property<JsonObject<Int32[]>>("monsters");
+                    b.Property<int>("dungeon_id");
 
                     b.Property<int>("token");
 
@@ -485,6 +485,32 @@ namespace Frontline.GameDesign.Core.Migrations
                     b.ToTable("DLegionScience");
                 });
 
+            modelBuilder.Entity("Frontline.GameDesign.DLegionShopItem", b =>
+                {
+                    b.Property<int>("id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<int>("commodity_stock");
+
+                    b.Property<int>("cost_res_cnt");
+
+                    b.Property<int>("cost_res_type");
+
+                    b.Property<int>("item_cnt");
+
+                    b.Property<int>("item_id");
+
+                    b.Property<int>("level_min");
+
+                    b.Property<int>("order");
+
+                    b.Property<int>("type");
+
+                    b.HasKey("id");
+
+                    b.ToTable("DLegionShopItem");
+                });
+
             modelBuilder.Entity("Frontline.GameDesign.DLevel", b =>
                 {
                     b.Property<int>("level")
@@ -582,8 +608,6 @@ namespace Frontline.GameDesign.Core.Migrations
 
                     b.Property<JsonObject<Int32[]>>("res_type");
 
-                    b.Property<int>("size");
-
                     b.HasKey("type");
 
                     b.ToTable("DMallShop");
@@ -594,18 +618,24 @@ namespace Frontline.GameDesign.Core.Migrations
                     b.Property<int>("id")
                         .ValueGeneratedOnAdd();
 
-                    b.Property<int>("count");
+                    b.Property<int>("commodity_stock");
+
+                    b.Property<int>("cost_res_cnt");
+
+                    b.Property<int>("cost_res_type");
 
                     b.Property<string>("desc")
                         .HasMaxLength(64);
 
+                    b.Property<int>("item_cnt");
+
                     b.Property<int>("item_id");
 
-                    b.Property<int>("rate");
+                    b.Property<int>("level_max");
 
-                    b.Property<int>("res_cnt");
+                    b.Property<int>("level_min");
 
-                    b.Property<int>("res_type");
+                    b.Property<int>("order");
 
                     b.Property<int>("type");
 
@@ -719,6 +749,8 @@ namespace Frontline.GameDesign.Core.Migrations
                     b.Property<int>("dungeon_id");
 
                     b.Property<int>("mid");
+
+                    b.Property<string>("Id");
 
                     b.Property<int>("level");
 
@@ -882,6 +914,8 @@ namespace Frontline.GameDesign.Core.Migrations
 
                     b.Property<int>("item_cnt_10");
 
+                    b.Property<int>("nec_drop");
+
                     b.Property<int>("normal_drop");
 
                     b.Property<JsonObject<List<int>>>("theme_unit_id");
@@ -961,17 +995,22 @@ namespace Frontline.GameDesign.Core.Migrations
 
             modelBuilder.Entity("Frontline.GameDesign.DSecretShop", b =>
                 {
-                    b.Property<int>("vip");
-
-                    b.Property<int>("group");
+                    b.Property<int>("id")
+                        .ValueGeneratedOnAdd();
 
                     b.Property<int>("duration_second");
 
                     b.Property<int>("interval_second");
 
-                    b.Property<int>("w");
+                    b.Property<int>("mission_type");
 
-                    b.HasKey("vip", "group");
+                    b.Property<int>("prob");
+
+                    b.Property<int>("shop_id");
+
+                    b.Property<JsonObject<Int32[]>>("trigger_lv");
+
+                    b.HasKey("id");
 
                     b.ToTable("DSecretShop");
                 });
@@ -1004,25 +1043,9 @@ namespace Frontline.GameDesign.Core.Migrations
                     b.ToTable("DSecretShopItem");
                 });
 
-            modelBuilder.Entity("Frontline.GameDesign.DSecretShopProb", b =>
-                {
-                    b.Property<int>("mission_type")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<string>("desc")
-                        .HasMaxLength(32);
-
-                    b.Property<int>("prob");
-
-                    b.HasKey("mission_type");
-
-                    b.ToTable("DSecretShopProb");
-                });
-
             modelBuilder.Entity("Frontline.GameDesign.DSkill", b =>
                 {
-                    b.Property<int>("id")
-                        .ValueGeneratedOnAdd();
+                    b.Property<int>("id");
 
                     b.Property<int>("lv");
 
@@ -1030,7 +1053,7 @@ namespace Frontline.GameDesign.Core.Migrations
 
                     b.Property<int>("unit_grade");
 
-                    b.HasKey("id");
+                    b.HasKey("id", "lv");
 
                     b.ToTable("DSkill");
                 });
@@ -1231,6 +1254,64 @@ namespace Frontline.GameDesign.Core.Migrations
                     b.ToTable("DUnitUnlock");
                 });
 
+            modelBuilder.Entity("Frontline.GameDesign.DVIP", b =>
+                {
+                    b.Property<string>("id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<bool>("can_sweep");
+
+                    b.Property<int>("day");
+
+                    b.Property<float>("diamond_mall_rate");
+
+                    b.Property<JsonObject<Int32[]>>("first_item_cnt");
+
+                    b.Property<JsonObject<Int32[]>>("first_item_id");
+
+                    b.Property<int>("lv");
+
+                    b.Property<int>("max_oil");
+
+                    b.Property<int>("mission_ex_numb_buytimes");
+
+                    b.Property<JsonObject<Int32[]>>("next_item_cnt");
+
+                    b.Property<JsonObject<Int32[]>>("next_item_id");
+
+                    b.Property<int>("oneday_buy_gold");
+
+                    b.Property<int>("oneday_buy_oil");
+
+                    b.Property<int>("oneday_recv_diamond");
+
+                    b.Property<int>("oneday_recv_gold");
+
+                    b.Property<float>("price");
+
+                    b.Property<int>("property_addition");
+
+                    b.Property<int>("reset_dikang");
+
+                    b.Property<int>("reset_rescue");
+
+                    b.Property<int>("reset_transport");
+
+                    b.Property<int>("reset_weekwar");
+
+                    b.Property<int>("sign_re_day_numb");
+
+                    b.Property<int>("work_day_hire_n");
+
+                    b.Property<int>("work_total_hire_n");
+
+                    b.Property<float>("work_worker4_prob");
+
+                    b.HasKey("id");
+
+                    b.ToTable("DVIP");
+                });
+
             modelBuilder.Entity("Frontline.GameDesign.DWeekBattle", b =>
                 {
                     b.Property<int>("mid");
@@ -1249,6 +1330,8 @@ namespace Frontline.GameDesign.Core.Migrations
 
                     b.Property<JsonObject<Int32[]>>("unit_type");
 
+                    b.Property<int>("unity_addition");
+
                     b.HasKey("mid", "day");
 
                     b.ToTable("DWeekBattle");
@@ -1266,28 +1349,6 @@ namespace Frontline.GameDesign.Core.Migrations
                     b.HasKey("id");
 
                     b.ToTable("DWeekBox");
-                });
-
-            modelBuilder.Entity("Frontline.GameDesign.VIPPrivilege", b =>
-                {
-                    b.Property<int>("id")
-                        .ValueGeneratedOnAdd();
-
-                    b.Property<int>("lv");
-
-                    b.Property<int>("work_day_hire_n");
-
-                    b.Property<float>("work_reward_ex_prob");
-
-                    b.Property<int>("work_total_hire_n");
-
-                    b.Property<int>("work_worker4_hire_n");
-
-                    b.Property<float>("work_worker4_prob");
-
-                    b.HasKey("id");
-
-                    b.ToTable("VIPPrivilege");
                 });
 #pragma warning restore 612, 618
         }

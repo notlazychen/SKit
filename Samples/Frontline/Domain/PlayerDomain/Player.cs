@@ -39,10 +39,14 @@ namespace Frontline.Domain
         ///// VIP等级
         ///// </summary>
         //public int VIP { get; set; }
+
         /// <summary>
         /// VIP经验
         /// </summary>
         public DateTime VIPEndTime { get; set; }
+        /// <summary>
+        /// 是否领取VIP奖励
+        /// </summary>
         public int VIPGiftReceved { get; set; }
         /// <summary>
         /// 是否已经废弃
@@ -132,5 +136,10 @@ namespace Frontline.Domain
 
         public List<Team> Teams { get; set; } = new List<Team>();
         public List<PVPFormation> Formations { get; set; } = new List<PVPFormation>();
+
+        /// <summary>
+        /// 购买过的VIP卡种
+        /// </summary>
+        public List<VIPCard> VIPCards { get; set; } = new List<VIPCard>();
     }
 }

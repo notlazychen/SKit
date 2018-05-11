@@ -55,33 +55,39 @@ namespace Frontline.Modules
             var dgameconfig = _desiongDb.DGameConfig.AsNoTracking().ToList();
             foreach (var dc in dgameconfig)
             {
-                if(fields.TryGetValue(dc.field_name, out var field))
+                try
                 {
-                    if(field.FieldType == typeof(int))
+                    if (fields.TryGetValue(dc.field_name, out var field))
                     {
-                        field.SetValue(null, int.Parse(dc.field_value));
+                        if (field.FieldType == typeof(int))
+                        {
+                            field.SetValue(null, int.Parse(dc.field_value));
 
+                        }
+                        else if (field.FieldType == typeof(List<int>))
+                        {
+                            field.SetValue(null,
+                                dc.field_value.Trim(new[] { '[', ']', '{', '}' })
+                                .Split(new char[] { ',' })
+                                .Select(int.Parse)
+                                .ToList());
+                        }
+                        else if (field.FieldType == typeof(float))
+                        {
+                            field.SetValue(null, float.Parse(dc.field_value));
+                        }
+                        else if (field.FieldType == typeof(List<float>))
+                        {
+                            field.SetValue(null,
+                                dc.field_value.Trim(new[] { '[', ']', '{', '}' })
+                                .Split(new char[] { ',' })
+                                .Select(float.Parse)
+                                .ToList());
+                        }
                     }
-                    else if(field.FieldType == typeof(List<int>))
-                    {
-                        field.SetValue(null,
-                            dc.field_value.Trim(new[] { '[',']','{','}'})
-                            .Split(new char[] { ','})
-                            .Select(int.Parse)
-                            .ToList());
-                    }
-                    else if (field.FieldType == typeof(float))
-                    {
-                        field.SetValue(null, float.Parse(dc.field_value));
-                    }
-                    else if (field.FieldType == typeof(List<float>))
-                    {
-                        field.SetValue(null,
-                            dc.field_value.Trim(new[] { '[', ']', '{', '}' })
-                            .Split(new char[] { ',' })
-                            .Select(float.Parse)
-                            .ToList());
-                    }
+                }catch(Exception ex)
+                {
+                    _logger.LogError(ex, ex.Message);
                 }
             }
         }

@@ -89,7 +89,9 @@ namespace Frontline.Modules
             {
                 science.Level = ds.lv;
             }
+            _legionModule.OnLegionScienceLevelUp(player, ds);
             _db.SaveChanges();
+
             LegionScienceLevelUpResponse response = new LegionScienceLevelUpResponse();
             response.science = new LegionScienceInfo
             {

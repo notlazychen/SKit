@@ -15,5 +15,7 @@ namespace Frontline.GameDesign
         public JsonObject<int[]> res_cnt { get; set; }
         public JsonObject<int[]> item_id { get; set; }
         public JsonObject<int[]> item_cnt { get; set; }
+
+        public int unity_addition { get; set; }
     }
 }

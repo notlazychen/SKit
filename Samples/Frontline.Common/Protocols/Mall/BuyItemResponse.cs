@@ -41,6 +41,11 @@ namespace protocol
         /// </summary>
 		[ProtoMember(2, IsRequired = false)]
 		public string info;
+        /// <summary>
+        ///  购买商品数量
+        /// </summary>
+		[ProtoMember(7, IsRequired = false)]
+        public int count;
 
-	}
+    }
 }

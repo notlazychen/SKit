@@ -39,24 +39,24 @@ namespace Frontline.Modules
             int diff = Request.diff;
             DWeekBattle dww = _weekModule.DWeekBattles[diff][day];
             var player = _playerModule.QueryPlayer(Session.PlayerId);
-            //检查阵容
-            Team team = player.Teams.First(t => t.IsSelected);
-            if (!(dww.unit_type.Object.Length == 1 && dww.unit_type.Object[0] == 0))
-            {
-                foreach (String uid in team.Units.Object)
-                {
-                    if (!string.IsNullOrEmpty(uid))
-                    {
-                        Unit u = player.Units.First(x => x.Id == uid);
-                        DUnit du = _campModule.DUnits[u.Tid];
-                        bool inSet = dww.unit_type.Object.Contains(du.ww_type);
-                        if (!inSet)
-                        {
-                            return (int)GameErrorCode.阵容中包含今日周常挑战不能上阵的兵;
-                        }
-                    }
-                }
-            }
+            ////检查阵容
+            //Team team = player.Teams.First(t => t.IsSelected);
+            //if (!(dww.unit_type.Object.Length == 1 && dww.unit_type.Object[0] == 0))
+            //{
+            //    foreach (String uid in team.Units.Object)
+            //    {
+            //        if (!string.IsNullOrEmpty(uid))
+            //        {
+            //            Unit u = player.Units.First(x => x.Id == uid);
+            //            DUnit du = _campModule.DUnits[u.Tid];
+            //            bool inSet = dww.unit_type.Object.Contains(du.ww_type);
+            //            if (!inSet)
+            //            {
+            //                return (int)GameErrorCode.阵容中包含今日周常挑战不能上阵的兵;
+            //            }
+            //        }
+            //    }
+            //}
 
             var ww = _weekModule.QueryWeekData(player.Id);
             ww.BattleDay = day;

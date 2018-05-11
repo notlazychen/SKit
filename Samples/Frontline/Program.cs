@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Frontline.Common.Network;
+using Frontline.Data;
 using Frontline.Domain;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
@@ -19,6 +20,7 @@ namespace Frontline
         public static void Main(string[] args)
         {
             var logger = LogManager.LoadConfiguration("nlog.config").GetCurrentClassLogger();
+
             try
             {
                 logger.Info("init main");

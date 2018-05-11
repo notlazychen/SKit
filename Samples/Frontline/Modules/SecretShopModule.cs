@@ -19,8 +19,7 @@ namespace Frontline.Modules
 
         private DataContext _db;
 
-        public Dictionary<int, DSecretShopProb> DSecretShopProbs { get; private set; }
-        public Dictionary<int, Dictionary<int, DSecretShop>> DSecretShops { get; private set; }//vip>group>x
+        public Dictionary<int, List<DSecretShop>> DSecretShops { get; private set; }//mission_type>shop_id>x
         public Dictionary<int, DSecretShopItem> DSecretShopItems { get; private set; }
         public Dictionary<int, Dictionary<int, DSecretShopItem>> DSecretShopItemsByGroup { get; private set; }//group>int>x
 
@@ -39,10 +38,9 @@ namespace Frontline.Modules
             var design = Server.GetModule<DesignDataModule>();
             design.Register(this, designDb =>
             {
-                DSecretShops = designDb.DSecretShop.AsNoTracking().GroupBy(g => g.vip).ToDictionary(g => g.Key, g => g.ToDictionary(x => x.group, x => x));
-                DSecretShopItems = designDb.DSecretShopItem.AsNoTracking().ToDictionary(x=>x.id, x=>x);
-                DSecretShopItemsByGroup = DSecretShopItems.Values.GroupBy(g => g.group).ToDictionary(g => g.Key, g => g.ToDictionary(x=>x.id, x=>x));
-                DSecretShopProbs = designDb.DSecretShopProb.AsNoTracking().ToDictionary(x=>x.mission_type, x=>x);
+                DSecretShops = designDb.DSecretShop.AsNoTracking().GroupBy(g => g.mission_type).ToDictionary(g => g.Key, g => g.ToList());
+                DSecretShopItems = designDb.DSecretShopItem.AsNoTracking().ToDictionary(x => x.id, x => x);
+                DSecretShopItemsByGroup = DSecretShopItems.Values.GroupBy(g => g.group).ToDictionary(g => g.Key, g => g.ToDictionary(x => x.id, x => x));
             });
 
             _dungeonModule.PassDungeon += _dungeonModule_PassDungeon;
@@ -55,21 +53,26 @@ namespace Frontline.Modules
             bool isOpen = shop.OpenTime <= now && shop.CloseTime >= now;
             if (!isOpen && shop.TriggerCD <= now)
             {
-                var dg = DSecretShopProbs[args.Dungeon.Type];
-                int cur = MathUtils.RandomNumber(0, 10000);
-                if(cur <= dg.prob * args.Number)
+                if (DSecretShops.TryGetValue(args.Dungeon.Type, out var dgs))
                 {
-                    //命中, 开店
-                    var group = this.DSecretShops[who.VIP].Values;
-
-                    DSecretShop ds = MathUtils.RandomElement(group, g => g.w);
+                    DSecretShop ds = null;
+                    foreach (var d in dgs)
+                    {
+                        if (d.trigger_lv.Object[0] <= who.Level && d.trigger_lv.Object[1] >= who.Level)
+                        {
+                            ds = d;
+                            break;
+                        }
+                    }
+                    if (ds == null)
+                        return;
                     shop.OpenTime = now;
                     shop.CloseTime = now.AddSeconds(ds.duration_second);
                     shop.TriggerCD = now.AddSeconds(ds.interval_second);
-                    var list = this.DSecretShopItemsByGroup[ds.group].Values.ToList();
+                    var list = this.DSecretShopItemsByGroup[ds.shop_id].Values.ToList();
                     if (shop.SecretShopItems.Any())
                     {
-                        foreach(var item in shop.SecretShopItems)
+                        foreach (var item in shop.SecretShopItems)
                         {
                             var ditem = MathUtils.RandomElement(list, l => l.w);
                             item.Tid = ditem.id;
@@ -119,6 +122,7 @@ namespace Frontline.Modules
                     }
                     Server.SendByUserNameAsync(who.Id, notify);
                 }
+
             }
         }
 
@@ -134,7 +138,7 @@ namespace Frontline.Modules
             if (!_shops.TryGetValue(pid, out var shop))
             {
                 shop = _db.SecretShops
-                    .Include(s=>s.SecretShopItems)
+                    .Include(s => s.SecretShopItems)
                     .FirstOrDefault(d => d.PlayerId == pid);
                 if (shop == null)
                 {

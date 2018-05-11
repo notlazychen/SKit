@@ -1,9 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Console;
 
 namespace Frontline.GameDesign
 {
     public class GameDesignContext : DbContext
     {
+        public static readonly LoggerFactory MyLoggerFactory = new LoggerFactory(new[] { new ConsoleLoggerProvider((_, __) => true, true) });
         bool IsDoConfig = false;
         public GameDesignContext()
         {
@@ -23,6 +26,7 @@ namespace Frontline.GameDesign
                 var connection = "Server=140.143.28.95;database=frontline_design;uid=chenrong;pwd=abcd1234;SslMode=None;charset=utf8;pooling=false";
                 //var connection = "Filename=./sqlitedb.db";
                 optionsBuilder.UseMySql(connection);
+                //optionsBuilder.UseLoggerFactory(MyLoggerFactory);
             }
         }
 
@@ -35,8 +39,7 @@ namespace Frontline.GameDesign
             modelBuilder.Entity<DDungeonStar>().HasKey(d => new { d.type, d.section, d.index });
             modelBuilder.Entity<DLegionScience>().HasKey(d => new { d.id, d.lv });
             modelBuilder.Entity<DWeekBattle>().HasKey(d => new { d.mid, d.day });
-
-            modelBuilder.Entity<DSecretShop>().HasKey(d => new { d.vip, d.group });
+            modelBuilder.Entity<DSkill>().HasKey(d => new { d.id, d.lv });            
         }
         public DbSet<DGameConfig> DGameConfig { get; set; }
 
@@ -75,7 +78,7 @@ namespace Frontline.GameDesign
         public DbSet<DFacTaskGroup> DFacTaskGroup { get; set; }
         public DbSet<DFacWorker> DFacWorker { get; set; }
 
-        public DbSet<VIPPrivilege> VIPPrivilege { get; set; }
+        public DbSet<DVIP> DVIP { get; set; }
         public DbSet<DName> DName { get; set; }
 
         public DbSet<DQuest> DQuest { get; set; }
@@ -94,11 +97,11 @@ namespace Frontline.GameDesign
         public DbSet<DWeekBox> DWeekBox { get; set; }
 
         public DbSet<DMallShopItem> DMallShopItem { get; set; }
+        public DbSet<DLegionShopItem> DLegionShopItem { get; set; }
         public DbSet<DMallShop> DMallShop { get; set; }
 
         public DbSet<DSecretShop> DSecretShop { get; set; }
-        public DbSet<DSecretShopItem> DSecretShopItem { get; set; }
-        public DbSet<DSecretShopProb> DSecretShopProb { get; set; }      
+        public DbSet<DSecretShopItem> DSecretShopItem { get; set; } 
         
         public DbSet<DSkill> DSkill { get; set; }
 

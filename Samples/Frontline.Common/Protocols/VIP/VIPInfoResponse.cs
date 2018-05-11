@@ -26,5 +26,10 @@ namespace protocol
         /// </summary>
 		[ProtoMember(3, IsRequired = false)]
         public bool recved;
+        /// <summary>
+        /// 购买过的VIP卡种
+        /// </summary>
+		[ProtoMember(4, IsRequired = false)]
+        public List<int> boughtVIP;
     }
 }

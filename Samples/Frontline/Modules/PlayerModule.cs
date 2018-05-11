@@ -29,7 +29,7 @@ namespace Frontline.Modules
         private ILogger<PlayerModule> _logger;
 
         public Dictionary<int, DLevel> DLevels { get; private set; }
-        public Dictionary<int, VIPPrivilege> VIP { get; private set; }
+        public Dictionary<int, DVIP> VIP { get; private set; }
         public Dictionary<int, DResPrice> DResPrices { get; private set; }//times:x
         public List<DName> DNames { get; private set; }
 
@@ -53,6 +53,8 @@ namespace Frontline.Modules
             camp.EquipLevelUp += (o, e) => UpdateMaxPower();
             camp.EquipGradeUp += (o, e) => UpdateMaxPower();
             camp.TeamSettingChanged += (o, e) => UpdateMaxPower();
+            var legion = Server.GetModule<LegionModule>();
+            legion.LegionScienceLevelUp += Legion_LegionScienceLevelUp;
 
             Server.GameTaskDone += Server_GameTaskDone;
             Server.SessionClosed += Server_SessionClosed;
@@ -61,11 +63,26 @@ namespace Frontline.Modules
             design.Register(this, designDb =>
             {
                 DLevels = designDb.DLevel.AsNoTracking().ToDictionary(x => x.level, x => x);
-                VIP = designDb.VIPPrivilege.AsNoTracking().ToDictionary(x => x.lv, x => x);
+                VIP = designDb.DVIP.AsNoTracking().ToDictionary(x => x.lv, x => x);
                 DResPrices = designDb.DResPrice.AsNoTracking().ToDictionary(x => x.times, x => x);
                 DNames = designDb.DName.ToList();
             });
         }
+
+        private void Legion_LegionScienceLevelUp(Player who, DLegionScience ds)
+        {
+            var camp = Server.GetModule<CampModule>();
+            foreach (var unit in who.Units)
+            {
+                var du = camp.DUnits[unit.Tid];
+                if (ds.unit_scope.Object.Contains(du.type_detail))
+                {
+                    camp.ToUnitInfo(unit, du, true);
+                }
+            }
+            this.UpdateMaxPower();
+        }
+
         protected override void OnConfigured()
         {
             //预加载所有玩家数据
@@ -92,6 +109,12 @@ namespace Frontline.Modules
                     player.Wallet.TodayBuyOil = 0;
                     player.Wallet.TodayBuySupply = 0;
                     player.LastDayRefreshTime = DateTime.Today;
+
+                    player.VIPGiftReceved = 0;
+                    if(player.VIP > 0 && player.VIPEndTime < DateTime.Today)
+                    {
+                        player.VIP = 0;
+                    }
                 }
             }
             _db.SaveChanges();
@@ -145,6 +168,51 @@ namespace Frontline.Modules
         }
 
         #region API
+        public int BuyVIP(string playerId, DVIP vip)
+        {
+            var player = this.QueryPlayer(playerId);
+            if(player.VIP > vip.lv)
+            {
+                return (int)GameErrorCode.不能购买低于当前的VIP卡;
+            }
+            else
+            {
+                player.VIP = vip.lv;
+                if(player.VIPEndTime <= DateTime.Now)
+                {
+                    player.VIPEndTime = DateTime.Today.AddDays(vip.day);
+                }
+                else
+                {
+                    player.VIPEndTime = player.VIPEndTime.AddDays(vip.day);
+                }
+                player.VIPGiftReceved = 0;
+                //给一期/续费奖励
+                bool isbought = player.VIPCards.Any(v=>v.VIPLevel == vip.lv);
+                int[] gift = isbought ? vip.next_item_id.Object : vip.first_item_id.Object;
+                int[] gift_cnt = isbought ? vip.next_item_cnt.Object : vip.first_item_cnt.Object;
+                var mailmodule = Server.GetModule<MailModule>();                
+                if (gift.Length != 0)
+                {
+                    //todo: 邮件发送VIP礼包
+                    mailmodule.SendSystemMail(player, MailModule.TYPE_SYSTEM, "VIP", "", gift, gift_cnt, null, null);
+                }
+                else
+                {
+                    mailmodule.SendSystemMail(player, MailModule.TYPE_SYSTEM, "VIP", "", null, null, null, null);
+                }
+
+                player.VIPCards.Add(new VIPCard { PlayerId = player.Id, BuyTime = DateTime.Now, EndTime = player.VIPEndTime, VIPLevel = vip.lv });
+                _db.SaveChanges();
+
+                VIPInfoChangedNotify notify = new VIPInfoChangedNotify();
+                notify.vip = vip.lv;
+                notify.endTime = player.VIPEndTime.ToUnixTime();
+                Server.SendByUserNameAsync(player.Id, notify);
+                return 0;
+            }
+        }
+
         public Player QueryPlayerByUsername(string username)
         {
             string playerId = _db.Players.Where(p => p.UserCode == username).Select(p => p.Id).FirstOrDefault();
@@ -179,6 +247,8 @@ namespace Frontline.Modules
                     needsave = true;
                 }
             }
+            if (player == null)
+                return null;
             
             //原油回复
             if(player.Wallet.OIL < GameConfig.OilMaxValue)
@@ -187,6 +257,8 @@ namespace Frontline.Modules
                 int deltavalue = deltaMinutes / GameConfig.OilReplyMinutes;
                 if (deltavalue > 0)
                 {
+                    int left = GameConfig.OilMaxValue - player.Wallet.OIL;
+                    deltavalue = deltavalue > left ? left : deltavalue;
                     player.Wallet.AddCurrency(CurrencyType.OIL, deltavalue);
                     player.Wallet.OilLastReplyTime = player.Wallet.OilLastReplyTime.AddMinutes(deltavalue * GameConfig.OilReplyMinutes);
                     needsave = true;
@@ -203,6 +275,12 @@ namespace Frontline.Modules
                 player.Wallet.TodayBuyOil = 0;
                 player.Wallet.TodayBuySupply = 0;
                 player.LastDayRefreshTime = DateTime.Today;
+
+                player.VIPGiftReceved = 0;
+                if (player.VIP > 0 && player.VIPEndTime < DateTime.Today)
+                {
+                    player.VIP = 0;
+                }
                 needsave = true;
             }
             if (needsave)
@@ -256,7 +334,7 @@ namespace Frontline.Modules
             player.Wallet.AddCurrency(CurrencyType.DIAMOND, 0);
             player.Wallet.AddCurrency(CurrencyType.IRON, 0);
             player.Wallet.AddCurrency(CurrencyType.SUPPLY, 0);
-            player.Wallet.AddCurrency(CurrencyType.OIL, 200);
+            player.Wallet.AddCurrency(CurrencyType.OIL, GameConfig.OilMaxValue);
 
             _db.Players.Add(player);
             this.OnPlayerCreating(player);
@@ -429,7 +507,7 @@ namespace Frontline.Modules
         public event EventHandler<PlayerLoader> PlayerLoading;
         internal void OnPlayerLoading(PlayerLoader loader)
         {
-            loader.Loader = loader.Loader.Include(p => p.Wallet);
+            loader.Loader = loader.Loader.Include(p => p.Wallet).Include(p=>p.VIPCards);
             PlayerLoading?.Invoke(this, loader);
         }
 

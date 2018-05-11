@@ -21,7 +21,7 @@ namespace Frontline.Modules
         public Dictionary<int, Dictionary<int, SortedDictionary<int, DDungeon>>> DDungeons { get; private set; }//type:{section:{mission:x}}
         public Dictionary<int, DMonster> DMonsters { get; private set; }//tid:x
         public Dictionary<int, DMonsterAbility> DMonsterAbilities { get; private set; }//level:x
-        public Dictionary<int, Dictionary<int, DMonsterInDungeon>> DMonsterInDungeons { get; private set; }//dungeonid:{monsterid:x}
+        public Dictionary<int, IEnumerable<DMonsterInDungeon>> DMonsterInDungeons { get; private set; }//dungeonid:{monsterid:x}
         public Dictionary<int, Dictionary<int, Dictionary<int, DDungeonStar>>> DDStars { get; private set; }//type:{section : {index : x}}
 
         private readonly Dictionary<string, Battle> _battles = new Dictionary<string, Battle>();
@@ -45,7 +45,7 @@ namespace Frontline.Modules
                 DDungeons = designDb.DDungeon.GroupBy(x => x.type).AsNoTracking().ToDictionary(x => x.Key, x => x.GroupBy(y => y.section).ToDictionary(y => y.Key, y => new SortedDictionary<int, DDungeon>(y.ToDictionary(z => z.mission, z => z))));
                 DMonsters = designDb.DMonster.AsNoTracking().ToDictionary(x => x.id, x => x);
                 DMonsterAbilities = designDb.DMonsterAbility.AsNoTracking().ToDictionary(x => x.level, x => x);
-                DMonsterInDungeons = designDb.DMonsterInDungeon.GroupBy(x => x.dungeon_id).AsNoTracking().ToDictionary(x => x.Key, x => x.ToDictionary(y => y.mid, y => y));
+                DMonsterInDungeons = designDb.DMonsterInDungeon.GroupBy(x => x.dungeon_id).AsNoTracking().ToDictionary(x => x.Key, x => x.ToList() as IEnumerable<DMonsterInDungeon>);
                 DDStars = designDb.DDungeonStar.AsNoTracking().GroupBy(x => x.type).ToDictionary(x => x.Key, x => x.GroupBy(y => y.section).ToDictionary(z => z.Key, z => z.ToDictionary(a => a.index, a => a)));
             });
         }
@@ -140,7 +140,7 @@ namespace Frontline.Modules
 
         public List<MonsterInfo> ToMonsterInfosByDungeonId(int dungeon_id)
         {
-            var mds = DMonsterInDungeons[dungeon_id].Values;
+            var mds = DMonsterInDungeons[dungeon_id];
             List<MonsterInfo> ms = new List<MonsterInfo>();
             foreach(var m in mds)
             {
@@ -151,7 +151,7 @@ namespace Frontline.Modules
 
         public MonsterInfo ToMonsterInfoByDungeonId(int mid, int dungeon_id)
         {
-            var md = DMonsterInDungeons[dungeon_id][mid];
+            var md = DMonsterInDungeons[dungeon_id].First(m=>m.mid == mid);
             return ToMonsterInfo(mid, md.level);
         }
 
@@ -338,7 +338,7 @@ namespace Frontline.Modules
             response.monster = new List<MonsterInfo>();
             foreach (var dm in dms)
             {
-                MonsterInfo mi = this.ToMonsterInfo(dm.Key, dm.Value.level);
+                MonsterInfo mi = this.ToMonsterInfo(dm.mid, dm.level);
                 response.monster.Add(mi);
             }
             Session.SendAsync(response);

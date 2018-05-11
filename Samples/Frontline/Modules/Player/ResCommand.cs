@@ -17,11 +17,13 @@ namespace Frontline.Modules
     public class ResCommand : GameCommand<ResRequest>
     {
         PlayerModule _playerModule;
+        DiKangModule _dikangModule;
         DataContext _db;
         GameServerSettings _config;
         protected override void OnInit()
         {
             _playerModule = Server.GetModule<PlayerModule>();
+            _dikangModule = Server.GetModule<DiKangModule>();
             _db = Server.GetModule<GameSettingModule>().DataContext;
             _config = Server.GetModule<GameSettingModule>().Settings;
         }
@@ -51,7 +53,7 @@ namespace Frontline.Modules
 
             //一些配置表的内容
             response.nextExp = _playerModule.DLevels[player.Level].exp;
-            response.resistMaxWave = 1;
+            response.resistMaxWave = _dikangModule.QueryDiKang(player.Id).Best;
             response.preExp = player.Level == 1 ? 0 : _playerModule.DLevels[player.Level - 1].exp;
             Session.SendAsync(response);
             return 0;

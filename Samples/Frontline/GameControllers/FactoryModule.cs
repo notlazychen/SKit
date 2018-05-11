@@ -136,7 +136,6 @@ namespace Frontline.Modules
         {
             _db.FacWorkers.RemoveRange(fac.FacWorkers.Where(w => w.State == FacWorkerState.Free || w.State == FacWorkerState.Fired));
             fac.FacWorkers.Where(w => w.InMarket).ToList().ForEach(w=>w.InMarket = false);           
-            //_db.SaveChanges();
             for (int i = 0; i < GameConfig.FactoryWorkerMarketLength; i++)
             {
                 var worker = new FacWorker();
@@ -260,7 +259,7 @@ namespace Frontline.Modules
             }
             //判断工人总数
             var canbuy = _playerModule.VIP[player.VIP].work_total_hire_n;
-            if(fac.FacWorkers.Count >= canbuy + 5)
+            if(fac.FacWorkers.Count(w=>!w.InMarket && w.State != FacWorkerState.Fired && w.State != FacWorkerState.Free) >= canbuy + 5)
             {
                 return (int)GameErrorCode.雇佣人数已满;
             }
@@ -405,7 +404,7 @@ namespace Frontline.Modules
             task.State = FacTaskState.Finish;
             var vip = playercon.VIP[player.VIP];
             double outAdd = 0;
-            double itemexAdd = dt.reward_ex_prob + vip.work_reward_ex_prob;
+            double itemexAdd = dt.reward_ex_prob;// + vip.work_reward_ex_prob;
             var worksId = task.FacWorkers.StringToMany(x=>x);
             foreach(var worker in fac.FacWorkers.Where(w => worksId.Contains(w.Id)))
             {

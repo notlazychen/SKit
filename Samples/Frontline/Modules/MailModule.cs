@@ -124,24 +124,29 @@ namespace Frontline.Modules
             mail.Type = mailType;
             mail.Id = Guid.NewGuid().ToString();
 
-            for(int i = 0; i< itemids.Length; i++)
+            if (itemids != null)
             {
-                MailAttachment att = new MailAttachment();
-                att.Count = itemcnts[i];
-                att.Type = 1;
-                att.Tid = itemids[i];
-                att.MailId = mail.Id;
-                mail.MailAttachments.Add(att);
+                for (int i = 0; i < itemids.Length; i++)
+                {
+                    MailAttachment att = new MailAttachment();
+                    att.Count = itemcnts[i];
+                    att.Type = 1;
+                    att.Tid = itemids[i];
+                    att.MailId = mail.Id;
+                    mail.MailAttachments.Add(att);
+                }
             }
-
-            for (int i = 0; i < resids.Length; i++)
+            if (resids != null)
             {
-                MailAttachment att = new MailAttachment();
-                att.Type = 0;
-                att.Count = rescnts[i];
-                att.Tid = resids[i];
-                att.MailId = mail.Id;
-                mail.MailAttachments.Add(att);
+                for (int i = 0; i < resids.Length; i++)
+                {
+                    MailAttachment att = new MailAttachment();
+                    att.Type = 0;
+                    att.Count = rescnts[i];
+                    att.Tid = resids[i];
+                    att.MailId = mail.Id;
+                    mail.MailAttachments.Add(att);
+                }
             }
             this.SendMail(mail);
         }

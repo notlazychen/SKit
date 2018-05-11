@@ -61,8 +61,8 @@ namespace SKit
 
         private readonly ElasticPool<byte[]> _socketRecvBufferPool;//输入缓冲池
         private readonly ElasticPool<byte[]> _socketSendBufferPool;//输出缓冲池
-        private readonly Packager _packager;//拆包打包器
-        private readonly Serializer _serializer;//正反序列化工具
+
+        private readonly Serializer _serializer;//正反序列化(包括拆包打包)工具
         private SKitConfig Config { get; }//配置
         private readonly IServiceCollection _services;//DI容器
 
@@ -132,8 +132,6 @@ namespace SKit
             Debug.Assert(_serializer != null, "ISerializable Can't be NULL!");
             _logger = provicer.GetService<ILogger<GameServer>>();
             Debug.Assert(_logger != null, "ILogger Can't be NULL!");
-            _packager = provicer.GetService<Packager>();
-            Debug.Assert(_packager != null, "ISPackager Can't be NULL!");
             this.Id = Config.Id;
             this.Name = Config.Name;
 
@@ -376,9 +374,9 @@ namespace SKit
             var buff = _socketSendBufferPool.Pop();
             try
             {
-                byte[] data = _serializer.Serialize(msg);
-                ArraySegment<byte> encodedMessage = _packager.Pack(data, buff, 0, buff.Length);
-                session.Socket.Send(encodedMessage.Array, encodedMessage.Offset, encodedMessage.Count, SocketFlags.None);
+                int size = _serializer.Serialize(msg, buff, buff.Length);
+                //ArraySegment<byte> encodedMessage = _serializer.Serialize(data, buff, 0, buff.Length);
+                session.Socket.Send(buff, 0, size, SocketFlags.None);
             }
             catch (Exception)
             {
@@ -458,6 +456,8 @@ namespace SKit
             else
             {
                 socket = e.AcceptSocket;
+                socket.NoDelay = true;
+                //socket.SetSocketOption(SocketOptionLevel.Tcp, SocketOptionName.NoDelay, true);
             }
 
             e.AcceptSocket = null;
@@ -536,8 +536,8 @@ namespace SKit
             while (session.BufferReaderCursor > 0)
             {
                 var readlength = 0;
-                ArraySegment<byte> data = _packager.UnPack(e.Buffer, from, session.BufferReaderCursor, ref readlength);
-                if (readlength != 0)
+                var data = _serializer.UnPack(e.Buffer, from, session.BufferReaderCursor, ref readlength);
+                if (readlength > 0)
                 {
                     yield return data;
                     session.BufferReaderCursor -= readlength;
@@ -562,10 +562,10 @@ namespace SKit
                 try
                 {
                     var datas = Resolve(session, e);
-                    foreach (ArraySegment<byte> data in datas)
+                    foreach (var data in datas)
                     {
                         //消息处理: 反序列化和筛选
-                        if (!DigestRecevedData(session, data))
+                        if (!ProcessRecevedData(session, data))
                         {
                             if (Config.KickoutWhenProtocolError)
                             {
@@ -683,405 +683,385 @@ namespace SKit
             {
                 try
                 {
-                    if (!_sendingQueue.IsEmpty)
+                    if (_sendingQueue.TryDequeue(out var message))
                     {
-                        while (_sendingQueue.TryDequeue(out var message))
+                        switch (message.MessageType)
                         {
-                            try
-                            {
-                                switch (message.MessageType)
+                            case MessageType.AllSession:
                                 {
-                                    case MessageType.AllSession:
-                                        {
-                                            foreach (var session in _sessions.Values)
-                                            {
-                                                var args = new SocketAsyncEventArgs();
-                                                args.Completed += IO_Completed;
-                                                var buff = _socketSendBufferPool.Pop();
-                                                args.SetBuffer(buff, 0, buff.Length);
-                                                byte[] data = _serializer.Serialize(message.Msg);
-                                                ArraySegment<byte> encodedMessage = _packager.Pack(data, args.Buffer, 0, args.Buffer.Length);
-                                                args.SetBuffer(0, encodedMessage.Count);
+                                    foreach (var session in _sessions.Values)
+                                    {
+                                        var args = new SocketAsyncEventArgs();
+                                        args.Completed += IO_Completed;
+                                        var buff = _socketSendBufferPool.Pop();
+                                        int size = _serializer.Serialize(message.Msg, buff, buff.Length);
+                                        args.SetBuffer(buff, 0, size);
 
-                                                if (!session.Socket.SendAsync(args))
-                                                {
-                                                    ProcessSend(args);
-                                                }
-                                            }
-                                        }
-                                        break;
-                                    case MessageType.AllUser:
+                                        if (!session.Socket.SendAsync(args))
                                         {
-                                            foreach (var session in _users.Values)
-                                            {
-                                                var args = new SocketAsyncEventArgs();
-                                                args.Completed += IO_Completed;
-                                                var buff = _socketSendBufferPool.Pop();
-                                                args.SetBuffer(buff, 0, buff.Length);
-                                                byte[] data = _serializer.Serialize(message.Msg);
-                                                ArraySegment<byte> encodedMessage = _packager.Pack(data, args.Buffer, 0, args.Buffer.Length);
-                                                args.SetBuffer(0, encodedMessage.Count);
-                                                if (!session.Socket.SendAsync(args))
-                                                {
-                                                    ProcessSend(args);
-                                                }
-                                            }
+                                            ProcessSend(args);
                                         }
-                                        break;
-                                    case MessageType.ToSession:
-                                        {
-                                            if (_sessions.TryGetValue(message.DestId, out var session))
-                                            {
-                                                var args = new SocketAsyncEventArgs();
-                                                args.Completed += IO_Completed;
-                                                var buff = _socketSendBufferPool.Pop();
-                                                args.SetBuffer(buff, 0, buff.Length);
-                                                byte[] data = _serializer.Serialize(message.Msg);
-                                                ArraySegment<byte> encodedMessage = _packager.Pack(data, args.Buffer, 0, args.Buffer.Length);
-                                                args.SetBuffer(0, encodedMessage.Count);
-                                                if (!session.Socket.SendAsync(args))
-                                                {
-                                                    ProcessSend(args);
-                                                }
-                                            }
-                                        }
-                                        break;
-                                    case MessageType.ToUser:
-                                        {
-                                            if (_users.TryGetValue(message.DestId, out var session))
-                                            {
-                                                var args = new SocketAsyncEventArgs();
-                                                args.Completed += IO_Completed;
-                                                var buff = _socketSendBufferPool.Pop();
-                                                args.SetBuffer(buff, 0, buff.Length);
-                                                byte[] data = _serializer.Serialize(message.Msg);
-                                                ArraySegment<byte> encodedMessage = _packager.Pack(data, args.Buffer, 0, args.Buffer.Length);
-                                                args.SetBuffer(0, encodedMessage.Count);
-                                                if (!session.Socket.SendAsync(args))
-                                                {
-                                                    ProcessSend(args);
-                                                }
-                                            }
-                                        }
-                                        break;
-                                    case MessageType.ToMultiUsers:
-                                        {
-                                            if (message.DestIds != null)
-                                            {
-                                                var args = new SocketAsyncEventArgs();
-                                                args.Completed += IO_Completed;
-                                                var buff = _socketSendBufferPool.Pop();
-                                                args.SetBuffer(buff, 0, buff.Length);
-                                                byte[] data = _serializer.Serialize(message.Msg);
-                                                ArraySegment<byte> encodedMessage = _packager.Pack(data, args.Buffer, 0, args.Buffer.Length);
-                                                args.SetBuffer(0, encodedMessage.Count);
-                                                foreach (var username in message.DestIds)
-                                                {
-                                                    if (_users.TryGetValue(username, out var session))
-                                                    {
-                                                        if (!session.Socket.SendAsync(args))
-                                                        {
-                                                            ProcessSend(args);
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        break;
-                                    case MessageType.ToMultiSessions:
-                                        {
-                                            if (message.DestIds != null)
-                                            {
-                                                var args = new SocketAsyncEventArgs();
-                                                args.Completed += IO_Completed;
-                                                var buff = _socketSendBufferPool.Pop();
-                                                args.SetBuffer(buff, 0, buff.Length);
-                                                byte[] data = _serializer.Serialize(message.Msg);
-                                                ArraySegment<byte> encodedMessage = _packager.Pack(data, args.Buffer, 0, args.Buffer.Length);
-                                                args.SetBuffer(0, encodedMessage.Count);
-                                                foreach (var id in message.DestIds)
-                                                {
-                                                    if (_sessions.TryGetValue(id, out var session))
-                                                    {
-                                                        if (!session.Socket.SendAsync(args))
-                                                        {
-                                                            ProcessSend(args);
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        break;
+                                    }
                                 }
-                            }
-                            catch (Exception)
-                            {
-                                //ignore
-                            }
-                        }
-                    }
-                    Thread.Sleep(1);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, ex.Message);
-                }
-            }
-        }
-
-        internal GameSession CurrentWorkingSession;
-        private void LoopWorking()
-        {
-            while (!_workingTaskTokenSource.IsCancellationRequested)
-            {
-                try
-                {
-                    if (!_workingQueue.IsEmpty)
-                    {
-                        while (_workingQueue.TryDequeue(out var task))
-                        {
-                            var t = task as GamePlayerTask;
-                            if (t != null)
-                            {
-                                CurrentWorkingSession = t.Session;
-                                int result = task.DoAction();
-
-                                this.OnGamePlayerTaskDone(new GameTaskDoneEventArgs()
+                                break;
+                            case MessageType.AllUser:
                                 {
-                                    GameSession = t.Session,
-                                    ResultCode = result,
-                                });
-                            }
-                            else
-                            {
-                                task.DoAction();
-                            }
+                                    foreach (var session in _users.Values)
+                                    {
+                                        var args = new SocketAsyncEventArgs();
+                                        args.Completed += IO_Completed;
+                                        var buff = _socketSendBufferPool.Pop();
+                                        int size = _serializer.Serialize(message.Msg, buff, buff.Length);
+                                        args.SetBuffer(buff, 0, size);
+                                        if (!session.Socket.SendAsync(args))
+                                        {
+                                            ProcessSend(args);
+                                        }
+                                    }
+                                }
+                                break;
+                            case MessageType.ToSession:
+                                {
+                                    if (_sessions.TryGetValue(message.DestId, out var session))
+                                    {
+                                        var args = new SocketAsyncEventArgs();
+                                        args.Completed += IO_Completed;
+                                        var buff = _socketSendBufferPool.Pop();
+                                        int size = _serializer.Serialize(message.Msg, buff, buff.Length);
+                                        args.SetBuffer(buff, 0, size);
+                                        if (!session.Socket.SendAsync(args))
+                                        {
+                                            ProcessSend(args);
+                                        }
+                                    }
+                                }
+                                break;
+                            case MessageType.ToUser:
+                                {
+                                    if (_users.TryGetValue(message.DestId, out var session))
+                                    {
+                                        var args = new SocketAsyncEventArgs();
+                                        args.Completed += IO_Completed;
+                                        var buff = _socketSendBufferPool.Pop();
+                                        int size = _serializer.Serialize(message.Msg, buff, buff.Length);
+                                        args.SetBuffer(buff, 0, size);
+                                        if (!session.Socket.SendAsync(args))
+                                        {
+                                            ProcessSend(args);
+                                        }
+                                    }
+                                }
+                                break;
+                            case MessageType.ToMultiUsers:
+                                {
+                                    if (message.DestIds != null)
+                                    {
+                                        var args = new SocketAsyncEventArgs();
+                                        args.Completed += IO_Completed;
+                                        var buff = _socketSendBufferPool.Pop();
+                                        int size = _serializer.Serialize(message.Msg, buff, buff.Length);
+                                        args.SetBuffer(buff, 0, size);
+                                        foreach (var username in message.DestIds)
+                                        {
+                                            if (_users.TryGetValue(username, out var session))
+                                            {
+                                                if (!session.Socket.SendAsync(args))
+                                                {
+                                                    ProcessSend(args);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                break;
+                            case MessageType.ToMultiSessions:
+                                {
+                                    if (message.DestIds != null)
+                                    {
+                                        var args = new SocketAsyncEventArgs();
+                                        args.Completed += IO_Completed;
+                                        var buff = _socketSendBufferPool.Pop();
+                                        int size = _serializer.Serialize(message.Msg, buff, buff.Length);
+                                        args.SetBuffer(buff, 0, size);
+                                        foreach (var id in message.DestIds)
+                                        {
+                                            if (_sessions.TryGetValue(id, out var session))
+                                            {
+                                                if (!session.Socket.SendAsync(args))
+                                                {
+                                                    ProcessSend(args);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                break;
                         }
-                    }
-                }
-                catch (System.Data.Common.DbException ex)
-                {
-                    //数据库异常，宕机吧
-                    _logger.LogError(ex, ex.Message);
-                    throw;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, ex.Message);
-                }
-                Thread.Sleep(1);
-            }
-        }
-
-        /// <summary>
-        /// 处理消息包
-        /// </summary>
-        /// <returns>是否执行成功</returns>
-        protected bool DigestRecevedData(GameSession session, ArraySegment<byte> data)
-        {
-            string cmd = _serializer.DataToCmd(data.Array, data.Offset, data.Count);
-            if (cmd == null || !this._commands.ContainsKey(cmd))
-            {
-                //如果没有处理器，先刷掉一批
-                return false;
-            }
-
-            var cmdInfo = this._commands[cmd];
-            var type = cmdInfo.RequestType;
-            if (!cmdInfo.AllowAnonymous && !session.IsAuthorized)
-            {
-                return false;
-            }
-
-            var request = _serializer.Deserialize(type, data.Array, data.Offset, data.Count);
-            var task = new GameRequestTask(cmdInfo.Command, session, request);
-            if (cmdInfo.Asynchronous)
-            {
-                //当遇到allowanonymous的任务时，即表示此任务不需要其他游戏逻辑线程同步，只要session同步即可，那么可以不放入逻辑线程而直接执行
-                task.DoAction();
-            }
-            else
-            {
-                this._workingQueue.Enqueue(task);
-            }
-            return true;
-        }
-        #endregion
-
-        #region 通讯协议约定
-        /// <summary>
-        /// 获得其他控制器
-        /// </summary>
-        public T GetModule<T>() where T : GameModule
-        {
-            Type t = typeof(T);
-            return _modules[t] as T;
-        }
-        /// <summary>
-        /// 消息驱动，通过消息实体名找处理函数
-        /// </summary>
-        private void ReflectProtocols()
-        {
-            _logger.LogInformation($"开始读取模块");
-            foreach (var type in Assembly.GetEntryAssembly().ExportedTypes)
-            {
-                if (type.GetTypeInfo().BaseType == typeof(GameModule))
-                {
-                    _services.AddTransient(typeof(GameModule), type);
-                }
-            }
-
-            var provider = _services.BuildServiceProvider();
-            var modules = provider.GetServices<GameModule>();
-            foreach (var module in modules)
-            {
-                Type type = module.GetType();
-                module.Server = this;
-                _modules.Add(type, module);
-
-                //加载handler并转化为command
-                MethodInfo[] methods = type.GetMethods(BindingFlags.Public | BindingFlags.DeclaredOnly | BindingFlags.Instance);
-                foreach (var methodInfo in methods)
-                {
-                    if (methodInfo.IsSpecialName || !methodInfo.Name.StartsWith("Call_"))
-                    {
-                        continue;
-                    }
-                    if (methodInfo.ReturnType != typeof(int))
-                    {
-                        _logger.LogWarning($"Method handler [{module.GetType().Name}.{methodInfo.Name}] has wrong return type!");
-                        continue;
-                    }
-                    ParameterInfo[] parameterInfos = methodInfo.GetParameters();
-                    if (parameterInfos.Length > 2 || parameterInfos.Length < 1)
-                    {
-                        _logger.LogWarning($"Protocol Handler {module.GetType().Name }.{methodInfo.Name} parameters count wrong!");
                     }
                     else
                     {
-                        List<Type> parameterTypes = new List<Type>();
-                        foreach (var p in parameterInfos)
-                        {
-                            parameterTypes.Add(p.ParameterType);
-                        }
-                        var requestType = parameterTypes.FirstOrDefault(x => x != typeof(GameSession));
-                        if (requestType == null)
-                        {
-                            _logger.LogWarning($"Protocol Handler {module.GetType().Name }.{methodInfo.Name} parameters not contains request entity!");
-                            continue;
-                        }
-                        String cmd = requestType.Name;
-                        Type methodGenericType;
-                        GameProtoHandlerParameters paramSeq;
-                        if (parameterTypes.Count == 1)
-                        {
-                            methodGenericType = typeof(Func<,>);
-                            paramSeq = GameProtoHandlerParameters.Request;
-                        }
-                        else
-                        {
-                            methodGenericType = typeof(Func<,,>);
-                            if (parameterTypes[0] == typeof(GameSession))
-                            {
-                                paramSeq = GameProtoHandlerParameters.GameSessionAndRequest;
-                            }
-                            else
-                            {
-                                paramSeq = GameProtoHandlerParameters.RequestAndGameSession;
-                            }
-                        }
-                        parameterTypes.Add(typeof(int));
-                        Type methodType = methodGenericType.MakeGenericType(parameterTypes.ToArray());
-                        Delegate actionMethod = Delegate.CreateDelegate(methodType, module, methodInfo);
-
-                        var options = methodInfo.GetCustomAttribute<GameCommandOptionsAttribute>();
-                        var commandInfo = new GameCommandInfo()
-                        {
-                            CMD = cmd,
-                            RequestType = requestType,
-                            Command = new GameMethodHandlerCommand()
-                            {
-                                MethodInfo = methodInfo,
-                                Module = module,
-                                ProcessAction = actionMethod,
-                                ParameterTypes = paramSeq,
-                                Server = this,
-                            }
-                        };
-                        if (options != null)
-                        {
-                            commandInfo.AllowAnonymous = options.AllowAnonymous;
-                            commandInfo.Asynchronous = options.Asynchronous;
-                            commandInfo.CMD = options.CMD ?? requestType.Name;
-                        }
-                        if (!_commands.TryGetValue(commandInfo.CMD, out var old))
-                        {
-                            _commands.Add(commandInfo.CMD, commandInfo);
-                            _serializer.Register(requestType);
-                        }
-                        else
-                        {
-                            _logger.LogWarning($"Request CMD [{commandInfo.CMD}] in [{commandInfo.Command.ToString()}] already declared in method: [{old.Command.ToString()}]");
-                        }
+                        Thread.Sleep(1);
                     }
                 }
-            }
-
-            //加载command
-            foreach (var type in Assembly.GetEntryAssembly().ExportedTypes)
-            {
-                if (type.BaseType.IsGenericType)
+                catch (Exception ex)
                 {
-                    if (type.BaseType.BaseType == typeof(GameCommandBase))
-                    {
-                        var requestType = type.BaseType.GetGenericArguments()[0];
-                        var options = type.GetCustomAttribute<GameCommandOptionsAttribute>();
-                        var command = Activator.CreateInstance(type) as GameCommandBase;
-                        command.Server = this;
-                        var commandInfo = new GameCommandInfo()
-                        {
-                            Command = command,
-                            RequestType = requestType,
-                            CMD = requestType.Name
-                        };
-                        if (options != null)
-                        {
-                            commandInfo.AllowAnonymous = options.AllowAnonymous;
-                            commandInfo.Asynchronous = options.Asynchronous;
-                            commandInfo.CMD = options.CMD ?? requestType.Name;
-                        }
-                        if (!_commands.TryGetValue(commandInfo.CMD, out var old))
-                        {
-                            _commands.Add(commandInfo.CMD, commandInfo);
-                            _serializer.Register(requestType);
-                        }
-                        else
-                        {
-                            _logger.LogWarning($"Request CMD [{commandInfo.CMD}] in [{commandInfo.Command.ToString()}] already declared in method: [{old.Command.ToString()}]");
-                        }
-                    }
+                    _logger.LogError(ex, ex.Message);
                 }
-            }
-
-            //模块初始化
-            foreach (var module in modules)
-            {
-                //_logger.LogInformation($"加载模块:{module.GetType().Name}");
-                module.ConfigureServices();
-            }
-            foreach (var module in modules)
-            {
-                _logger.LogInformation($"配置模块:{module.GetType().Name}");
-                module.Configure();
-            }
-
-            //命令初始化
-            foreach (var command in _commands.Values)
-            {
-                command.Command.Init();
             }
         }
 
-        #endregion 
+    internal GameSession CurrentWorkingSession;
+    private void LoopWorking()
+    {
+        while (!_workingTaskTokenSource.IsCancellationRequested)
+        {
+            try
+            {
+                if (_workingQueue.TryDequeue(out var task))
+                {
+                    var t = task as GamePlayerTask;
+                    if (t != null)
+                    {
+                        CurrentWorkingSession = t.Session;
+                        int result = task.DoAction();
+                        this.OnGamePlayerTaskDone(new GameTaskDoneEventArgs()
+                        {
+                            GameSession = t.Session,
+                            ResultCode = result,
+                        });
+                    }
+                    else
+                    {
+                        task.DoAction();
+                    }
+                }
+                else
+                {
+                    Thread.Sleep(1);
+                }
+            }
+            catch (System.Data.Common.DbException ex)
+            {
+                //数据库异常，宕机吧
+                _logger.LogError(ex, ex.Message);
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, ex.Message);
+            }
+        }
     }
+
+    /// <summary>
+    /// 处理消息包
+    /// </summary>
+    /// <returns>是否执行成功</returns>
+    protected bool ProcessRecevedData(GameSession session, ArraySegment<byte> data)
+    {
+        string cmd = _serializer.DataToCmd(data.Array, data.Offset, data.Count);
+        if (cmd == null || !this._commands.ContainsKey(cmd))
+        {
+            //如果没有处理器，先刷掉一批
+            return false;
+        }
+
+        var cmdInfo = this._commands[cmd];
+        var type = cmdInfo.RequestType;
+        if (!cmdInfo.AllowAnonymous && !session.IsAuthorized)
+        {
+            return false;
+        }
+
+        var request = _serializer.Deserialize(type, data.Array, data.Offset, data.Count);
+        var task = new GameRequestTask(cmdInfo.Command, session, request);
+        if (cmdInfo.Asynchronous)
+        {
+            //当遇到allowanonymous的任务时，即表示此任务不需要其他游戏逻辑线程同步，只要session同步即可，那么可以不放入逻辑线程而直接执行
+            task.DoAction();
+        }
+        else
+        {
+            this._workingQueue.Enqueue(task);
+        }
+        return true;
+    }
+    #endregion
+
+    #region 通讯协议约定
+    /// <summary>
+    /// 获得其他控制器
+    /// </summary>
+    public T GetModule<T>() where T : GameModule
+    {
+        Type t = typeof(T);
+        return _modules[t] as T;
+    }
+    /// <summary>
+    /// 消息驱动，通过消息实体名找处理函数
+    /// </summary>
+    private void ReflectProtocols()
+    {
+        _logger.LogInformation($"开始读取模块");
+        foreach (var type in Assembly.GetEntryAssembly().ExportedTypes)
+        {
+            if (type.GetTypeInfo().BaseType == typeof(GameModule))
+            {
+                _services.AddTransient(typeof(GameModule), type);
+            }
+        }
+
+        var provider = _services.BuildServiceProvider();
+        var modules = provider.GetServices<GameModule>();
+        foreach (var module in modules)
+        {
+            Type type = module.GetType();
+            module.Server = this;
+            _modules.Add(type, module);
+
+            //加载handler并转化为command
+            MethodInfo[] methods = type.GetMethods(BindingFlags.Public | BindingFlags.DeclaredOnly | BindingFlags.Instance);
+            foreach (var methodInfo in methods)
+            {
+                if (methodInfo.IsSpecialName || !methodInfo.Name.StartsWith("Call_"))
+                {
+                    continue;
+                }
+                if (methodInfo.ReturnType != typeof(int))
+                {
+                    _logger.LogWarning($"Method handler [{module.GetType().Name}.{methodInfo.Name}] has wrong return type!");
+                    continue;
+                }
+                ParameterInfo[] parameterInfos = methodInfo.GetParameters();
+                if (parameterInfos.Length > 2 || parameterInfos.Length < 1)
+                {
+                    _logger.LogWarning($"Protocol Handler {module.GetType().Name }.{methodInfo.Name} parameters count wrong!");
+                }
+                else
+                {
+                    List<Type> parameterTypes = new List<Type>();
+                    foreach (var p in parameterInfos)
+                    {
+                        parameterTypes.Add(p.ParameterType);
+                    }
+                    var requestType = parameterTypes.FirstOrDefault(x => x != typeof(GameSession));
+                    if (requestType == null)
+                    {
+                        _logger.LogWarning($"Protocol Handler {module.GetType().Name }.{methodInfo.Name} parameters not contains request entity!");
+                        continue;
+                    }
+                    String cmd = requestType.Name;
+                    Type methodGenericType;
+                    GameProtoHandlerParameters paramSeq;
+                    if (parameterTypes.Count == 1)
+                    {
+                        methodGenericType = typeof(Func<,>);
+                        paramSeq = GameProtoHandlerParameters.Request;
+                    }
+                    else
+                    {
+                        methodGenericType = typeof(Func<,,>);
+                        if (parameterTypes[0] == typeof(GameSession))
+                        {
+                            paramSeq = GameProtoHandlerParameters.GameSessionAndRequest;
+                        }
+                        else
+                        {
+                            paramSeq = GameProtoHandlerParameters.RequestAndGameSession;
+                        }
+                    }
+                    parameterTypes.Add(typeof(int));
+                    Type methodType = methodGenericType.MakeGenericType(parameterTypes.ToArray());
+                    Delegate actionMethod = Delegate.CreateDelegate(methodType, module, methodInfo);
+
+                    var options = methodInfo.GetCustomAttribute<GameCommandOptionsAttribute>();
+                    var commandInfo = new GameCommandInfo()
+                    {
+                        CMD = cmd,
+                        RequestType = requestType,
+                        Command = new GameMethodHandlerCommand()
+                        {
+                            MethodInfo = methodInfo,
+                            Module = module,
+                            ProcessAction = actionMethod,
+                            ParameterTypes = paramSeq,
+                            Server = this,
+                        }
+                    };
+                    if (options != null)
+                    {
+                        commandInfo.AllowAnonymous = options.AllowAnonymous;
+                        commandInfo.Asynchronous = options.Asynchronous;
+                        commandInfo.CMD = options.CMD ?? requestType.Name;
+                    }
+                    if (!_commands.TryGetValue(commandInfo.CMD, out var old))
+                    {
+                        _commands.Add(commandInfo.CMD, commandInfo);
+                        _serializer.Register(requestType);
+                    }
+                    else
+                    {
+                        _logger.LogWarning($"Request CMD [{commandInfo.CMD}] in [{commandInfo.Command.ToString()}] already declared in method: [{old.Command.ToString()}]");
+                    }
+                }
+            }
+        }
+
+        //加载command
+        foreach (var type in Assembly.GetEntryAssembly().ExportedTypes)
+        {
+            if (type.BaseType.IsGenericType)
+            {
+                if (type.BaseType.BaseType == typeof(GameCommandBase))
+                {
+                    var requestType = type.BaseType.GetGenericArguments()[0];
+                    var options = type.GetCustomAttribute<GameCommandOptionsAttribute>();
+                    var command = Activator.CreateInstance(type) as GameCommandBase;
+                    command.Server = this;
+                    var commandInfo = new GameCommandInfo()
+                    {
+                        Command = command,
+                        RequestType = requestType,
+                        CMD = requestType.Name
+                    };
+                    if (options != null)
+                    {
+                        commandInfo.AllowAnonymous = options.AllowAnonymous;
+                        commandInfo.Asynchronous = options.Asynchronous;
+                        commandInfo.CMD = options.CMD ?? requestType.Name;
+                    }
+                    if (!_commands.TryGetValue(commandInfo.CMD, out var old))
+                    {
+                        _commands.Add(commandInfo.CMD, commandInfo);
+                        _serializer.Register(requestType);
+                    }
+                    else
+                    {
+                        _logger.LogWarning($"Request CMD [{commandInfo.CMD}] in [{commandInfo.Command.ToString()}] already declared in method: [{old.Command.ToString()}]");
+                    }
+                }
+            }
+        }
+
+        //模块初始化
+        foreach (var module in modules)
+        {
+            //_logger.LogInformation($"加载模块:{module.GetType().Name}");
+            module.ConfigureServices();
+        }
+        foreach (var module in modules)
+        {
+            _logger.LogInformation($"配置模块:{module.GetType().Name}");
+            module.Configure();
+        }
+
+        //命令初始化
+        foreach (var command in _commands.Values)
+        {
+            command.Command.Init();
+        }
+    }
+
+    #endregion
+}
 }

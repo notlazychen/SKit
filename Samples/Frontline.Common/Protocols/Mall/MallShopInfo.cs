@@ -42,6 +42,11 @@ namespace protocol
         /// </summary>
 		[ProtoMember(7, IsRequired = false)]
 		public int limit_cnt;
+        /// <summary>
+        /// 排序
+        /// </summary>
+        [ProtoMember(8, IsRequired = false)]
+        public int order;
 
-	}
+    }
 }

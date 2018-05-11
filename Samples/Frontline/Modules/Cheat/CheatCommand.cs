@@ -33,10 +33,37 @@ namespace Frontline.Modules
             _actions.Add("invincible", Invincible);
             _actions.Add("无敌", Invincible);
             _actions.Add("win", Win);
+            _actions.Add("buyvip", BuyVIP);
+            _actions.Add("juntuandengji", SetLegionLv);
         }
 
         private const string reason = "GM命令";
         private readonly Dictionary<string, Action<string[]>> _actions = new Dictionary<string, Action<string[]>>();
+
+        private void SetLegionLv(string[] args)
+        {
+            int lv = int.Parse(args[0]);
+            var legionModule = Server.GetModule<LegionModule>();
+            var lm = legionModule.QueryLegionMember(Session.PlayerId);
+            var legion = legionModule.QueryLegion(lm.LegionId);
+
+            if(legionModule.DLegions.TryGetValue(lv, out var de))
+            {
+                legion.Level = de.level;
+                legion.Exp = de.exp;
+
+                _db.SaveChanges();
+            }    
+        }        
+
+        private void BuyVIP(string[] args)
+        {
+            int viplevel = int.Parse(args[0]);
+            if (_playerModule.VIP.TryGetValue(viplevel, out var vip))
+            {
+                _playerModule.BuyVIP(Session.PlayerId, vip);
+            }
+        }
 
         private void AddExp(string[] args)
         {
@@ -102,7 +129,7 @@ namespace Frontline.Modules
             {
                 var du = camp.DUnits[unit.Tid];
                 var dugs = camp.DUnitGrades[du.star][du.type];
-                var dug = dugs[dugs.Max(d=>d.Value.grade)];
+                var dug = dugs[dugs.Max(d => d.Value.grade)];
                 unit.Level = dug.max_level;
                 unit.Grade = dug.grade;
                 camp.OnUnitLevelUp(new UnitLevelUpEventArgs() { UnitInfo = camp.ToUnitInfo(unit), OldLevel = 1 });

@@ -439,6 +439,23 @@ namespace Frontline.Migrations
                     b.ToTable("LegionSciences");
                 });
 
+            modelBuilder.Entity("Frontline.Domain.LegionShop", b =>
+                {
+                    b.Property<string>("PlayerId")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<DateTime>("LastRefreshTime");
+
+                    b.Property<string>("SoldItems")
+                        .HasMaxLength(2048);
+
+                    b.HasKey("PlayerId");
+
+                    b.HasIndex("PlayerId");
+
+                    b.ToTable("LegionShops");
+                });
+
             modelBuilder.Entity("Frontline.Domain.Lottery", b =>
                 {
                     b.Property<string>("PlayerId")
@@ -565,6 +582,8 @@ namespace Frontline.Migrations
 
                     b.Property<int>("CommodityId");
 
+                    b.Property<bool>("IsOut");
+
                     b.Property<string>("PlayerId");
 
                     b.Property<int>("SoldCount");
@@ -613,9 +632,6 @@ namespace Frontline.Migrations
                     b.Property<DateTime>("LastLvUpTime");
 
                     b.Property<DateTime>("LastVipUpTime");
-
-                    b.Property<string>("LegionId")
-                        .HasMaxLength(64);
 
                     b.Property<int>("Level");
 
@@ -930,6 +946,26 @@ namespace Frontline.Migrations
                     b.ToTable("Units");
                 });
 
+            modelBuilder.Entity("Frontline.Domain.VIPCard", b =>
+                {
+                    b.Property<string>("Id")
+                        .ValueGeneratedOnAdd();
+
+                    b.Property<DateTime>("BuyTime");
+
+                    b.Property<DateTime>("EndTime");
+
+                    b.Property<string>("PlayerId");
+
+                    b.Property<int>("VIPLevel");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PlayerId");
+
+                    b.ToTable("VIPCard");
+                });
+
             modelBuilder.Entity("Frontline.Domain.Wallet", b =>
                 {
                     b.Property<string>("PlayerId");
@@ -1169,6 +1205,13 @@ namespace Frontline.Migrations
                 {
                     b.HasOne("Frontline.Domain.Player")
                         .WithMany("Units")
+                        .HasForeignKey("PlayerId");
+                });
+
+            modelBuilder.Entity("Frontline.Domain.VIPCard", b =>
+                {
+                    b.HasOne("Frontline.Domain.Player")
+                        .WithMany("VIPCards")
                         .HasForeignKey("PlayerId");
                 });
 

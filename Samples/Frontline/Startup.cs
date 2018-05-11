@@ -14,6 +14,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using NLog.Extensions.Logging;
 using SKit.AspNetCore;
 
 namespace Frontline
@@ -31,13 +32,15 @@ namespace Frontline
         public void ConfigureServices(IServiceCollection services)
         {
             var connectionData = Configuration.GetConnectionString("mysql-data");
+            var loggerFactory = new LoggerFactory(new[] { new Extensions.GameDatabaseLoggerProvider() });
             services.AddDbContext<DataContext>(options => options.UseMySql(connectionData, builder =>
             {
                 builder.EnableRetryOnFailure(
                     5,
                     TimeSpan.FromSeconds(5),
                     new int[] { 2 });
-            }), ServiceLifetime.Singleton);//游戏逻辑并不会多线程处理
+            }).UseLoggerFactory(loggerFactory), 
+            ServiceLifetime.Singleton);//游戏逻辑并不会多线程处理
 
             var connectionDesign = Configuration.GetConnectionString("mysql-design");
             services.AddDbContext<GameDesignContext>(options => options.UseMySql(connectionDesign, builder =>
@@ -45,12 +48,12 @@ namespace Frontline
                 builder.EnableRetryOnFailure(
                     5,
                     TimeSpan.FromSeconds(10),
-                    new int[] { 2 });
+                    new int[] { 2 });                
             }));
 
             services.AddSingleton<Services.MessageBus>();
             services.Configure<GameServerSettings>(Configuration.GetSection("game"));
-            services.AddSKit<VerintHeadPackager, ProtoBufSerializer>();
+            services.AddSKit<ProtoBufSerializer>();
             services.AddMvc();
         }
 
@@ -64,7 +67,6 @@ namespace Frontline
 
             app.UseSKit();
             app.UseMvcWithDefaultRoute();
-
         }
     }
 }

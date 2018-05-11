@@ -56,22 +56,42 @@ namespace Frontline.Modules
                 int day = ww.BattleDay;
                 int diff = ww.BattleDiff;
                 DWeekBattle dww = _weekModule.DWeekBattles[diff][day];
+                //检查阵容
+                int addition = 0;
+                Team team = player.Teams.First(t => t.IsSelected);
+                if (!(dww.unit_type.Object.Length == 1 && dww.unit_type.Object[0] == 0))
+                {
+                    foreach (String uid in team.Units.Object)
+                    {
+                        if (!string.IsNullOrEmpty(uid))
+                        {
+                            Unit u = player.Units.First(x => x.Id == uid);
+                            DUnit du = _campModule.DUnits[u.Tid];
+                            bool inSet = dww.unit_type.Object.Contains(du.ww_type);
+                            if (inSet)
+                            {
+                                addition += dww.unity_addition;
+                            }
+                        }
+                    }
+                }
                 if (dww.item_id.Object.Length != 0)
                 {
-                    _pkgModule.AddItems(player, dww.item_id.Object, dww.item_cnt.Object, reason);
                     for (int i = 0; i < dww.item_id.Object.Length; i++)
                     {
                         int itemid = dww.item_id.Object[i];
-                        int itemcnt = dww.item_cnt.Object[i];
+                        int itemcnt = (int)(dww.item_cnt.Object[i] * (1+ addition / 10000d));
                         response.reward.items.Add(new RewardItem { id = itemid, count = itemcnt });
+                        _pkgModule.AddItem(player, itemid, itemcnt, reason);
                     }
                 }
                 if (dww.res_type.Object.Length != 0)
                 {
-                    _playerModule.AddCurrencies(player, dww.res_type.Object, dww.res_cnt.Object, reason);
                     for (int i = 0; i < dww.res_type.Object.Length; i++)
                     {
-                        response.reward.res.Add(new ResInfo { type = dww.res_type.Object[i], count = dww.res_cnt.Object[i] });
+                        int rescount = (int)(dww.res_cnt.Object[i] * (1 + addition / 10000d));
+                        _playerModule.AddCurrency(player, dww.res_type.Object[i], rescount, reason);
+                        response.reward.res.Add(new ResInfo { type = dww.res_type.Object[i], count = rescount });
                     }
                 }
                 _db.SaveChanges();

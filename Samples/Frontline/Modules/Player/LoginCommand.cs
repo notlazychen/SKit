@@ -47,7 +47,8 @@ namespace Frontline.Modules
             }
             else
             {
-                player = _playerModule.QueryPlayer(_db.Players.Where(p => p.UserCode == usercode).Select(p => p.Id).First());
+                string playerId = $"S{Server.Id}P{ucenterId}";
+                player = _playerModule.QueryPlayer(playerId);
                 player.LastLoginTime = DateTime.Now;
                 _db.SaveChanges();
             }

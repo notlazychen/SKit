@@ -93,6 +93,11 @@ namespace Frontline.Data
 
             modelBuilder.Entity<Raffle>().HasKey(m => new { m.PlayerId, m.Type });
             modelBuilder.Entity<Raffle>().HasIndex(m => m.PlayerId);
+
+            modelBuilder.Entity<VIPCard>().HasIndex(m => m.PlayerId);
+            modelBuilder.Entity<VIPCard>().HasOne<Player>().WithMany(p => p.VIPCards).HasForeignKey(v => v.PlayerId);
+
+            modelBuilder.Entity<LegionShop>().HasIndex(d => d.PlayerId);            
         }
 
         public DbSet<Player> Players { get; set; }
@@ -142,5 +147,6 @@ namespace Frontline.Data
         public DbSet<MallShopCommodity> MallShopCommodities { get; set; }
 
         public DbSet<SecretShop> SecretShops { get; set; }
+        public DbSet<LegionShop> LegionShops { get; set; }        
     }
 }

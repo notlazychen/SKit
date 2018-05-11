@@ -61,7 +61,7 @@ namespace Frontline.Modules
                 DSkills = designDb.DSkill.AsNoTracking().GroupBy(g => g.id).ToDictionary(g => g.Key, g => g.ToDictionary(x => x.lv, x => x));
             });
         }
-
+        
         private void PlayerController_PlayerLoading(object sender, PlayerLoader e)
         {
             e.Loader = e.Loader
@@ -520,8 +520,7 @@ namespace Frontline.Modules
 
             var unitInfo = this.ToUnitInfo(unit, du, true);
             OnUnitUnlock(player, unitInfo);
-
-            //_db.SaveChanges();
+            
             return unitInfo;
         }
 

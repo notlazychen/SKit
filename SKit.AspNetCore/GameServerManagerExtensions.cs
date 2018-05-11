@@ -9,11 +9,11 @@ namespace SKit.AspNetCore
 {
     public static class GameServerManagerExtensions
     {
-        public static IServiceCollection AddSKit<TSPackager, TSerializable>(this IServiceCollection services) 
+        public static IServiceCollection AddSKit<TSerializable>(this IServiceCollection services) 
             where TSerializable : Serializer
-            where TSPackager :  Packager
+            //where TSPackager :  Packager
         {
-            services.AddTransient<Packager, TSPackager>();
+            //services.AddTransient<Packager, TSPackager>();
             services.AddTransient<Serializer, TSerializable>();
 
             var provider = services.BuildServiceProvider();

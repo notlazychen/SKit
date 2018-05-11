@@ -24,7 +24,7 @@ namespace Frontline.GameDesign.Core
         static void Main(string[] args)
         {
 #if DEBUG
-            bool import = false;
+            bool import = true;
 #else
             bool import = false;
 #endif
@@ -37,39 +37,42 @@ namespace Frontline.GameDesign.Core
             {
                 import = true;
             }
-            db = new GameDesignContext();
-            var tool = new TableTool();
-
-            if (import)
+            using (db = new GameDesignContext())
             {
-                var ms = typeof(Program).GetMethods(BindingFlags.Static | BindingFlags.Public);
-                MethodInfo mi = ms[0];
-                int tables = 0;
-                try
+                var tool = new TableTool();
+
+                if (import)
                 {
-                    foreach (var en in tool.Tables)
+                    var ms = typeof(Program).GetMethods(BindingFlags.Static | BindingFlags.Public);
+                    MethodInfo mi = ms[0];
+                    int tables = 0;
+                    try
                     {
-                        tables++;
-                        string propertyname = en.Value;
-                        var property = db.GetType().GetProperties().FirstOrDefault(x => x.Name == propertyname);
-                        var method = mi.MakeGenericMethod(new Type[] { property.PropertyType.GetGenericArguments()[0] });
-                        var set = property.GetValue(db);
-                        method.Invoke(null, new object[] { en.Key, set, null });
+                        foreach (var en in tool.Tables)
+                        {
+                            tables++;
+                            string propertyname = en.Value;
+                            var property = db.GetType().GetProperties().FirstOrDefault(x => x.Name == propertyname);
+                            var method = mi.MakeGenericMethod(new Type[] { property.PropertyType.GetGenericArguments()[0] });
+                            var set = property.GetValue(db);
+                            method.Invoke(null, new object[] { en.Key, set, null });
+                        }
                     }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
+                    Console.WriteLine("数据表导入全部结束按回车继续");
+                    Console.ReadLine();
                 }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.Message);
-                }
-                Console.WriteLine("数据表导入全部结束按回车继续");
-                Console.ReadLine();
+                Console.WriteLine("开始进行数据表关联检查");
+                db.CheckMall();
+                db.CheckFactory();
+                db.CheckUnitGrade();
+                db.CheckRandom();
+                db.CheckDiKang();
+                Console.WriteLine("数值表检查结束");
             }
-            Console.WriteLine("开始进行数据表关联检查");
-            db.CheckMall();
-            db.CheckFactory();
-            db.CheckUnitGrade();
-            db.CheckRandom();
-            Console.WriteLine("数值表检查结束");
             Console.ReadLine();
         }
 
@@ -96,7 +99,8 @@ namespace Frontline.GameDesign.Core
                 {
                     //检查ID是否有重复
                     set.Add(dd);
-                }catch(Exception)
+                }
+                catch (Exception)
                 {
                     Console.WriteLine("[主键重复]{0}", JsonConvert.SerializeObject(dd));
                 }

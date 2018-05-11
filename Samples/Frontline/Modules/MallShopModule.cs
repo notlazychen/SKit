@@ -47,35 +47,35 @@ namespace Frontline.Modules
 
         #region 辅助方法
         private Dictionary<string, Mall> _instances = new Dictionary<string, Mall>();
-        public Mall QueryMall(string pid)
+        public Mall QueryMall(Player player)
         {
             var now = DateTime.Now;
-            if (!_instances.TryGetValue(pid, out var instance))
+            if (!_instances.TryGetValue(player.Id, out var instance))
             {
                 instance = _db.Malls
                     .Include(m=>m.Shops)
                         .ThenInclude(s=>s.ShopCommodities)
-                    .FirstOrDefault(l => l.PlayerId == pid);
+                    .FirstOrDefault(l => l.PlayerId == player.Id);
                 if (instance == null)
                 {
                     instance = new Mall()
                     {
-                        PlayerId = pid,
+                        PlayerId = player.Id,
                     };
 
                     foreach(var dshop in DMallShops.Values)
                     {
                         var shop = new MallShop();
                         shop.LastRefreshTime = now;
-                        shop.PlayerId = pid;
-                        RandomShopCommdities(shop, dshop);
+                        shop.PlayerId = player.Id;
+                        RandomShopCommdities(player, shop, dshop);
                         shop.Type = dshop.type;
                         instance.Shops.Add(shop);
                     }
                     _db.Malls.Add(instance);
                     _db.SaveChanges();
                 }
-                _instances.Add(pid, instance);
+                _instances.Add(player.Id, instance);
             }
             foreach (var shop in instance.Shops)
             {
@@ -83,7 +83,7 @@ namespace Frontline.Modules
                 //判断刷新时间
                 if (now.IsPass(shop.LastRefreshTime, dshop.refresh_hour.Object))
                 {
-                    RandomShopCommdities(shop, dshop);
+                    RandomShopCommdities(player, shop, dshop);
                     shop.LastRefreshTime = now;
                     _db.SaveChanges();
                 }
@@ -100,57 +100,85 @@ namespace Frontline.Modules
             var dc = this.DMallShopItems[c.Type][c.CommodityId];
             MallShopInfo info = new MallShopInfo
             {
-                count = dc.count,
+                count = dc.item_cnt,
                 id = dc.id,
                 item_id = dc.item_id,
-                res_type = dc.res_type,
-                res_cnt = dc.res_cnt,
+                res_type = dc.cost_res_type,
+                res_cnt = dc.cost_res_cnt,
                 type = dc.type,
-                limit_cnt = 1 - c.SoldCount
+                limit_cnt = dc.commodity_stock - c.SoldCount,
+                order = dc.order,
             };
             return info;
         }
         #endregion
 
-        public void RandomShopCommdities(MallShop shop, DMallShop dshop)
+        public void RandomShopCommdities(Player p, MallShop shop, DMallShop dshop)
         {
+            if (!this.DMallShopItems.ContainsKey(dshop.type))
+                return;
             var source = this.DMallShopItems[dshop.type].Values.ToList();
-            if(shop.ShopCommodities.Count != dshop.size)
+            //if(shop.ShopCommodities.Count != dshop.size)
+            //{
+            //    int deltalength = dshop.size - shop.ShopCommodities.Count;
+            //    if(deltalength < 0)
+            //    {
+            //        //多出来的删掉
+            //        for(int i = 0; i< -deltalength; i++)
+            //        {
+            //            var c = shop.ShopCommodities.First();
+            //            shop.ShopCommodities.Remove(c);
+            //            _db.MallShopCommodities.Remove(c);
+            //        }
+            //    }
+            //    else
+            //    {
+            //        //不足的补上
+            //        for (int i = 0; i < deltalength; i++)
+            //        {
+            //            MallShopCommodity commodity = new MallShopCommodity
+            //            {
+            //                PlayerId = shop.PlayerId,
+            //                Type = dshop.type,
+            //            };
+            //            shop.ShopCommodities.Add(commodity);
+            //        }
+            //    }
+            //}
+            int pos = 0;
+            foreach(var dgood in source)
             {
-                int deltalength = dshop.size - shop.ShopCommodities.Count;
-                if(deltalength < 0)
+                if (p.Level < dgood.level_min)
+                    continue;
+                if (p.Level > dgood.level_max)
+                    continue;
+                MallShopCommodity c = null;
+                if(shop.ShopCommodities.Count <= pos)
                 {
-                    //多出来的删掉
-                    for(int i = 0; i< -deltalength; i++)
+                    c = new MallShopCommodity
                     {
-                        var c = shop.ShopCommodities.First();
-                        shop.ShopCommodities.Remove(c);
-                        _db.MallShopCommodities.Remove(c);
-                    }
+                        PlayerId = shop.PlayerId,
+                        Type = dshop.type,
+                    };
+                    shop.ShopCommodities.Add(c);
                 }
                 else
                 {
-                    //不足的补上
-                    for (int i = 0; i < deltalength; i++)
-                    {
-                        MallShopCommodity commodity = new MallShopCommodity
-                        {
-                            PlayerId = shop.PlayerId,
-                            Type = dshop.type,
-                        };
-                        shop.ShopCommodities.Add(commodity);
-                    }
+                    c = shop.ShopCommodities[pos];
+                }
+                c.CommodityId = dgood.id;
+                c.SoldCount = 0;
+                c.IsOut = false;
+                pos++;
+            }
+            if (shop.ShopCommodities.Count > pos)
+            {
+                for (int i = pos; i < shop.ShopCommodities.Count; i++)
+                {
+                    shop.ShopCommodities[i].IsOut = true;
                 }
             }
-            foreach(var c in shop.ShopCommodities)
-            {
-                var item = MathUtils.RandomElement(source, s => s.rate);
-                if (item == null)
-                    break;
-                source.Remove(item);
-                c.CommodityId = item.id;
-                c.SoldCount = 0;
-            }
+            _db.SaveChanges();
         }
     }
 }

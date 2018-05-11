@@ -72,22 +72,90 @@ namespace Frontline.Common.Network
             }
         }
 
-        public override byte[] Serialize(Object entity)
+        //public override byte[] Serialize(Object entity)
+        //{
+        //    short cmd;
+        //    var type = entity.GetType();
+        //    if (!_types.TryGetValue(type, out cmd)){
+
+        //        var attribute = type.GetCustomAttributesData().FirstOrDefault(a => a.AttributeType == typeof(ProtoAttribute));
+        //        if(attribute == null)
+        //        {
+        //            return null;
+        //        }
+        //        cmd = Convert.ToInt16(attribute.NamedArguments[0].TypedValue.Value);
+        //        _types.Add(type, cmd);
+        //        _cmds.Add(cmd, type.Name);
+        //    }
+            
+        //    MemoryStream stream = new MemoryStream();
+        //    ProtoBuf.Serializer.Serialize(stream, entity);
+        //    var bytes = stream.ToArray();
+        //    MathUtils.Xor(bytes, _xorbytes);
+
+        //    //2字节 short cmd
+        //    //其他entity data
+        //    int offset = 0;
+        //    var data = new byte[bytes.Length + 2];
+
+        //    data[offset++] = (byte)((cmd >> 8) & 0xff);
+        //    data[offset++] = (byte)(cmd & 0xff);
+
+        //    Buffer.BlockCopy(bytes, 0, data, offset, bytes.Length);
+        //    if (_config.LogIO)
+        //    {
+        //        _logger.LogDebug("[SEND]{0}:{1}", entity.GetType().Name, JsonConvert.SerializeObject(entity));
+        //    }
+        //    return data;
+        //}
+
+        public override void Register(Type type)
         {
+            var attribute = type.GetCustomAttributesData().First(a => a.AttributeType == typeof(ProtoAttribute));
+            short cmd = Convert.ToInt16(attribute.NamedArguments[0].TypedValue.Value);
+            _types.Add(type, cmd);
+            _cmds.Add(cmd, type.Name);
+        }
+
+        private bool TryGetHeadLengthAndBodyLength(byte[] buffer, int offset, int length, out int headLength, out int bodyLength)
+        {
+            headLength = Varint.ByteArray2Int(new ArraySegment<byte>(buffer, offset, length), out bodyLength);
+            return headLength > 0 && bodyLength > 0;
+        }
+
+        public override ArraySegment<byte> UnPack(byte[] buffer, int offset, int count, ref int readlength)
+        {
+            if (TryGetHeadLengthAndBodyLength(buffer, offset, count, out var headSize, out var bodySize))
+            {
+                int total = headSize + bodySize;
+                if (total <= count)
+                {
+                    readlength = total;
+                    return new ArraySegment<byte>(buffer, offset + headSize, bodySize);
+                }
+            }
+            readlength = 0;
+            return default(ArraySegment<byte>);
+        }
+
+        public override int Serialize(object entity, byte[] buffer, int length)
+        {
+            //组包
             short cmd;
             var type = entity.GetType();
-            if (!_types.TryGetValue(type, out cmd)){
+            if (!_types.TryGetValue(type, out cmd))
+            {
 
                 var attribute = type.GetCustomAttributesData().FirstOrDefault(a => a.AttributeType == typeof(ProtoAttribute));
-                if(attribute == null)
+                if (attribute == null)
                 {
-                    return null;
+                    throw new Exception("not protobuf entity message!");
                 }
                 cmd = Convert.ToInt16(attribute.NamedArguments[0].TypedValue.Value);
                 _types.Add(type, cmd);
                 _cmds.Add(cmd, type.Name);
             }
-            
+
             MemoryStream stream = new MemoryStream();
             ProtoBuf.Serializer.Serialize(stream, entity);
             var bytes = stream.ToArray();
@@ -96,25 +164,25 @@ namespace Frontline.Common.Network
             //2字节 short cmd
             //其他entity data
             int offset = 0;
-            var buffer = new byte[bytes.Length + 2];
+            var data = new byte[bytes.Length + 2];
 
-            buffer[offset++] = (byte)((cmd >> 8) & 0xff);
-            buffer[offset++] = (byte)(cmd & 0xff);
+            data[offset++] = (byte)((cmd >> 8) & 0xff);
+            data[offset++] = (byte)(cmd & 0xff);
 
-            Buffer.BlockCopy(bytes, 0, buffer, offset, bytes.Length);
+            Buffer.BlockCopy(bytes, 0, data, offset, bytes.Length);
             if (_config.LogIO)
             {
                 _logger.LogDebug("[SEND]{0}:{1}", entity.GetType().Name, JsonConvert.SerializeObject(entity));
             }
-            return buffer;
-        }
-
-        public override void Register(Type type)
-        {
-            var attribute = type.GetCustomAttributesData().First(a => a.AttributeType == typeof(ProtoAttribute));
-            short cmd = Convert.ToInt16(attribute.NamedArguments[0].TypedValue.Value);
-            _types.Add(type, cmd);
-            _cmds.Add(cmd, type.Name);
+            var head = Varint.Int2ByteArray(data.Length);
+            int totalLength = head.Count + data.Length;
+            if (length < totalLength)
+            {
+                throw new StackOverflowException("数据包大小超过设置的发送缓冲区");
+            }
+            Buffer.BlockCopy(head.Array, 0, buffer, 0, head.Count);//拷贝头
+            Buffer.BlockCopy(data, 0, buffer, head.Count, data.Length);//拷贝数据
+            return totalLength;
         }
     }
 }

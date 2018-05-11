@@ -50,13 +50,13 @@ namespace Frontline.Modules
 
         private void _PlayerController_PlayerCreating(object sender, Player e)
         {
-            PlayerItem item = new PlayerItem()
-            {
-                PlayerId = e.Id,
-                Tid = 40000001,
-                Count = 1
-            };
-            e.Items.Add(item);
+            //PlayerItem item = new PlayerItem()
+            //{
+            //    PlayerId = e.Id,
+            //    Tid = 40000001,
+            //    Count = 1
+            //};
+            //e.Items.Add(item);
         }
 
         #region 事件
@@ -235,7 +235,7 @@ namespace Frontline.Modules
             return item;
         }
 
-        public RewardInfo RandomReward(Player player, int randomId, int times, string reason)
+        public RewardInfo RandomReward(Player player, int randomId, int times, string reason, bool test = false)
         {
             RewardInfo ri = new RewardInfo() { res = new List<ResInfo>(), items = new List<RewardItem>() };
 
@@ -263,14 +263,17 @@ namespace Frontline.Modules
                     }
                 }
 
-                foreach (var element in ri.items.GroupBy(itm => itm.id))
+                if (!test)
                 {
-                    PlayerItem item = this.AddItem(player, element.Key, element.Sum(x => x.count), reason);
-                }
-                var playerModule = Server.GetModule<PlayerModule>();
-                foreach (var element in ri.res.GroupBy(itm => itm.type))
-                {
-                    playerModule.AddCurrency(player, element.Key, element.Sum(x => x.count), reason);
+                    foreach (var element in ri.items.GroupBy(itm => itm.id))
+                    {
+                        PlayerItem item = this.AddItem(player, element.Key, element.Sum(x => x.count), reason);
+                    }
+                    var playerModule = Server.GetModule<PlayerModule>();
+                    foreach (var element in ri.res.GroupBy(itm => itm.type))
+                    {
+                        playerModule.AddCurrency(player, element.Key, element.Sum(x => x.count), reason);
+                    }
                 }
             }
             return ri;

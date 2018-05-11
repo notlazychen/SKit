@@ -36,21 +36,21 @@ namespace Frontline.Modules
             MallShopRefreshResponse response = new MallShopRefreshResponse();
             response.success = true;
             response.type = Request.type;
-            var mall = _mallModule.QueryMall(Session.PlayerId);
+            var player = _playerModule.QueryPlayer(Session.PlayerId);
+            var mall = _mallModule.QueryMall(player);
             var shop = mall.Shops.First(s=>s.Type == Request.type);
             var dshop = _mallModule.DMallShops[shop.Type];
             if (!dshop.refresh)
             {
                 return (int)GameErrorCode.此商店不可手动刷新;
             }
-            var player = _playerModule.QueryPlayer(mall.PlayerId);
             if (!_playerModule.IsCurrencyEnough(player, CurrencyType.DIAMOND, dshop.diamond))
             {
                 return (int)GameErrorCode.资源不足;
             }
             string reason = $"商城刷新";
             _playerModule.AddCurrency(player, CurrencyType.DIAMOND, -dshop.diamond, reason);
-            _mallModule.RandomShopCommdities(shop, dshop);
+            _mallModule.RandomShopCommdities(player, shop, dshop);
             shop.LastRefreshTime = DateTime.Now;
             _db.SaveChanges();
             response.shops = new List<MallShopInfo>();
