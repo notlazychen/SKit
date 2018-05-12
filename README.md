@@ -61,7 +61,9 @@
         }
 ```
         可以对处理函数使用GameCommandOptionsAttribute特性(非必需).
+        
         * allowAnonymous:true, 表明其允许匿名用户, 否则用户必须在登录(即使用Session.Login()方法)之后才能访问该处理函数, 匿名情况下将丢弃该包/或者踢出非法用户.
+        
         * asynchronous:true, 使其将在收到消息之后直接执行而非放入主循环同步处理.
         
     2, 创建命令形式, 继承GameCommand<TRequest>类型并实现ExecuteCommand()方法 :
