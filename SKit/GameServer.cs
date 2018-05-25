@@ -1010,7 +1010,7 @@ namespace SKit
         //加载command
         foreach (var type in Assembly.GetEntryAssembly().ExportedTypes)
         {
-            if (type.BaseType.IsGenericType)
+            if (type.BaseType != null && type.BaseType.IsGenericType)
             {
                 if (type.BaseType.BaseType == typeof(GameCommandBase))
                 {
