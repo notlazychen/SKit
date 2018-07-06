@@ -51,12 +51,5 @@ namespace SKit
         /// </summary>
         /// <remarks>此方法执行在ConfigureModules之后</remarks>
         protected virtual void OnConfigured() { }
-        /// <summary>
-        /// 当服务器停止时
-        /// </summary>
-        public virtual void OnServerClosing()
-        {
-
-        }
     }
 }
