@@ -165,6 +165,8 @@ namespace SKit
         private readonly ILogger<GameServer> _logger;
 
         #region 事件
+        public event GameServerEvent<GameServer, Exception> UnhandledExceptionCatched;
+
         public event GameServerEvent<GameSession, int> GameTaskDone;
         private void OnGamePlayerTaskDone(GameSession session, int result)
         {
@@ -950,15 +952,10 @@ namespace SKit
                         }                        
                     }
                 }
-                catch (System.Data.Common.DbException ex)
-                {
-                    //数据库异常，宕机吧
-                    _logger.LogError(ex, ex.Message);
-                    throw;
-                }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, ex.Message);
+                    this.UnhandledExceptionCatched?.Invoke(this, ex);
                 }
             }
         }
