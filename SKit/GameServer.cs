@@ -121,6 +121,7 @@ namespace SKit
                     catch (Exception ex)
                     {
                         _logger.LogError(ex, ex.Message);
+                        this.UnhandledExceptionCatched?.Invoke(this, ex);
                     }
                     isdone = true;
                     _schedule.Remove(act);
