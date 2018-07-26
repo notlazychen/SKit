@@ -332,9 +332,8 @@ namespace SKit
                     foreach (var module in _modules.Values)
                     {
                         _logger.LogInformation($"Module [{module.GetType().Name}] Close");
-
-                        this.ServerClosing?.Invoke(this, DateTime.Now);
                     }
+                    this.ServerClosing?.Invoke(this, DateTime.Now);
 
                     if (_acceptEventArg != null)
                     {
