@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Reflection;
 using System.Collections.Generic;
-using Microsoft.Extensions.Logging;
 
 namespace SKit
 {

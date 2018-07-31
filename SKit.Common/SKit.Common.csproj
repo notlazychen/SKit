@@ -2,6 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <Authors>cnroy</Authors>
+    <Company>cnroy</Company>
+    <Product>SKit.Common</Product>
+    <Description>客户端和服务端共用的基础库</Description>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
 </Project>

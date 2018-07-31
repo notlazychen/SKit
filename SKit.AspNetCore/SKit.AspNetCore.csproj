@@ -2,6 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <Authors>cnroy</Authors>
+    <Description>适用于Asp.Net Core的SKit组件</Description>
   </PropertyGroup>
 
   <ItemGroup>
