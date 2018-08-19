@@ -4,22 +4,27 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SKit.Common;
 using System;
+using System.Reflection;
 
 namespace SKit.AspNetCore
 {
     public static class GameServerManagerExtensions
     {
-        public static IServiceCollection AddSKit<TSerializable>(this IServiceCollection services) 
+        public static IServiceCollection AddSKit<TSerializable>(this IServiceCollection services, IConfiguration configuration) 
             where TSerializable : Serializer
             //where TSPackager :  Packager
         {
             //services.AddTransient<Packager, TSPackager>();
-            services.AddTransient<Serializer, TSerializable>();
-
-            var provider = services.BuildServiceProvider();
-            var config = provider.GetService<IConfiguration>();
-            services.Configure<SKitConfig>(config.GetSection("skit"));
-            services.AddSingleton(new GameServer(services));
+            services.AddTransient<Serializer, TSerializable>();            
+            services.Configure<SKitConfig>(configuration.GetSection("skit"));
+            foreach (var type in Assembly.GetEntryAssembly().ExportedTypes)
+            {
+                if (type.GetTypeInfo().BaseType == typeof(GameModule))
+                {
+                    services.AddTransient(typeof(GameModule), type);
+                }
+            }
+            services.AddSingleton(provider => new GameServer(provider));
             return services;
         }
 

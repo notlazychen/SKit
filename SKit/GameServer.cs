@@ -64,7 +64,6 @@ namespace SKit
 
         private readonly Serializer _serializer;//正反序列化(包括拆包打包)工具
         private SKitConfig Config { get; }//配置
-        private readonly IServiceCollection _services;//DI容器
 
         #region 计划任务
         private class Schedule
@@ -203,16 +202,15 @@ namespace SKit
         #endregion
 
         #region 开放方法
-        public GameServer(IServiceCollection services)
+        public GameServer(IServiceProvider provider)
         {
-            _services = services;
-            var provicer = _provider = services.BuildServiceProvider();
+            _provider = provider;
             _configuration = _provider.GetService<IConfiguration>();
-            Config = provicer.GetService<IOptions<SKitConfig>>().Value;
+            Config = provider.GetService<IOptions<SKitConfig>>().Value;
             Debug.Assert(Config != null, "SKitConfig Can't be NULL!");
-            _serializer = provicer.GetService<Serializer>();
+            _serializer = provider.GetService<Serializer>();
             Debug.Assert(_serializer != null, "ISerializable Can't be NULL!");
-            _logger = provicer.GetService<ILogger<GameServer>>();
+            _logger = provider.GetService<ILogger<GameServer>>();
             Debug.Assert(_logger != null, "ILogger Can't be NULL!");
             this.Id = Config.Id;
             this.Name = Config.Name;
@@ -230,7 +228,7 @@ namespace SKit
             //_listener.AllowNatTraversal(true);
         }
 
-        ServiceProvider _provider;
+        IServiceProvider _provider;
         IConfiguration _configuration;
         public string GetConfig(string key)
         {
@@ -280,7 +278,7 @@ namespace SKit
                     //反射
                     this.ReflectProtocols();
 
-                    _logger.LogInformation($"启动工作线程...");
+                    _logger.LogDebug($"启动工作线程...");
                     IsRunning = true;
 
                     //启动任务工作线程
@@ -289,7 +287,7 @@ namespace SKit
                     _workingTask.Name = MainWorldThreadName;
                     _workingTask.Start();
 
-                    _logger.LogInformation($"启动序列化线程...");
+                    _logger.LogDebug($"启动序列化线程...");
                     //启动发送线程
                     //_sendingTaskTokenSource = new CancellationTokenSource();
                     _sendingTask = new Thread(LoopSending);
@@ -301,7 +299,7 @@ namespace SKit
                     _listener.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.KeepAlive, true);
                     //_listener.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
 
-                    _logger.LogInformation($"绑定端口{Config.Port}");
+                    _logger.LogDebug($"绑定端口{Config.Port}");
                     _listener.Bind(endPoint);
                     _listener.Listen(Config.Backlog);
 
@@ -309,10 +307,10 @@ namespace SKit
                     _acceptEventArg = acceptEventArg;
                     acceptEventArg.Completed += acceptEventArg_Completed;
 
-                    _logger.LogInformation($"开启监听");
+                    _logger.LogDebug($"开启监听");
                     if (!_listener.AcceptAsync(acceptEventArg))
                         ProcessAccept(acceptEventArg);
-                    _logger.LogInformation($"服务器[{Id}]已启动");
+                    _logger.LogDebug($"服务器[{Id}]已启动");
                 }
             }
             catch (Exception ex)
@@ -327,11 +325,11 @@ namespace SKit
             {
                 try
                 {
-                    _logger.LogInformation($"Game Server [{Id}] Closing...");
+                    _logger.LogDebug($"Game Server [{Id}] Closing...");
                     //各模块自行qingli 
                     foreach (var module in _modules.Values)
                     {
-                        _logger.LogInformation($"Module [{module.GetType().Name}] Close");
+                        _logger.LogDebug($"Module [{module.GetType().Name}] Close");
                     }
                     this.ServerClosing?.Invoke(this, DateTime.Now);
 
@@ -372,7 +370,7 @@ namespace SKit
                     _users.Clear();
 
                     IsRunning = false;
-                    _logger.LogInformation($"Game Server [{Id}] Closed");
+                    _logger.LogDebug($"Game Server [{Id}] Closed");
                     this.ServerClosing?.Invoke(this, DateTime.Now);
                 }
                 catch (Exception ex)
@@ -1009,16 +1007,8 @@ namespace SKit
         /// </summary>
         private void ReflectProtocols()
         {
-            _logger.LogInformation($"开始读取模块");
-            foreach (var type in Assembly.GetEntryAssembly().ExportedTypes)
-            {
-                if (type.GetTypeInfo().BaseType == typeof(GameModule))
-                {
-                    _services.AddTransient(typeof(GameModule), type);
-                }
-            }
-
-            var provider = _services.BuildServiceProvider();
+            _logger.LogDebug($"开始读取模块");
+            var provider = _provider;
             var modules = provider.GetServices<GameModule>();
             foreach (var module in modules)
             {
@@ -1153,12 +1143,12 @@ namespace SKit
             //模块初始化
             foreach (var module in modules)
             {
-                //_logger.LogInformation($"加载模块:{module.GetType().Name}");
+                //_logger.LogDebug($"加载模块:{module.GetType().Name}");
                 module.ConfigureServices();
             }
             foreach (var module in modules)
             {
-                _logger.LogInformation($"配置模块:{module.GetType().Name}");
+                _logger.LogDebug($"配置模块:{module.GetType().Name}");
                 module.Configure();
             }
 
