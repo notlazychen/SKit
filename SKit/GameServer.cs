@@ -811,28 +811,30 @@ namespace SKit
                         {
                             case MessageType.AllSession:
                                 {
+                                    var btemp = new byte[Config.SendBufferSize];
+                                    int size = _serializer.Serialize(message.Msg, btemp, btemp.Length);
                                     foreach (var session in _sessions.Values)
                                     {
                                         var args = new SocketAsyncEventArgs();
                                         args.Completed += IO_Completed;
                                         var buff = _socketSendBufferPool.Pop();
-                                        int size = _serializer.Serialize(message.Msg, buff, buff.Length);
+                                        Buffer.BlockCopy(btemp, 0, buff, 0, size);
                                         args.SetBuffer(buff, 0, size);
-
                                         BeginSendSocketMessage(session.Socket, args);
                                     }
                                 }
                                 break;
                             case MessageType.AllUser:
                                 {
+                                    var btemp = new byte[Config.SendBufferSize];
+                                    int size = _serializer.Serialize(message.Msg, btemp, btemp.Length);
                                     foreach (var session in _users.Values)
                                     {
                                         var args = new SocketAsyncEventArgs();
                                         args.Completed += IO_Completed;
                                         var buff = _socketSendBufferPool.Pop();
-                                        int size = _serializer.Serialize(message.Msg, buff, buff.Length);
+                                        Buffer.BlockCopy(btemp, 0, buff, 0, size);
                                         args.SetBuffer(buff, 0, size);
-
                                         BeginSendSocketMessage(session.Socket, args);
                                     }
                                 }
@@ -846,7 +848,6 @@ namespace SKit
                                         var buff = _socketSendBufferPool.Pop();
                                         int size = _serializer.Serialize(message.Msg, buff, buff.Length);
                                         args.SetBuffer(buff, 0, size);
-
                                         BeginSendSocketMessage(session.Socket, args);
                                     }
                                 }
@@ -860,7 +861,6 @@ namespace SKit
                                         var buff = _socketSendBufferPool.Pop();
                                         int size = _serializer.Serialize(message.Msg, buff, buff.Length);
                                         args.SetBuffer(buff, 0, size);
-
                                         BeginSendSocketMessage(session.Socket, args);
                                     }
                                 }
@@ -869,15 +869,17 @@ namespace SKit
                                 {
                                     if (message.DestIds != null)
                                     {
-                                        var args = new SocketAsyncEventArgs();
-                                        args.Completed += IO_Completed;
-                                        var buff = _socketSendBufferPool.Pop();
-                                        int size = _serializer.Serialize(message.Msg, buff, buff.Length);
-                                        args.SetBuffer(buff, 0, size);
+                                        var btemp = new byte[Config.SendBufferSize];
+                                        int size = _serializer.Serialize(message.Msg, btemp, btemp.Length);
                                         foreach (var username in message.DestIds)
                                         {
                                             if (_users.TryGetValue(username, out var session))
                                             {
+                                                var args = new SocketAsyncEventArgs();
+                                                args.Completed += IO_Completed;
+                                                var buff = _socketSendBufferPool.Pop();
+                                                Buffer.BlockCopy(btemp, 0, buff, 0, size);
+                                                args.SetBuffer(buff, 0, size);
                                                 BeginSendSocketMessage(session.Socket, args);
                                             }
                                         }
@@ -888,15 +890,17 @@ namespace SKit
                                 {
                                     if (message.DestIds != null)
                                     {
-                                        var args = new SocketAsyncEventArgs();
-                                        args.Completed += IO_Completed;
-                                        var buff = _socketSendBufferPool.Pop();
-                                        int size = _serializer.Serialize(message.Msg, buff, buff.Length);
-                                        args.SetBuffer(buff, 0, size);
+                                        var btemp = new byte[Config.SendBufferSize];
+                                        int size = _serializer.Serialize(message.Msg, btemp, btemp.Length);
                                         foreach (var id in message.DestIds)
                                         {
                                             if (_sessions.TryGetValue(id, out var session))
                                             {
+                                                var args = new SocketAsyncEventArgs();
+                                                args.Completed += IO_Completed;
+                                                var buff = _socketSendBufferPool.Pop();
+                                                Buffer.BlockCopy(btemp, 0, buff, 0, size);
+                                                args.SetBuffer(buff, 0, size);
                                                 BeginSendSocketMessage(session.Socket, args);
                                             }
                                         }
